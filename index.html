@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Deriv Bot PRO MAX</title>
+<style>
+body { background:#0d0d0d; color:#fff; font-family:sans-serif; text-align:center; }
+button { padding:12px; margin:8px; font-size:16px; border:none; border-radius:5px; }
+.start { background:green; }
+.stop { background:red; }
+</style>
+</head>
+<body>
+
+<h2>🤖 Deriv Bot PRO MAX</h2>
+
+<button class="start" onclick="startBot()">🟢 Iniciar</button>
+<button class="stop" onclick="stopBot()">🔴 Detener</button>
+
+<p id="status">Estado: OFF</p>
+<p id="symbol">Activo: -</p>
+<p id="profit">Ganancia: 0</p>
+<p id="trades">Trades: 0</p>
+<p id="winrate">Winrate: 0%</p>
+
+<script>
+const token = "U8trCjr6Qp5NY7D";
+
+// MULTI INDICES
+const symbols = ["R_100","R_75","R_50"];
+
+let ws;
+let running = false;
+
+let stake = 0.35;
+let maxLoss = 3;
+let maxTrades = 25;
+
+let profit = 0;
+let trades = 0;
+let wins = 0;
+let losses = 0;
+
+let dataMap = {};
+let paused = false;
+
+//----------------------------------
+
+function startBot() {
+    if (running) return;
+
+    ws = new WebSocket("wss://ws.derivws.com/websockets/v3?app_id=1089");
+
+    ws.onopen = () => {
+        ws.send(JSON.stringify({ authorize: token }));
+        document.getElementById("status").innerText = "Estado: ON";
+    };
+
+    ws.onmessage = (msg) => {
+        let d = JSON.parse(msg.data);
+
+        if (d.msg_type === "authorize") {
+            symbols.forEach(s => {
+                ws.send(JSON.stringify({ ticks: s, subscribe: 1 }));
+                dataMap[s] = [];
+            });
+        }
+
+        if (d.msg_type === "tick" && !paused) {
+
+            let sym = d.tick.symbol;
+            let price = parseFloat(d.tick.quote);
+
+            dataMap[sym].push(price);
+            if (dataMap[sym].length > 40) dataMap[sym].shift();
+
+            // 🔥 ELEGIR MEJOR ACTIVO
+            let bestSym = null;
+            let bestScore = 0;
+
+            for (let s of symbols) {
+
+                let ticks = dataMap[s];
+                if (ticks.length < 25) continue;
+
+                let returns = [];
+                for (let i=1;i<ticks.length;i++)
+                    returns.push(ticks[i]-ticks[i-1]);
+
+                let mean = avg(returns);
+                let std = stddev(returns, mean);
+                if (std === 0) continue;
+
+                let z = (returns[returns.length-1]-mean)/std;
+                let score = Math.abs(z);
+
+                if (score > bestScore) {
+                    bestScore = score;
+                    bestSym = s;
+                }
+            }
+
+            if (bestSym) {
+                document.getElementById("symbol").innerText = "Activo: " + bestSym;
+
+                let ticks = dataMap[bestSym];
+                let last = ticks[ticks.length-1];
+                let digit = parseInt(last.toString().slice(-1));
+
+                // 🧠 LÓGICA HÍBRIDA + DÍGITOS
+
+                if (digit >= 7) trade(bestSym, "PUT");
+                else if (digit <= 2) trade(bestSym, "CALL");
+
+                else {
+                    let returns = [];
+                    for (let i=1;i<ticks.length;i++)
+                        returns.push(ticks[i]-ticks[i-1]);
+
+                    let mean = avg(returns);
+                    let std = stddev(returns, mean);
+
+                    let z = (returns[returns.length-1]-mean)/std;
+
+                    if (z > 1.7) trade(bestSym, "PUT");
+                    else if (z < -1.7) trade(bestSym, "CALL");
+                }
+            }
+        }
+
+        // RESULTADOS
+        if (d.msg_type === "proposal_open_contract") {
+
+            if (d.proposal_open_contract.is_sold) {
+
+                let pnl = parseFloat(d.proposal_open_contract.profit);
+
+                profit += pnl;
+                trades++;
+
+                if (pnl > 0) wins++;
+                else losses++;
+
+                updatePanel();
+
+                // 🛡️ ANTI-RUINA
+                if (profit <= -maxLoss || trades >= maxTrades) {
+                    paused = true;
+                    document.getElementById("status").innerText = "🚫 STOP";
+                }
+
+                // 🔁 PAUSA INTELIGENTE
+                if (losses >= 3) {
+                    paused = true;
+                    document.getElementById("status").innerText = "⏸️ PAUSA";
+                    setTimeout(()=>{
+                        paused = false;
+                        losses = 0;
+                        document.getElementById("status").innerText = "Estado: ON";
+                    },60000);
+                }
+            }
+        }
+    };
+
+    running = true;
+}
+
+//----------------------------------
+
+function stopBot() {
+    if (ws) ws.close();
+    running = false;
+    document.getElementById("status").innerText = "Estado: OFF";
+}
+
+//----------------------------------
+
+function trade(symbol, direction) {
+
+    if (paused) return;
+
+    ws.send(JSON.stringify({
+        buy: 1,
+        price: stake,
+        parameters: {
+            amount: stake,
+            basis: "stake",
+            contract_type: "DIGITDIFF",
+            barrier: Math.floor(Math.random()*10),
+            currency: "USD",
+            duration: 1,
+            duration_unit: "t",
+            symbol: symbol
+        }
+    }));
+}
+
+//----------------------------------
+
+function updatePanel() {
+    document.getElementById("profit").innerText = "Ganancia: " + profit.toFixed(2);
+    document.getElementById("trades").innerText = "Trades: " + trades;
+
+    let wr = trades>0 ? (wins/trades*100).toFixed(1):0;
+    document.getElementById("winrate").innerText = "Winrate: " + wr + "%";
+}
+
+//----------------------------------
+
+function avg(arr){ return arr.reduce((a,b)=>a+b,0)/arr.length; }
+
+function stddev(arr,mean){
+    return Math.sqrt(arr.map(x=>Math.pow(x-mean,2))
+    .reduce((a,b)=>a+b,0)/arr.length);
+}
+</script>
+
+</body>
+</html>
