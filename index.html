@@ -353,7 +353,7 @@ select {
 <script>
 // 🔐 TOKENS (REEMPLAZAR CUANDO ESTÉN LISTOS)
 const tokens = {
-    demo: "lPQzqrCdf0ctXW6",
+    demo: "1PQzqrCdfOctXW6",
     real: "***********NY7D"
 };
 
@@ -378,11 +378,9 @@ let cooldown = 8000;
 let paused = false;
 let currentMode = "safe";
 let currentAccountType = null;
-
-// 🛡️ CONTROL DE PÉRDIDA DIARIA (3% máximo)
-let maxDailyLossPercent = 3; // 3%
-let maxDailyLoss = 0; // se calcula al iniciar
 let stopLossActivated = false;
+let maxDailyLossPercent = 3;
+let maxDailyLoss = 0;
 
 // 📈 DATA POR ACTIVO
 let dataMap = {};
@@ -551,7 +549,6 @@ function startBotWithAccount(accountType) {
         return;
     }
     
-    // Resetear stop loss si es nuevo día (se puede mejorar con fecha)
     stopLossActivated = false;
     paused = false;
     
@@ -563,21 +560,18 @@ function startBotWithAccount(accountType) {
     const badgeHtml = `<span class="account-badge ${accountType === 'demo' ? 'demo-badge' : 'real-badge'}">${accountType === 'demo' ? '🟢 DEMO' : '🔴 REAL'}</span>`;
     document.getElementById("accountBadge").innerHTML = badgeHtml;
     
-    // Validar token
     if(!token || token === "TU_TOKEN_DEMO" || token === "TU_TOKEN_REAL") {
         addLog(`❌ ERROR: Token para ${accountType.toUpperCase()} no configurado.`, "error");
         alert(`❌ Token de ${accountType.toUpperCase()} no configurado.\n\nReemplaza 'TU_TOKEN_${accountType.toUpperCase()}' en el código.`);
         return;
     }
     
-    // Configurar modo y stake (conservador)
     currentMode = mode;
-    let riskPercent = 0.0035; // 0.35% por defecto ultra conservador
-    if(mode === "safe") { riskPercent = 0.0035; cooldown = 10000; }      // 0.35% por trade
-    else if(mode === "mid") { riskPercent = 0.005; cooldown = 8000; }    // 0.5% por trade
-    else { riskPercent = 0.0075; cooldown = 7000; }                      // 0.75% por trade
+    let riskPercent = 0.0035;
+    if(mode === "safe") { riskPercent = 0.0035; cooldown = 10000; }
+    else if(mode === "mid") { riskPercent = 0.005; cooldown = 8000; }
+    else { riskPercent = 0.0075; cooldown = 7000; }
     
-    // Resetear variables
     dailyProfit = 0;
     wins = 0;
     losses = 0;
@@ -595,7 +589,6 @@ function startBotWithAccount(accountType) {
     addLog(`🛡️ PROTECCIÓN: Máximo 3% de pérdida diaria`, "warning");
     addLog(`⚙️ Riesgo por trade: ${(riskPercent*100).toFixed(2)}% | Cooldown: ${cooldown/1000}s`, "info");
     
-    // Conectar WebSocket
     ws = new WebSocket("wss://ws.derivws.com/websockets/v3?app_id=1089");
     
     ws.onopen = () => {
@@ -660,4 +653,14 @@ function startBotWithAccount(accountType) {
             
             if(d.msg_type === "tick" && running && !paused && !stopLossActivated) {
                 const sym = d.tick.symbol;
-                const price = parseFloat
+                const price = parseFloat(d.tick.quote);
+                
+                if(!dataMap[sym]) dataMap[sym] = [];
+                dataMap[sym].push(price);
+                if(dataMap[sym].length > 60) dataMap[sym].shift();
+                
+                const t = dataMap[sym];
+                if(t.length < 40) return;
+                
+                const returns = [];
+                for(let i = 1; i < t.length; i++)
