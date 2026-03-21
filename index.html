@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+  <!DOCTYPE html>
 <html>
 <head>
 <title>Deriv Bot HEDGE v5 - Ultra Conservador</title>
@@ -112,7 +112,11 @@ select { padding: 10px 15px; margin: 5px; background: rgba(255,255,255,0.1); col
     </div>
 </div>
 <script>
-const tokens = { demo: "***********MfkF", real: "TU_TOKEN_REAL"};
+// 🔐 TOKENS (REEMPLAZA CON TUS TOKENS REALES)
+const tokens = { 
+    demo: "TU_TOKEN_DEMO_AQUI", 
+    real: "TU_TOKEN_REAL_AQUI" 
+};
 
 const symbols = ["R_100","R_75","R_50","R_25","R_10","BOOM1000","CRASH1000","BOOM500","CRASH500"];
 
@@ -368,4 +372,35 @@ function startBotWithAccount(accType){
                     document.getElementById("statusBadge").innerHTML="⏸️ PAUSA"; 
                     addLog(`⏸️ Pausa 2min (${losses} pérdidas)`,"warning"); 
                     setTimeout(()=>{ 
-  
+                        if(running && !stopLossActivated){ 
+                            paused=false; 
+                            losses=0; 
+                            document.getElementById("statusBadge").innerHTML="🟢 CONECTADO"; 
+                            addLog("▶️ Reactivado","success"); 
+                        } 
+                    },120000); 
+                } 
+            } 
+        }catch(e){ addLog(`❌ Error: ${e.message}`,"error"); } 
+    }; 
+    ws.onerror=()=>addLog("❌ WebSocket error","error"); 
+    ws.onclose=()=>{ 
+        if(running && !stopLossActivated){ 
+            addLog("🔌 Conexión perdida","error"); 
+            running=false; 
+            document.getElementById("statusBadge").innerHTML="⚪ DESCONECTADO"; 
+        } 
+    }; 
+}
+
+function mostrarModal(){ 
+    if(running){ addLog("⚠️ Detén el bot primero","error"); return; } 
+    document.getElementById("modalConfirm").style.display="flex"; 
+}
+function cerrarModal(){ document.getElementById("modalConfirm").style.display="none"; }
+function confirmarStart(accType){ cerrarModal(); startBotWithAccount(accType); }
+
+addLog("🛡️ Ultra Conservador - 3% pérdida diaria","warning");
+</script>
+</body>
+</html>
