@@ -1,219 +1,663 @@
 <!DOCTYPE html>
 <html>
 <head>
-<title>Deriv Bot PRO MAX</title>
+<title>Deriv Bot HEDGE v5 - Ultra Conservador</title>
 <style>
-body { background:#0d0d0d; color:#fff; font-family:sans-serif; text-align:center; }
-button { padding:12px; margin:8px; font-size:16px; border:none; border-radius:5px; }
-.start { background:green; }
-.stop { background:red; }
+body { 
+    background: linear-gradient(135deg, #0a0a0a 0%, #1a1a2e 100%);
+    color: #fff; 
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+    text-align: center; 
+    margin: 0;
+    padding: 20px;
+}
+
+.container {
+    max-width: 600px;
+    margin: 0 auto;
+}
+
+.card {
+    background: rgba(255,255,255,0.05);
+    backdrop-filter: blur(10px);
+    border-radius: 20px;
+    padding: 20px;
+    margin: 20px 0;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+}
+
+button { 
+    padding: 12px 24px; 
+    margin: 8px; 
+    font-size: 16px; 
+    border: none; 
+    border-radius: 10px; 
+    cursor: pointer;
+    font-weight: bold;
+    transition: transform 0.2s;
+}
+
+button:hover {
+    transform: scale(1.05);
+}
+
+.start { 
+    background: linear-gradient(135deg, #00c853, #00a844);
+    color: white;
+}
+
+.stop { 
+    background: linear-gradient(135deg, #d32f2f, #b71c1c);
+    color: white;
+}
+
+select { 
+    padding: 10px 15px; 
+    margin: 5px; 
+    background: rgba(255,255,255,0.1);
+    color: #fff; 
+    border: 1px solid rgba(255,255,255,0.2);
+    border-radius: 10px;
+    cursor: pointer;
+}
+
+.status-badge {
+    display: inline-block;
+    padding: 5px 15px;
+    border-radius: 20px;
+    font-size: 14px;
+    font-weight: bold;
+    margin: 10px 0;
+}
+
+.status-on {
+    background: #00c853;
+    color: white;
+}
+
+.status-off {
+    background: #d32f2f;
+    color: white;
+}
+
+.status-paused {
+    background: #ff9800;
+    color: white;
+}
+
+.stat-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 10px;
+    margin-top: 15px;
+}
+
+.stat-item {
+    background: rgba(0,0,0,0.5);
+    padding: 10px;
+    border-radius: 10px;
+}
+
+.stat-label {
+    font-size: 12px;
+    opacity: 0.7;
+    display: block;
+}
+
+.stat-value {
+    font-size: 20px;
+    font-weight: bold;
+    color: #ffd700;
+}
+
+.log {
+    background: rgba(0,0,0,0.8);
+    border-radius: 10px;
+    padding: 10px;
+    height: 200px;
+    overflow-y: auto;
+    font-family: 'Courier New', monospace;
+    font-size: 11px;
+    text-align: left;
+    margin-top: 15px;
+}
+
+.log-entry {
+    margin: 3px 0;
+    padding: 2px 5px;
+    border-left: 3px solid;
+}
+
+.log-info {
+    color: #aaa;
+    border-left-color: #2196f3;
+}
+
+.log-success {
+    color: #4caf50;
+    border-left-color: #4caf50;
+}
+
+.log-error {
+    color: #f44336;
+    border-left-color: #f44336;
+}
+
+.log-trade {
+    color: #ff9800;
+    border-left-color: #ff9800;
+}
+
+.log-warning {
+    color: #ff9800;
+    border-left-color: #ff9800;
+}
+
+.strategy-stats {
+    display: flex;
+    justify-content: space-around;
+    margin-top: 10px;
+    font-size: 11px;
+}
+
+.strategy-item {
+    text-align: center;
+    padding: 5px;
+    border-radius: 5px;
+    background: rgba(0,0,0,0.3);
+}
+
+.strategy-active {
+    background: rgba(255,215,0,0.2);
+    border: 1px solid #ffd700;
+}
+
+.risk-info {
+    background: rgba(0,0,0,0.5);
+    border-radius: 10px;
+    padding: 10px;
+    margin: 10px 0;
+    font-size: 12px;
+    border-left: 3px solid #ff9800;
+    text-align: left;
+}
+
+.modal {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0,0,0,0.8);
+    z-index: 1000;
+    justify-content: center;
+    align-items: center;
+}
+
+.modal-content {
+    background: linear-gradient(135deg, #1a1a2e, #0f0f1a);
+    border-radius: 20px;
+    padding: 30px;
+    max-width: 400px;
+    text-align: center;
+    border: 1px solid rgba(255,215,0,0.3);
+}
+
+.modal-buttons {
+    display: flex;
+    gap: 15px;
+    justify-content: center;
+    margin-top: 25px;
+}
+
+.modal-btn {
+    padding: 12px 25px;
+    font-size: 16px;
+    font-weight: bold;
+    border: none;
+    border-radius: 10px;
+    cursor: pointer;
+}
+
+.modal-demo {
+    background: linear-gradient(135deg, #2196f3, #0b5e9e);
+    color: white;
+}
+
+.modal-real {
+    background: linear-gradient(135deg, #f44336, #b71c1c);
+    color: white;
+}
+
+.modal-cancel {
+    background: #555;
+    color: white;
+}
+
+.account-badge {
+    display: inline-block;
+    padding: 4px 12px;
+    border-radius: 15px;
+    font-size: 12px;
+    font-weight: bold;
+    margin-left: 10px;
+}
+
+.demo-badge {
+    background: #2196f3;
+    color: white;
+}
+
+.real-badge {
+    background: #f44336;
+    color: white;
+}
 </style>
 </head>
 <body>
+<div class="container">
+    <h2>🤖 Bot HEDGE v5</h2>
+    <p style="font-size:12px; opacity:0.7;">Ultra Conservador | Máx 3% pérdida/día | Protección de cuenta</p>
 
-<h2>🤖 Deriv Bot PRO MAX</h2>
+    <div class="card">
+        <div class="risk-info">
+            ⚠️ <strong>PROTECCIÓN DE CUENTA</strong><br>
+            📊 Cuenta: <span id="accountDisplay">-</span><br>
+            🛡️ Límite pérdida diaria: <strong style="color:#ff9800">3%</strong><br>
+            💰 Si la pérdida supera $3 USD (en cuenta $100), el bot se detiene automáticamente.<br>
+            🔄 Se reinicia al día siguiente o manualmente.
+        </div>
 
-<button class="start" onclick="startBot()">🟢 Iniciar</button>
-<button class="stop" onclick="stopBot()">🔴 Detener</button>
+        <div style="margin-bottom: 15px;">
+            <select id="mode">
+                <option value="safe">🛡️ Ultra Conservador (0.35% por trade)</option>
+                <option value="mid">⚖️ Conservador (0.5% por trade)</option>
+                <option value="aggressive">🔥 Moderado (0.75% por trade)</option>
+            </select>
+        </div>
 
-<p id="status">Estado: OFF</p>
-<p id="symbol">Activo: -</p>
-<p id="profit">Ganancia: 0</p>
-<p id="trades">Trades: 0</p>
-<p id="winrate">Winrate: 0%</p>
+        <br>
+
+        <button class="start" onclick="mostrarModal()">▶️ INICIAR BOT</button>
+        <button class="stop" onclick="stopBot()">⏹️ DETENER BOT</button>
+
+        <br><br>
+
+        <div id="statusBadge" class="status-badge status-off">⚪ DESCONECTADO</div>
+        <div id="accountBadge" style="margin-top: 5px;"></div>
+
+        <div class="stat-grid">
+            <div class="stat-item">
+                <span class="stat-label">💰 SALDO</span>
+                <span class="stat-value" id="balance">0.00 USD</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-label">📈 GANANCIA HOY</span>
+                <span class="stat-value" id="profit" style="color: #ffd700;">0.00 USD</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-label">🎯 APUESTA</span>
+                <span class="stat-value" id="stake">0.00 USD</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-label">📊 ACTIVO</span>
+                <span class="stat-value" id="symbol">-</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-label">🏆 WINRATE</span>
+                <span class="stat-value" id="winrate">0%</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-label">🎲 TRADES HOY</span>
+                <span class="stat-value" id="trades">0</span>
+            </div>
+        </div>
+
+        <div class="stat-item" style="margin-top: 10px;">
+            <span class="stat-label">⚠️ PÉRDIDA MÁXIMA HOY</span>
+            <span class="stat-value" id="maxLossToday" style="color: #ff9800;">-3.00 USD</span>
+        </div>
+
+        <div id="strategyInfo" class="strategy-stats">
+            <div class="strategy-item" id="stratVol">📊 Volatilidad: -</div>
+            <div class="strategy-item" id="stratBoom">💥 Boom: -</div>
+            <div class="strategy-item" id="stratCrash">💢 Crash: -</div>
+        </div>
+    </div>
+
+    <div class="log" id="logPanel">
+        <div class="log-entry log-info">🤖 Bot HEDGE v5 - Ultra Conservador</div>
+        <div class="log-entry log-info">🛡️ Límite de pérdida diaria: 3% de la cuenta inicial</div>
+        <div class="log-entry log-info">⚙️ Presiona INICIAR y selecciona Demo o Real</div>
+    </div>
+</div>
+
+<!-- MODAL DE CONFIRMACIÓN -->
+<div id="modalConfirm" class="modal">
+    <div class="modal-content">
+        <h3>⚠️ SELECCIONA MODO DE OPERACIÓN</h3>
+        <p style="margin: 15px 0; color: #ccc;">
+            🔹 <strong style="color:#2196f3">DEMO</strong> - Cuenta de práctica<br>
+            🔹 <strong style="color:#f44336">REAL</strong> - Dinero real<br><br>
+            <span style="color:#ff9800;">🛡️ Protección activa: Máx 3% pérdida/día</span>
+        </p>
+        <div class="modal-buttons">
+            <button class="modal-btn modal-demo" onclick="confirmarStart('demo')">🟢 DEMO</button>
+            <button class="modal-btn modal-real" onclick="confirmarStart('real')">🔴 REAL</button>
+            <button class="modal-btn modal-cancel" onclick="cerrarModal()">❌ Cancelar</button>
+        </div>
+    </div>
+</div>
 
 <script>
-const token = "U8trCjr6Qp5NY7D";
+// 🔐 TOKENS (REEMPLAZAR CUANDO ESTÉN LISTOS)
+const tokens = {
+    demo: "VRTC_TU_TOKEN_DEMO",
+    real: "CR_TU_TOKEN_REAL"
+};
 
-// MULTI INDICES
-const symbols = ["R_100","R_75","R_50"];
+// 📊 ACTIVOS SOPORTADOS
+const symbols = [
+    "R_100", "R_75", "R_50", "R_25", "R_10",
+    "BOOM1000", "CRASH1000", "BOOM500", "CRASH500"
+];
 
-let ws;
+// 🧠 VARIABLES DEL BOT
+let ws = null;
 let running = false;
-
-let stake = 0.35;
-let maxLoss = 3;
-let maxTrades = 25;
-
-let profit = 0;
-let trades = 0;
+let balance = 0;
+let initialBalance = 0;
+let stake = 0;
+let dailyProfit = 0;
 let wins = 0;
 let losses = 0;
-
-let dataMap = {};
+let totalTrades = 0;
+let lastTradeTime = 0;
+let cooldown = 8000;
 let paused = false;
+let currentMode = "safe";
+let currentAccountType = null;
 
-//----------------------------------
+// 🛡️ CONTROL DE PÉRDIDA DIARIA (3% máximo)
+let maxDailyLossPercent = 3; // 3%
+let maxDailyLoss = 0; // se calcula al iniciar
+let stopLossActivated = false;
 
-function startBot() {
-    if (running) return;
+// 📈 DATA POR ACTIVO
+let dataMap = {};
 
-    ws = new WebSocket("wss://ws.derivws.com/websockets/v3?app_id=1089");
+// 🎯 ESTADÍSTICAS POR ESTRATEGIA
+let strategyStats = {
+    volatility: { wins: 0, losses: 0, profit: 0, trades: 0 },
+    boom: { wins: 0, losses: 0, profit: 0, trades: 0 },
+    crash: { wins: 0, losses: 0, profit: 0, trades: 0 }
+};
 
-    ws.onopen = () => {
-        ws.send(JSON.stringify({ authorize: token }));
-        document.getElementById("status").innerText = "Estado: ON";
-    };
+let currentStrategy = "volatility";
 
-    ws.onmessage = (msg) => {
-        let d = JSON.parse(msg.data);
+// 🧠 RED NEURONAL
+let weights = [0.3, 0.4, 0.3];
+const LEARNING_RATE = 0.003;
+const MAX_WEIGHT = 0.8;
+const MIN_WEIGHT = -0.8;
 
-        if (d.msg_type === "authorize") {
-            symbols.forEach(s => {
-                ws.send(JSON.stringify({ ticks: s, subscribe: 1 }));
-                dataMap[s] = [];
-            });
-        }
-
-        if (d.msg_type === "tick" && !paused) {
-
-            let sym = d.tick.symbol;
-            let price = parseFloat(d.tick.quote);
-
-            dataMap[sym].push(price);
-            if (dataMap[sym].length > 40) dataMap[sym].shift();
-
-            // 🔥 ELEGIR MEJOR ACTIVO
-            let bestSym = null;
-            let bestScore = 0;
-
-            for (let s of symbols) {
-
-                let ticks = dataMap[s];
-                if (ticks.length < 25) continue;
-
-                let returns = [];
-                for (let i=1;i<ticks.length;i++)
-                    returns.push(ticks[i]-ticks[i-1]);
-
-                let mean = avg(returns);
-                let std = stddev(returns, mean);
-                if (std === 0) continue;
-
-                let z = (returns[returns.length-1]-mean)/std;
-                let score = Math.abs(z);
-
-                if (score > bestScore) {
-                    bestScore = score;
-                    bestSym = s;
-                }
-            }
-
-            if (bestSym) {
-                document.getElementById("symbol").innerText = "Activo: " + bestSym;
-
-                let ticks = dataMap[bestSym];
-                let last = ticks[ticks.length-1];
-                let digit = parseInt(last.toString().slice(-1));
-
-                // 🧠 LÓGICA HÍBRIDA + DÍGITOS
-
-                if (digit >= 7) trade(bestSym, "PUT");
-                else if (digit <= 2) trade(bestSym, "CALL");
-
-                else {
-                    let returns = [];
-                    for (let i=1;i<ticks.length;i++)
-                        returns.push(ticks[i]-ticks[i-1]);
-
-                    let mean = avg(returns);
-                    let std = stddev(returns, mean);
-
-                    let z = (returns[returns.length-1]-mean)/std;
-
-                    if (z > 1.7) trade(bestSym, "PUT");
-                    else if (z < -1.7) trade(bestSym, "CALL");
-                }
-            }
-        }
-
-        // RESULTADOS
-        if (d.msg_type === "proposal_open_contract") {
-
-            if (d.proposal_open_contract.is_sold) {
-
-                let pnl = parseFloat(d.proposal_open_contract.profit);
-
-                profit += pnl;
-                trades++;
-
-                if (pnl > 0) wins++;
-                else losses++;
-
-                updatePanel();
-
-                // 🛡️ ANTI-RUINA
-                if (profit <= -maxLoss || trades >= maxTrades) {
-                    paused = true;
-                    document.getElementById("status").innerText = "🚫 STOP";
-                }
-
-                // 🔁 PAUSA INTELIGENTE
-                if (losses >= 3) {
-                    paused = true;
-                    document.getElementById("status").innerText = "⏸️ PAUSA";
-                    setTimeout(()=>{
-                        paused = false;
-                        losses = 0;
-                        document.getElementById("status").innerText = "Estado: ON";
-                    },60000);
-                }
-            }
-        }
-    };
-
-    running = true;
+// 📝 FUNCIÓN DE LOG
+function addLog(message, type = "info") {
+    const logPanel = document.getElementById("logPanel");
+    const entry = document.createElement("div");
+    entry.className = `log-entry log-${type}`;
+    const time = new Date().toLocaleTimeString();
+    entry.textContent = `[${time}] ${message}`;
+    logPanel.appendChild(entry);
+    logPanel.scrollTop = logPanel.scrollHeight;
+    
+    while(logPanel.children.length > 100) {
+        logPanel.removeChild(logPanel.firstChild);
+    }
 }
 
-//----------------------------------
-
-function stopBot() {
-    if (ws) ws.close();
-    running = false;
-    document.getElementById("status").innerText = "Estado: OFF";
+// 📊 ACTUALIZAR UI
+function updateUI() {
+    document.getElementById("balance").innerHTML = `${balance.toFixed(2)} USD`;
+    document.getElementById("profit").innerHTML = `${dailyProfit.toFixed(2)} USD`;
+    if(dailyProfit < 0) {
+        document.getElementById("profit").style.color = "#f44336";
+    } else {
+        document.getElementById("profit").style.color = "#ffd700";
+    }
+    document.getElementById("stake").innerHTML = `${stake.toFixed(2)} USD`;
+    const winrate = totalTrades > 0 ? (wins / totalTrades * 100).toFixed(1) : 0;
+    document.getElementById("winrate").innerHTML = `${winrate}%`;
+    document.getElementById("trades").innerHTML = totalTrades;
+    
+    const remainingLoss = (maxDailyLoss + dailyProfit).toFixed(2);
+    document.getElementById("maxLossToday").innerHTML = `-${maxDailyLoss.toFixed(2)} USD | Restante: ${remainingLoss} USD`;
+    
+    for(let strat in strategyStats) {
+        let s = strategyStats[strat];
+        let winrateStr = s.trades > 0 ? (s.wins/s.trades*100).toFixed(0) : 0;
+        let profitStr = s.profit.toFixed(2);
+        let element = document.getElementById(`strat${strat.charAt(0).toUpperCase() + strat.slice(1)}`);
+        if(element) {
+            element.innerHTML = strat === "volatility" ? "📊" : strat === "boom" ? "💥" : "💢";
+            element.innerHTML += ` ${winrateStr}% | $${profitStr}`;
+            if(currentStrategy === strat) {
+                element.style.background = "rgba(255,215,0,0.2)";
+                element.style.border = "1px solid #ffd700";
+            } else {
+                element.style.background = "rgba(0,0,0,0.3)";
+                element.style.border = "none";
+            }
+        }
+    }
 }
 
-//----------------------------------
+// 📈 ESTADÍSTICAS
+function avg(arr) { return arr.reduce((a,b)=>a+b,0) / arr.length; }
+function stddev(arr, mean) {
+    return Math.sqrt(arr.map(x => Math.pow(x - mean, 2)).reduce((a,b)=>a+b,0) / arr.length);
+}
 
-function trade(symbol, direction) {
+// 🧠 ACTUALIZAR PESOS
+function updateWeights(success) {
+    if(success) {
+        weights = weights.map(w => Math.min(MAX_WEIGHT, w + LEARNING_RATE));
+    } else {
+        weights = weights.map(w => Math.max(MIN_WEIGHT, w - LEARNING_RATE));
+    }
+}
 
-    if (paused) return;
+// 🎯 ELEGIR MEJOR ESTRATEGIA
+function chooseStrategy() {
+    let best = "volatility";
+    let bestScore = -999999;
+    
+    for(let strat in strategyStats) {
+        let s = strategyStats[strat];
+        if(s.trades < 5) continue;
+        
+        let winrate = s.wins / s.trades;
+        let avgProfit = s.trades > 0 ? s.profit / s.trades : 0;
+        let score = winrate * avgProfit * Math.sqrt(s.trades);
+        
+        if(score > bestScore && s.trades >= 5) {
+            bestScore = score;
+            best = strat;
+        }
+    }
+    
+    if(best !== currentStrategy && strategyStats[best].trades >= 5) {
+        addLog(`🔄 Cambiando estrategia: ${currentStrategy} → ${best}`, "success");
+        currentStrategy = best;
+    }
+}
 
+// 💰 EJECUTAR TRADE
+function executeTrade(symbol, contractType) {
+    if(paused || stopLossActivated) return;
+    
     ws.send(JSON.stringify({
-        buy: 1,
-        price: stake,
-        parameters: {
-            amount: stake,
-            basis: "stake",
-            contract_type: "DIGITDIFF",
-            barrier: Math.floor(Math.random()*10),
-            currency: "USD",
-            duration: 1,
-            duration_unit: "t",
-            symbol: symbol
-        }
+        proposal: 1,
+        amount: stake,
+        basis: "stake",
+        contract_type: contractType,
+        currency: "USD",
+        duration: 5,
+        duration_unit: "t",
+        symbol: symbol
     }));
+    
+    window.pendingTrade = { symbol, contractType, stake };
 }
 
-//----------------------------------
-
-function updatePanel() {
-    document.getElementById("profit").innerText = "Ganancia: " + profit.toFixed(2);
-    document.getElementById("trades").innerText = "Trades: " + trades;
-
-    let wr = trades>0 ? (wins/trades*100).toFixed(1):0;
-    document.getElementById("winrate").innerText = "Winrate: " + wr + "%";
+// 🛑 VERIFICAR STOP LOSS DIARIO
+function checkDailyStopLoss() {
+    if(dailyProfit <= -maxDailyLoss) {
+        if(!stopLossActivated) {
+            stopLossActivated = true;
+            paused = true;
+            running = false;
+            if(ws) ws.close();
+            document.getElementById("statusBadge").innerHTML = "🔴 STOP LOSS ACTIVADO";
+            document.getElementById("statusBadge").className = "status-badge status-paused";
+            addLog(`🛑🛑🛑 STOP LOSS DIARIO ACTIVADO 🛑🛑🛑`, "error");
+            addLog(`📉 Pérdida diaria: $${dailyProfit.toFixed(2)} (${Math.abs(dailyProfit/initialBalance*100).toFixed(1)}% de la cuenta)`, "error");
+            addLog(`🛡️ El bot se detuvo para proteger tu cuenta. Reinicia mañana o manualmente.`, "warning");
+        }
+        return true;
+    }
+    return false;
 }
 
-//----------------------------------
-
-function avg(arr){ return arr.reduce((a,b)=>a+b,0)/arr.length; }
-
-function stddev(arr,mean){
-    return Math.sqrt(arr.map(x=>Math.pow(x-mean,2))
-    .reduce((a,b)=>a+b,0)/arr.length);
+// 🛑 DETENER BOT
+function stopBot() {
+    if(ws) {
+        ws.close();
+        ws = null;
+    }
+    running = false;
+    currentAccountType = null;
+    document.getElementById("statusBadge").innerHTML = "⚪ DESCONECTADO";
+    document.getElementById("statusBadge").className = "status-badge status-off";
+    document.getElementById("accountBadge").innerHTML = "";
+    addLog("⏹️ Bot detenido manualmente", "error");
 }
-</script>
 
-</body>
-</html>
+// 🚀 INICIAR BOT
+function startBotWithAccount(accountType) {
+    if(running) {
+        addLog("⚠️ Bot ya está corriendo", "error");
+        return;
+    }
+    
+    // Resetear stop loss si es nuevo día (se puede mejorar con fecha)
+    stopLossActivated = false;
+    paused = false;
+    
+    currentAccountType = accountType;
+    const mode = document.getElementById("mode").value;
+    const token = tokens[accountType];
+    
+    document.getElementById("accountDisplay").innerHTML = accountType === 'demo' ? 'DEMO' : 'REAL';
+    const badgeHtml = `<span class="account-badge ${accountType === 'demo' ? 'demo-badge' : 'real-badge'}">${accountType === 'demo' ? '🟢 DEMO' : '🔴 REAL'}</span>`;
+    document.getElementById("accountBadge").innerHTML = badgeHtml;
+    
+    // Validar token
+    if(!token || token === "TU_TOKEN_DEMO" || token === "TU_TOKEN_REAL") {
+        addLog(`❌ ERROR: Token para ${accountType.toUpperCase()} no configurado.`, "error");
+        alert(`❌ Token de ${accountType.toUpperCase()} no configurado.\n\nReemplaza 'TU_TOKEN_${accountType.toUpperCase()}' en el código.`);
+        return;
+    }
+    
+    // Configurar modo y stake (conservador)
+    currentMode = mode;
+    let riskPercent = 0.0035; // 0.35% por defecto ultra conservador
+    if(mode === "safe") { riskPercent = 0.0035; cooldown = 10000; }      // 0.35% por trade
+    else if(mode === "mid") { riskPercent = 0.005; cooldown = 8000; }    // 0.5% por trade
+    else { riskPercent = 0.0075; cooldown = 7000; }                      // 0.75% por trade
+    
+    // Resetear variables
+    dailyProfit = 0;
+    wins = 0;
+    losses = 0;
+    totalTrades = 0;
+    dataMap = {};
+    strategyStats = {
+        volatility: { wins: 0, losses: 0, profit: 0, trades: 0 },
+        boom: { wins: 0, losses: 0, profit: 0, trades: 0 },
+        crash: { wins: 0, losses: 0, profit: 0, trades: 0 }
+    };
+    initialBalance = 0;
+    
+    addLog(`🚀 Conectando a Deriv con cuenta ${accountType.toUpperCase()}...`, "info");
+    addLog(`⚠️ MODO ${accountType.toUpperCase()} - ${accountType === 'real' ? 'DINERO REAL' : 'CUENTA DE PRÁCTICA'}`, accountType === 'real' ? "error" : "success");
+    addLog(`🛡️ PROTECCIÓN: Máximo 3% de pérdida diaria`, "warning");
+    addLog(`⚙️ Riesgo por trade: ${(riskPercent*100).toFixed(2)}% | Cooldown: ${cooldown/1000}s`, "info");
+    
+    // Conectar WebSocket
+    ws = new WebSocket("wss://ws.derivws.com/websockets/v3?app_id=1089");
+    
+    ws.onopen = () => {
+        addLog("✅ WebSocket conectado", "success");
+        ws.send(JSON.stringify({ authorize: token }));
+    };
+    
+    ws.onmessage = (event) => {
+        try {
+            const d = JSON.parse(event.data);
+            
+            if(d.error) {
+                addLog(`⚠️ Error API: ${d.error.message}`, "error");
+                if(d.error.code === "AuthorizationRequired") {
+                    addLog("❌ Token inválido o expirado.", "error");
+                    stopBot();
+                }
+                return;
+            }
+            
+            if(d.msg_type === "authorize") {
+                addLog(`✅ Autenticado: ${d.authorize.loginid} (${accountType.toUpperCase()})`, "success");
+                running = true;
+                document.getElementById("statusBadge").innerHTML = "🟢 CONECTADO";
+                document.getElementById("statusBadge").className = "status-badge status-on";
+                
+                symbols.forEach(s => {
+                    ws.send(JSON.stringify({ ticks: s, subscribe: 1 }));
+                    dataMap[s] = [];
+                });
+                
+                ws.send(JSON.stringify({ balance: 1 }));
+                addLog("📡 Suscrito a todos los activos", "success");
+            }
+            
+            if(d.balance) {
+                balance = d.balance.balance;
+                if(initialBalance === 0) {
+                    initialBalance = balance;
+                    maxDailyLoss = initialBalance * (maxDailyLossPercent / 100);
+                    let riskPercent = currentMode === "safe" ? 0.0035 : (currentMode === "mid" ? 0.005 : 0.0075);
+                    stake = balance * riskPercent;
+                    addLog(`💰 Balance inicial: $${balance.toFixed(2)}`, "success");
+                    addLog(`🛡️ Límite pérdida diaria: $${maxDailyLoss.toFixed(2)} (3% de $${balance.toFixed(2)})`, "warning");
+                    addLog(`🎯 Apuesta inicial: $${stake.toFixed(2)} (${(riskPercent*100).toFixed(2)}% del balance)`, "info");
+                }
+                updateUI();
+            }
+            
+            if(d.msg_type === "proposal" && window.pendingTrade && d.proposal) {
+                const proposalId = d.proposal.id;
+                const askPrice = d.proposal.ask;
+                addLog(`💼 Compra: $${askPrice}`, "success");
+                
+                ws.send(JSON.stringify({
+                    buy: proposalId,
+                    price: askPrice
+                }));
+                window.pendingTrade = null;
+                document.getElementById("symbol").innerHTML = `${window.lastTradeSymbol || "?"}`;
+            }
+            
+            if(d.msg_type === "tick" && running && !paused && !stopLossActivated) {
+                const sym = d.tick.symbol;
+                const price = parseFloat
