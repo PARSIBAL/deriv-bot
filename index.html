@@ -114,6 +114,7 @@ select { padding: 10px 15px; margin: 5px; background: rgba(255,255,255,0.1); col
 const DEMO_TOKEN = "e1lRgxNoxWwBkzx";
 const REAL_TOKEN = "TU_TOKEN_REAL_AQUI";
 
+// 🔥 SOLO ACTIVOS DE VOLATILIDAD (R_* funcionan correctamente)
 const symbols = ["R_100", "R_75", "R_50", "R_25", "R_10"];
 
 let ws = null;
@@ -143,11 +144,12 @@ function addLog(msg, type) {
 }
 
 function updateUI() {
+    let safeStake = (stake && !isNaN(stake) && stake > 0) ? stake : 0.35;
     document.getElementById("balance").innerHTML = `${balance.toFixed(2)} USD`;
     document.getElementById("profit").innerHTML = `${dailyProfit.toFixed(2)} USD`;
     if (dailyProfit < 0) document.getElementById("profit").style.color = "#f44336";
     else document.getElementById("profit").style.color = "#ffd700";
-    document.getElementById("stake").innerHTML = `${stake.toFixed(2)} USD`;
+    document.getElementById("stake").innerHTML = `${safeStake.toFixed(2)} USD`;
     let wr = totalTrades > 0 ? (wins / totalTrades * 100).toFixed(1) : 0;
     document.getElementById("winrate").innerHTML = `${wr}%`;
     document.getElementById("trades").innerHTML = totalTrades;
@@ -156,7 +158,7 @@ function updateUI() {
 }
 
 function roundStake(val) {
-    if (!val || val <= 0) return 0.35;
+    if (!val || val <= 0 || isNaN(val)) return 0.35;
     let r = Math.floor(val * 100) / 100;
     if (r < 0.35) r = 0.35;
     return r;
@@ -170,11 +172,23 @@ function stopBot() {
     addLog("⏹️ Bot detenido", "error");
 }
 
+// 🔧 FUNCIÓN CORREGIDA - Con validación de stake
 function executeTrade(sym, type) {
     if (paused || stopLossActivated) return;
-    let stakeAmount = stake > 0 ? stake : 0.35;
-    let stakeRounded = roundStake(stakeAmount);
+    
+    let currentStake = stake;
+    if (!currentStake || currentStake <= 0 || isNaN(currentStake)) {
+        currentStake = 0.35;
+    }
+    
+    let stakeRounded = roundStake(currentStake);
+    
+    if (!stakeRounded || isNaN(stakeRounded)) {
+        stakeRounded = 0.35;
+    }
+    
     addLog(`💼 Enviando trade: ${sym} ${type} $${stakeRounded.toFixed(2)}`, "info");
+    
     ws.send(JSON.stringify({
         proposal: 1,
         amount: stakeRounded,
@@ -199,7 +213,7 @@ function startBot(accType) {
     
     if (!token || token === "TU_TOKEN_REAL_AQUI") {
         addLog("❌ Token no configurado. Edita el código y pon tu token.", "error");
-        alert("Pon tu token en el código (línea 170)");
+        alert("Pon tu token en el código");
         return;
     }
 
@@ -304,15 +318,13 @@ function startBot(accType) {
                 if (now - lastTradeTime < cooldown) return;
                 
                 let decision = null;
-                if (sym.includes("CRASH") && trend > 0) decision = "CALL";
-                if (sym.includes("BOOM") && trend > 0) decision = "PUT";
                 if (sym.includes("R_")) {
                     if (z > 1.0) decision = "CALL";
                     if (z < -1.0) decision = "PUT";
                 }
                 
                 if (decision) {
-                    addLog(`🎯 SEÑAL: ${sym} ${decision} | score: ${score.toFixed(3)}`, "trade");
+                    addLog(`🎯 SEÑAL: ${sym} ${decision} | z: ${z.toFixed(2)} | score: ${score.toFixed(3)}`, "trade");
                     document.getElementById("symbol").innerHTML = sym;
                     executeTrade(sym, decision);
                     lastTradeTime = now;
@@ -355,7 +367,7 @@ function mostrarModal() {
 function cerrarModal() { document.getElementById("modalConfirm").style.display = "none"; }
 function confirmarStart(accType) { cerrarModal(); startBot(accType); }
 
-addLog("🛡️ Bot listo - 3% pérdida diaria", "warning");
+addLog("🛡️ Bot listo - Solo índices R_ (volatilidad)", "warning");
 </script>
 </body>
 </html>
