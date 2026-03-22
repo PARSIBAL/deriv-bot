@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-<title>Deriv Bot HEDGE v5 - API v2</title>
+<title>Deriv Bot HEDGE v5 - Ultra Conservador</title>
 <style>
 body { 
     background: linear-gradient(135deg, #0a0a0a 0%, #1a1a2e 100%);
@@ -112,14 +112,14 @@ select { padding: 10px 15px; margin: 5px; background: rgba(255,255,255,0.1); col
 <script>
 // 🔐 TOKENS - API v2 (formato corto como hlIqOTfiVeUDsck)
 const tokens = { 
-    demo: "FHpnV3Y3YW5KlBA", 
+    demo: "***********KlBA", 
     real: "TU_TOKEN_REAL_AQUI" 
 };
 
 // 🔥 ACTIVOS CONFIRMADOS PARA TRADING
 const symbols = [
     "R_100", "R_75", "R_50", "R_25", "R_10",
-    "BOOM500", "CRASH500"
+
 ];
 
 let ws = null, running = false, balance = 0, initialBalance = 0, stake = 0, dailyProfit = 0, wins = 0, losses = 0, totalTrades = 0, lastTradeTime = 0, cooldown = 8000, paused = false, currentMode = "safe", currentAccountType = null, stopLossActivated = false, maxDailyLossPercent = 3, maxDailyLoss = 0;
@@ -254,7 +254,7 @@ function startBotWithAccount(accType){
         return; 
     }
     
-    addLog(`🔑 Token usado: ${token.substring(0, 4)}...${token.substring(token.length-4)}`, "info");
+    addLog(`🔑 Token: ${token.substring(0, 4)}...${token.substring(token.length-4)}`, "info");
     
     currentMode=mode; 
     let risk=0.0035; 
@@ -267,29 +267,29 @@ function startBotWithAccount(accType){
     initialBalance=0; 
     addLog(`🚀 Conectando ${accType.toUpperCase()}...`,"info"); 
     
-    // 🔧 Usando API v2 (sin app_id en la URL)
+    // 🌐 API v2 WebSocket
     ws = new WebSocket("wss://ws.binaryws.com/websockets/v3?app_id=1089");
     
     ws.onopen=()=>{ 
         addLog("✅ WebSocket conectado","success"); 
-        // API v2 usa "authorize" con el token directamente
         ws.send(JSON.stringify({ authorize: token })); 
     }; 
     
     ws.onmessage=(e)=>{ 
         try{ 
             let d=JSON.parse(e.data); 
-            addLog(`📥 Respuesta: ${JSON.stringify(d).substring(0, 150)}`, "info");
             
+            // 🔧 Manejar errores
             if(d.error){ 
                 addLog(`⚠️ Error API: ${d.error.message}`,"error"); 
                 if(d.error.message.includes("Invalid") || d.error.message.includes("authorize")){ 
-                    addLog("❌ Token inválido. Verifica que el token sea correcto.", "error"); 
+                    addLog("❌ Token inválido. Verifica el token.", "error"); 
                     stopBot(); 
                 } 
                 return; 
             } 
             
+            // ✅ Autorización exitosa
             if(d.authorize){ 
                 addLog(`✅ Autenticado: ${d.authorize.loginid}`,"success"); 
                 running=true; 
@@ -304,6 +304,7 @@ function startBotWithAccount(accType){
                 addLog(`📡 Suscrito a: ${symbols.join(", ")}`,"success"); 
             } 
             
+            // 💰 Balance
             if(d.balance){ 
                 balance = d.balance.balance; 
                 if(initialBalance===0){ 
@@ -312,24 +313,27 @@ function startBotWithAccount(accType){
                     let risk2=currentMode==="safe"?0.0035:(currentMode==="mid"?0.005:0.0075); 
                     stake = roundStake(balance * risk2);
                     addLog(`💰 Balance: $${balance.toFixed(2)}`,"success"); 
-                    addLog(`🛡️ Límite pérdida: $${maxDailyLoss.toFixed(2)}`,"warning"); 
+                    addLog(`🛡️ Límite pérdida: $${maxDailyLoss.toFixed(2)} (3%)`,"warning"); 
                     addLog(`🎯 Apuesta: $${stake.toFixed(2)} (${(risk2*100).toFixed(2)}%)`,"info");
                 } 
                 updateUI(); 
             } 
             
-            if(d.msg_type === "proposal" && window.pendingTrade && d.proposal){ 
+            // 📊 Propuesta recibida
+            if(d.proposal && window.pendingTrade){ 
                 let pid = d.proposal.id; 
                 let price = d.proposal.ask; 
-                addLog(`💼 Compra ejecutada: $${price}`,"success"); 
+                addLog(`💼 Comprando contrato: $${price.toFixed(2)}`,"success"); 
                 ws.send(JSON.stringify({ buy: pid, price: price })); 
                 window.pendingTrade = null; 
                 document.getElementById("symbol").innerHTML = window.lastTradeSymbol || "?"; 
             } 
             
-            if(d.msg_type === "tick" && running && !paused && !stopLossActivated){ 
+            // 📈 Ticks en tiempo real
+            if(d.tick && running && !paused && !stopLossActivated){ 
                 let sym = d.tick.symbol; 
                 let price = parseFloat(d.tick.quote); 
+                
                 if(!dataMap[sym]) dataMap[sym]=[]; 
                 dataMap[sym].push(price); 
                 if(dataMap[sym].length>60) dataMap[sym].shift(); 
@@ -360,14 +364,15 @@ function startBotWithAccount(accType){
                 } 
                 
                 if(decision && target){ 
-                    addLog(`🎯 SEÑAL: ${target} ${decision} score:${score.toFixed(3)}`,"trade"); 
+                    addLog(`🎯 SEÑAL: ${target} ${decision} | score: ${score.toFixed(3)}`,"trade"); 
                     window.lastTradeSymbol = target; 
                     executeTrade(target, decision); 
                     lastTradeTime = now; 
                 } 
             } 
             
-            if(d.msg_type === "proposal_open_contract" && d.proposal_open_contract.is_sold){ 
+            // 📉 Resultado del contrato
+            if(d.proposal_open_contract && d.proposal_open_contract.is_sold){ 
                 let pnl = parseFloat(d.proposal_open_contract.profit); 
                 let sym = d.proposal_open_contract.symbol; 
                 dailyProfit += pnl; 
@@ -380,7 +385,7 @@ function startBotWithAccount(accType){
                     wins++; 
                     strategyStats[strat].wins++; 
                     strategyStats[strat].profit += pnl; 
-                    addLog(`✅ +$${pnl.toFixed(2)}`,"success"); 
+                    addLog(`✅ GANANCIA: +$${pnl.toFixed(2)}`,"success"); 
                     updateWeights(true); 
                     let risk2=currentMode==="safe"?0.0035:(currentMode==="mid"?0.005:0.0075); 
                     stake = roundStake(balance * risk2);
@@ -388,7 +393,7 @@ function startBotWithAccount(accType){
                     losses++; 
                     strategyStats[strat].losses++; 
                     strategyStats[strat].profit += pnl; 
-                    addLog(`❌ ${pnl.toFixed(2)}`,"error"); 
+                    addLog(`❌ PÉRDIDA: $${pnl.toFixed(2)}`,"error"); 
                     updateWeights(false); 
                     let risk2=currentMode==="safe"?0.0035:(currentMode==="mid"?0.005:0.0075); 
                     stake = roundStake(balance * risk2);
@@ -400,20 +405,25 @@ function startBotWithAccount(accType){
                 if(losses>=3 && !stopLossActivated){ 
                     paused=true; 
                     document.getElementById("statusBadge").innerHTML="⏸️ PAUSA"; 
-                    addLog(`⏸️ Pausa 2min (${losses} pérdidas)`,"warning"); 
+                    addLog(`⏸️ Pausa 2 minutos (${losses} pérdidas consecutivas)`,"warning"); 
                     setTimeout(()=>{ 
                         if(running && !stopLossActivated){ 
                             paused=false; 
                             losses=0; 
                             document.getElementById("statusBadge").innerHTML="🟢 CONECTADO"; 
-                            addLog("▶️ Reactivado","success"); 
+                            addLog("▶️ Bot reactivado","success"); 
                         } 
                     },120000); 
                 } 
             } 
-        }catch(e){ addLog(`❌ Error: ${e.message}`,"error"); } 
+            
+        }catch(e){ 
+            addLog(`❌ Error: ${e.message}`,"error"); 
+            console.error(e);
+        } 
     }; 
-    ws.onerror=()=>addLog("❌ WebSocket error","error"); 
+    
+    ws.onerror=()=>addLog("❌ Error WebSocket","error"); 
     ws.onclose=()=>{ 
         if(running && !stopLossActivated){ 
             addLog("🔌 Conexión perdida","error"); 
@@ -431,7 +441,8 @@ function cerrarModal(){ document.getElementById("modalConfirm").style.display="n
 function confirmarStart(accType){ cerrarModal(); startBotWithAccount(accType); }
 
 addLog("🛡️ Ultra Conservador - 3% pérdida diaria","warning");
-addLog(`🔧 Usando API v2 con token: ${tokens.demo.substring(0,4)}...${tokens.demo.substring(tokens.demo.length-4)}`,"info");
+addLog(`🔧 API v2 | Token: ${tokens.demo.substring(0,4)}...${tokens.demo.substring(tokens.demo.length-4)}`,"info");
+addLog(`📡 Activos: ${symbols.join(", ")}`,"info");
 </script>
 </body>
 </html>
