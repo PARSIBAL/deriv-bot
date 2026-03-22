@@ -1,18 +1,333 @@
-// Prueba rápida del token
-const testToken = "yuOrdh8nqLqMQnh";
-const ws = new WebSocket("wss://ws.binaryws.com/websockets/v3?app_id=1089");
-
-ws.onopen = () => {
-    console.log("Conectado, enviando token...");
-    ws.send(JSON.stringify({ authorize: testToken }));
+<script>
+// 🔐 TOKENS - API v2
+const tokens = { 
+    demo: "***********MQnh", 
+    real: "TU_TOKEN_REAL_AQUI" 
 };
 
-ws.onmessage = (e) => {
-    const data = JSON.parse(e.data);
-    console.log("Respuesta:", data);
-    if (data.authorize) {
-        console.log("✅ TOKEN VÁLIDO! Cuenta:", data.authorize.loginid);
-    } else if (data.error) {
-        console.log("❌ TOKEN INVÁLIDO:", data.error.message);
+const symbols = [
+    "R_100", "R_75", "R_50", "R_25", "R_10",
+    "BOOM500", "CRASH500"
+];
+
+let ws = null, running = false, balance = 0, initialBalance = 0, stake = 0.35, dailyProfit = 0, wins = 0, losses = 0, totalTrades = 0, lastTradeTime = 0, cooldown = 8000, paused = false, currentMode = "safe", currentAccountType = null, stopLossActivated = false, maxDailyLossPercent = 3, maxDailyLoss = 0;
+let dataMap = {};
+let strategyStats = { volatility: { wins: 0, losses: 0, profit: 0, trades: 0 }, boom: { wins: 0, losses: 0, profit: 0, trades: 0 }, crash: { wins: 0, losses: 0, profit: 0, trades: 0 } };
+let currentStrategy = "volatility";
+let weights = [0.3, 0.4, 0.3];
+const LEARNING_RATE = 0.003, MAX_WEIGHT = 0.8, MIN_WEIGHT = -0.8;
+
+function roundStake(value) {
+    if(!value || value <= 0) return 0.35;
+    let rounded = Math.floor(value * 100) / 100;
+    if(rounded < 0.35) rounded = 0.35;
+    if(rounded > balance * 0.05 && balance > 0) rounded = Math.floor(balance * 0.05 * 100) / 100;
+    if(rounded <= 0) rounded = 0.35;
+    return rounded;
+}
+
+function addLog(msg, type) { 
+    let log = document.getElementById("logPanel"), entry = document.createElement("div"); 
+    entry.className = `log-entry log-${type||"info"}`; 
+    entry.textContent = `[${new Date().toLocaleTimeString()}] ${msg}`; 
+    log.appendChild(entry); 
+    log.scrollTop = log.scrollHeight; 
+    if(log.children.length>100) log.removeChild(log.firstChild); 
+}
+
+function updateUI() { 
+    document.getElementById("balance").innerHTML = `${balance.toFixed(2)} USD`; 
+    document.getElementById("profit").innerHTML = `${dailyProfit.toFixed(2)} USD`; 
+    if(dailyProfit<0) document.getElementById("profit").style.color="#f44336"; 
+    else document.getElementById("profit").style.color="#ffd700"; 
+    document.getElementById("stake").innerHTML = `${stake.toFixed(2)} USD`; 
+    let wr = totalTrades>0?(wins/totalTrades*100).toFixed(1):0; 
+    document.getElementById("winrate").innerHTML = `${wr}%`; 
+    document.getElementById("trades").innerHTML = totalTrades; 
+    let remaining = (maxDailyLoss + dailyProfit).toFixed(2); 
+    document.getElementById("maxLossToday").innerHTML = `-${maxDailyLoss.toFixed(2)} USD | Restante: ${remaining} USD`; 
+    for(let s in strategyStats){ 
+        let st=strategyStats[s]; 
+        let wr2=st.trades>0?(st.wins/st.trades*100).toFixed(0):0; 
+        let elem=document.getElementById(`strat${s.charAt(0).toUpperCase()+s.slice(1)}`); 
+        if(elem){ 
+            elem.innerHTML=(s==="volatility"?"📊":s==="boom"?"💥":"💢")+` ${wr2}% | $${st.profit.toFixed(2)}`; 
+            if(currentStrategy===s){ 
+                elem.style.background="rgba(255,215,0,0.2)"; 
+                elem.style.border="1px solid #ffd700"; 
+            }else{ 
+                elem.style.background="rgba(0,0,0,0.3)"; 
+                elem.style.border="none"; 
+            } 
+        } 
+    } 
+}
+
+function avg(arr){ return arr.reduce((a,b)=>a+b,0)/arr.length; }
+function stddev(arr,mean){ return Math.sqrt(arr.map(x=>Math.pow(x-mean,2)).reduce((a,b)=>a+b,0)/arr.length); }
+function updateWeights(success){ 
+    if(success){ weights=weights.map(w=>Math.min(MAX_WEIGHT,w+LEARNING_RATE)); 
+    }else{ weights=weights.map(w=>Math.max(MIN_WEIGHT,w-LEARNING_RATE)); } 
+}
+
+function chooseStrategy(){ 
+    let best="volatility", bestScore=-999999; 
+    for(let s in strategyStats){ 
+        let st=strategyStats[s]; 
+        if(st.trades<5) continue; 
+        let winrate=st.wins/st.trades; 
+        let avgProfit=st.trades>0?st.profit/st.trades:0; 
+        let score=winrate*avgProfit*Math.sqrt(st.trades); 
+        if(score>bestScore && st.trades>=5){ bestScore=score; best=s; } 
+    } 
+    if(best!==currentStrategy && strategyStats[best].trades>=5){ 
+        addLog(`🔄 Estrategia: ${currentStrategy} → ${best}`,"success"); 
+        currentStrategy=best; 
+    } 
+}
+
+// 🔧 FUNCIÓN CORREGIDA
+function executeTrade(sym,type){ 
+    if(paused||stopLossActivated) return; 
+    
+    let currentStake = stake;
+    if(!currentStake || currentStake <= 0) {
+        currentStake = 0.35;
     }
-};
+    
+    let stakeRounded = roundStake(currentStake);
+    addLog(`💼 Enviando trade: ${sym} ${type} $${stakeRounded.toFixed(2)}`, "info");
+    
+    ws.send(JSON.stringify({
+        proposal: 1,
+        amount: stakeRounded,
+        basis: "stake",
+        contract_type: type,
+        currency: "USD",
+        duration: 5,
+        duration_unit: "t",
+        symbol: sym
+    })); 
+    window.pendingTrade = { symbol: sym, contractType: type, stake: stakeRounded }; 
+}
+
+function checkDailyStopLoss(){ 
+    if(dailyProfit<=-maxDailyLoss && !stopLossActivated){ 
+        stopLossActivated=true; 
+        paused=true; 
+        running=false; 
+        if(ws) ws.close(); 
+        document.getElementById("statusBadge").innerHTML="🔴 STOP LOSS ACTIVADO"; 
+        document.getElementById("statusBadge").className="status-badge status-paused"; 
+        addLog(`🛑 STOP LOSS DIARIO! Pérdida: $${dailyProfit.toFixed(2)}`,"error"); 
+        return true; 
+    } 
+    return false; 
+}
+
+function stopBot(){ 
+    if(ws) ws.close(); 
+    running=false; 
+    currentAccountType=null; 
+    document.getElementById("statusBadge").innerHTML="⚪ DESCONECTADO"; 
+    document.getElementById("statusBadge").className="status-badge status-off"; 
+    document.getElementById("accountBadge").innerHTML=""; 
+    addLog("⏹️ Bot detenido","error"); 
+}
+
+function startBotWithAccount(accType){ 
+    if(running){ addLog("⚠️ Bot ya activo","error"); return; } 
+    stopLossActivated=false; 
+    paused=false; 
+    currentAccountType=accType; 
+    let mode=document.getElementById("mode").value; 
+    let token=tokens[accType]; 
+    document.getElementById("accountDisplay").innerHTML=accType==='demo'?'DEMO':'REAL'; 
+    document.getElementById("accountBadge").innerHTML=`<span class="account-badge ${accType==='demo'?'demo-badge':'real-badge'}">${accType==='demo'?'🟢 DEMO':'🔴 REAL'}</span>`; 
+    
+    if(!token || token==="TU_TOKEN_REAL_AQUI") { 
+        addLog(`❌ Token ${accType} no configurado.`, "error"); 
+        alert(`Configura tu token de ${accType} en el código.`); 
+        return; 
+    }
+    
+    currentMode=mode; 
+    let risk=0.0035; 
+    if(mode==="safe"){ risk=0.0035; cooldown=10000; 
+    }else if(mode==="mid"){ risk=0.005; cooldown=8000; 
+    }else{ risk=0.0075; cooldown=7000; } 
+    dailyProfit=0; wins=0; losses=0; totalTrades=0; 
+    dataMap={}; 
+    strategyStats={volatility:{wins:0,losses:0,profit:0,trades:0},boom:{wins:0,losses:0,profit:0,trades:0},crash:{wins:0,losses:0,profit:0,trades:0}}; 
+    initialBalance=0; 
+    stake = 0.35; // Valor inicial
+    addLog(`🚀 Conectando ${accType.toUpperCase()}...`,"info"); 
+    
+    ws = new WebSocket("wss://ws.binaryws.com/websockets/v3?app_id=1089");
+    
+    ws.onopen=()=>{ 
+        addLog("✅ WebSocket conectado","success"); 
+        ws.send(JSON.stringify({ authorize: token })); 
+    }; 
+    
+    ws.onmessage=(e)=>{ 
+        try{ 
+            let d=JSON.parse(e.data); 
+            
+            if(d.error){ 
+                addLog(`⚠️ Error API: ${d.error.message}`,"error"); 
+                if(d.error.message.includes("Invalid") || d.error.message.includes("authorize")){ 
+                    addLog("❌ Token inválido. Verifica el token.", "error"); 
+                    stopBot(); 
+                } 
+                return; 
+            } 
+            
+            if(d.authorize){ 
+                addLog(`✅ Autenticado: ${d.authorize.loginid}`,"success"); 
+                running=true; 
+                document.getElementById("statusBadge").innerHTML="🟢 CONECTADO"; 
+                document.getElementById("statusBadge").className="status-badge status-on"; 
+                
+                symbols.forEach(s=>{ 
+                    ws.send(JSON.stringify({ ticks: s, subscribe: 1 })); 
+                    dataMap[s]=[]; 
+                }); 
+                ws.send(JSON.stringify({ balance: 1 })); 
+                addLog(`📡 Suscrito a: ${symbols.join(", ")}`,"success"); 
+            } 
+            
+            if(d.balance){ 
+                balance = d.balance.balance; 
+                if(initialBalance===0){ 
+                    initialBalance=balance; 
+                    maxDailyLoss=initialBalance*(maxDailyLossPercent/100); 
+                    let risk2=currentMode==="safe"?0.0035:(currentMode==="mid"?0.005:0.0075); 
+                    stake = roundStake(balance * risk2);
+                    addLog(`💰 Balance: $${balance.toFixed(2)}`,"success"); 
+                    addLog(`🛡️ Límite pérdida: $${maxDailyLoss.toFixed(2)} (3%)`,"warning"); 
+                    addLog(`🎯 Apuesta: $${stake.toFixed(2)} (${(risk2*100).toFixed(2)}%)`,"info");
+                } 
+                updateUI(); 
+            } 
+            
+            if(d.proposal && window.pendingTrade){ 
+                let pid = d.proposal.id; 
+                let price = d.proposal.ask; 
+                addLog(`💼 Comprando contrato: $${price.toFixed(2)}`,"success"); 
+                ws.send(JSON.stringify({ buy: pid, price: price })); 
+                window.pendingTrade = null; 
+                document.getElementById("symbol").innerHTML = window.lastTradeSymbol || "?"; 
+            } 
+            
+            if(d.tick && running && !paused && !stopLossActivated){ 
+                let sym = d.tick.symbol; 
+                let price = parseFloat(d.tick.quote); 
+                
+                if(!dataMap[sym]) dataMap[sym]=[]; 
+                dataMap[sym].push(price); 
+                if(dataMap[sym].length>60) dataMap[sym].shift(); 
+                
+                let t = dataMap[sym]; 
+                if(t.length<40) return; 
+                
+                let ret=[]; 
+                for(let i=1;i<t.length;i++) ret.push(t[i]-t[i-1]); 
+                let mean=avg(ret); 
+                let std=stddev(ret,mean); 
+                if(std<0.002||std>0.018) return; 
+                let last=Math.abs(ret[ret.length-1]); 
+                if(last>std*2.5) return; 
+                let trend=ret.slice(-5).reduce((a,b)=>a+b,0); 
+                let z=(ret[ret.length-1]-mean)/std; 
+                let score=trend*weights[0]+z*weights[1]+std*weights[2]; 
+                let now=Date.now(); 
+                if(now-lastTradeTime<cooldown) return; 
+                chooseStrategy(); 
+                
+                let decision=null, target=null; 
+                if(currentStrategy==="crash" && sym.includes("CRASH") && score>0.5){ decision="CALL"; target=sym; } 
+                if(currentStrategy==="boom" && sym.includes("BOOM") && score>0.5){ decision="PUT"; target=sym; } 
+                if(currentStrategy==="volatility" && sym.includes("R_")){ 
+                    if(score>0.7){ decision="CALL"; target=sym; 
+                    }else if(score<-0.7){ decision="PUT"; target=sym; } 
+                } 
+                
+                if(decision && target){ 
+                    addLog(`🎯 SEÑAL: ${target} ${decision} | score: ${score.toFixed(3)}`,"trade"); 
+                    window.lastTradeSymbol = target; 
+                    executeTrade(target, decision); 
+                    lastTradeTime = now; 
+                } 
+            } 
+            
+            if(d.proposal_open_contract && d.proposal_open_contract.is_sold){ 
+                let pnl = parseFloat(d.proposal_open_contract.profit); 
+                let sym = d.proposal_open_contract.symbol; 
+                dailyProfit += pnl; 
+                totalTrades++; 
+                let strat = "volatility"; 
+                if(sym.includes("BOOM")) strat = "boom"; 
+                else if(sym.includes("CRASH")) strat = "crash"; 
+                
+                if(pnl>0){ 
+                    wins++; 
+                    strategyStats[strat].wins++; 
+                    strategyStats[strat].profit += pnl; 
+                    addLog(`✅ GANANCIA: +$${pnl.toFixed(2)}`,"success"); 
+                    updateWeights(true); 
+                    let risk2=currentMode==="safe"?0.0035:(currentMode==="mid"?0.005:0.0075); 
+                    stake = roundStake(balance * risk2);
+                }else{ 
+                    losses++; 
+                    strategyStats[strat].losses++; 
+                    strategyStats[strat].profit += pnl; 
+                    addLog(`❌ PÉRDIDA: $${pnl.toFixed(2)}`,"error"); 
+                    updateWeights(false); 
+                    let risk2=currentMode==="safe"?0.0035:(currentMode==="mid"?0.005:0.0075); 
+                    stake = roundStake(balance * risk2);
+                } 
+                strategyStats[strat].trades++; 
+                updateUI(); 
+                
+                if(checkDailyStopLoss()){ if(ws) ws.close(); running=false; } 
+                if(losses>=3 && !stopLossActivated){ 
+                    paused=true; 
+                    document.getElementById("statusBadge").innerHTML="⏸️ PAUSA"; 
+                    addLog(`⏸️ Pausa 2 minutos (${losses} pérdidas consecutivas)`,"warning"); 
+                    setTimeout(()=>{ 
+                        if(running && !stopLossActivated){ 
+                            paused=false; 
+                            losses=0; 
+                            document.getElementById("statusBadge").innerHTML="🟢 CONECTADO"; 
+                            addLog("▶️ Bot reactivado","success"); 
+                        } 
+                    },120000); 
+                } 
+            } 
+            
+        }catch(e){ 
+            addLog(`❌ Error: ${e.message}`,"error"); 
+            console.error(e);
+        } 
+    }; 
+    
+    ws.onerror=()=>addLog("❌ Error WebSocket","error"); 
+    ws.onclose=()=>{ 
+        if(running && !stopLossActivated){ 
+            addLog("🔌 Conexión perdida","error"); 
+            running=false; 
+            document.getElementById("statusBadge").innerHTML="⚪ DESCONECTADO"; 
+        } 
+    }; 
+}
+
+function mostrarModal(){ 
+    if(running){ addLog("⚠️ Detén el bot primero","error"); return; } 
+    document.getElementById("modalConfirm").style.display="flex"; 
+}
+function cerrarModal(){ document.getElementById("modalConfirm").style.display="none"; }
+function confirmarStart(accType){ cerrarModal(); startBotWithAccount(accType); }
+
+addLog("🛡️ Ultra Conservador - 3% pérdida diaria","warning");
+</script>
