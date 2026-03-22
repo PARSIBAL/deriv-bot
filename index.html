@@ -1,545 +1,313 @@
-<!DOCTYPE html>
-<html>
-<head>
-    <title>Deriv Bot HEDGE v5</title>
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-        
-        body {
-            background: linear-gradient(135deg, #0a0a0a 0%, #1a1a2e 100%);
-            color: #fff;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            min-height: 100vh;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            padding: 20px;
-        }
-        
-        .container {
-            max-width: 500px;
-            width: 100%;
-        }
-        
-        .card {
-            background: rgba(255, 255, 255, 0.05);
-            backdrop-filter: blur(10px);
-            border-radius: 20px;
-            padding: 25px;
-            margin-bottom: 20px;
-            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-        }
-        
-        h2 {
-            text-align: center;
-            margin-bottom: 20px;
-            color: #ffd700;
-        }
-        
-        .select-group {
-            display: flex;
-            gap: 10px;
-            justify-content: center;
-            margin-bottom: 20px;
-        }
-        
-        select {
-            background: rgba(0, 0, 0, 0.5);
-            color: white;
-            border: 1px solid rgba(255, 255, 255, 0.2);
-            padding: 10px 15px;
-            border-radius: 10px;
-            font-size: 14px;
-            cursor: pointer;
-            flex: 1;
-        }
-        
-        .button-group {
-            display: flex;
-            gap: 15px;
-            justify-content: center;
-            margin-bottom: 20px;
-        }
-        
-        button {
-            padding: 12px 24px;
-            font-size: 16px;
-            font-weight: bold;
-            border: none;
-            border-radius: 10px;
-            cursor: pointer;
-            transition: transform 0.2s;
-        }
-        
-        button:hover {
-            transform: scale(1.05);
-        }
-        
-        .btn-start {
-            background: linear-gradient(135deg, #00c853, #00a844);
-            color: white;
-        }
-        
-        .btn-stop {
-            background: linear-gradient(135deg, #d32f2f, #b71c1c);
-            color: white;
-        }
-        
-        .status-badge {
-            text-align: center;
-            padding: 8px;
-            border-radius: 10px;
-            margin-bottom: 20px;
-            font-weight: bold;
-            font-size: 18px;
-        }
-        
-        .status-on {
-            background: #00c853;
-            color: white;
-        }
-        
-        .status-off {
-            background: #d32f2f;
-            color: white;
-        }
-        
-        .status-paused {
-            background: #ff9800;
-            color: #1a1a2e;
-        }
-        
-        .stats-grid {
-            display: grid;
-            grid-template-columns: repeat(2, 1fr);
-            gap: 15px;
-            margin-bottom: 20px;
-        }
-        
-        .stat-box {
-            background: rgba(0, 0, 0, 0.5);
-            padding: 12px;
-            border-radius: 10px;
-            text-align: center;
-        }
-        
-        .stat-label {
-            font-size: 12px;
-            opacity: 0.7;
-            margin-bottom: 5px;
-        }
-        
-        .stat-value {
-            font-size: 24px;
-            font-weight: bold;
-            color: #ffd700;
-        }
-        
-        .log-panel {
-            background: rgba(0, 0, 0, 0.8);
-            border-radius: 10px;
-            padding: 10px;
-            height: 200px;
-            overflow-y: auto;
-            font-family: 'Courier New', monospace;
-            font-size: 11px;
-        }
-        
-        .log-entry {
-            margin: 3px 0;
-            padding: 2px 5px;
-            border-left: 3px solid;
-        }
-        
-        .log-info {
-            color: #aaa;
-            border-left-color: #2196f3;
-        }
-        
-        .log-success {
-            color: #4caf50;
-            border-left-color: #4caf50;
-        }
-        
-        .log-error {
-            color: #f44336;
-            border-left-color: #f44336;
-        }
-        
-        .log-trade {
-            color: #ff9800;
-            border-left-color: #ff9800;
-        }
-        
-        .log-warning {
-            color: #ff9800;
-            border-left-color: #ff9800;
-        }
-    </style>
-</head>
-<body>
-    <div class="container">
-        <div class="card">
-            <h2>🤖 Deriv Bot HEDGE v5</h2>
-            
-            <div class="select-group">
-                <select id="accountType">
-                    <option value="demo">🟢 Cuenta Demo</option>
-                    <option value="real">🔴 Cuenta Real</option>
-                </select>
-            </div>
-            
-            <div class="button-group">
-                <button class="btn-start" onclick="startBot()">▶️ INICIAR BOT</button>
-                <button class="btn-stop" onclick="stopBot()">⏹️ DETENER BOT</button>
-            </div>
-            
-            <div id="statusBadge" class="status-badge status-off">⚪ DESCONECTADO</div>
-            
-            <div class="stats-grid">
-                <div class="stat-box">
-                    <div class="stat-label">💰 SALDO</div>
-                    <div class="stat-value" id="balance">0.00</div>
-                </div>
-                <div class="stat-box">
-                    <div class="stat-label">📈 GANANCIA</div>
-                    <div class="stat-value" id="profit">0.00</div>
-                </div>
-                <div class="stat-box">
-                    <div class="stat-label">🎯 APUESTA</div>
-                    <div class="stat-value" id="stake">0.00</div>
-                </div>
-                <div class="stat-box">
-                    <div class="stat-label">📊 ESTADO</div>
-                    <div class="stat-value" id="status">OFF</div>
-                </div>
-            </div>
-            
-            <div class="log-panel" id="logPanel">
-                <div class="log-entry log-info">🤖 Bot listo</div>
-                <div class="log-entry log-info">⚙️ Configura tu token en el código y presiona INICIAR</div>
-            </div>
-        </div>
-    </div>
+<script>
+// 🔐 TOKENS - PON AQUÍ TUS TOKENS REALES
+const tokens = {
+    demo: "jTtP5pnqMXYvJlf",  // ← REEMPLAZA con tu token real
+    real: "deriv-live-TU_TOKEN_REAL_AQUI"
+};
 
-    <script>
-        // 🔐 TOKENS - PON AQUÍ TUS TOKENS REALES
-        const tokens = {
-            demo: "jTtP5pnqMXYvJlf",  // ← REEMPLAZA con tu token real
-            real: "deriv-live-TU_TOKEN_REAL_AQUI"  // ← REEMPLAZA con tu token real
-        };
-        
-        const symbols = [
-            "R_100","R_75","R_50","R_25","R_10",
-            "BOOM1000","CRASH1000","BOOM500","CRASH500"
-        ];
-        
-        let ws = null, running = false;
-        let balance = 0, stake = 0;
-        let profit = 0, losses = 0, wins = 0;
-        let lastTradeTime = 0;
-        let paused = false;
-        let pendingTrade = null;
-        let hedgeMode = false;
-        let lastDirection = null;
-        let dailyLossLimit = 0;
-        let initialBalance = 0;
-        let dataMap = {};
-        
-        function avg(arr) { 
-            if(arr.length === 0) return 0;
-            return arr.reduce((a,b)=>a+b,0)/arr.length; 
+// 🔥 ACTIVOS CONFIRMADOS PARA TRADING
+const symbols = [
+    "R_100", "R_75", "R_50", "R_25", "R_10",
+    "BOOM500", "CRASH500"
+];
+
+let ws = null, running = false;
+let balance = 0, stake = 0;
+let profit = 0, losses = 0, wins = 0;
+let lastTradeTime = 0;
+let paused = false;
+let pendingTrade = null;
+let hedgeMode = false;
+let lastDirection = null;
+let dailyLossLimit = 0;
+let initialBalance = 0;
+let dataMap = {};
+
+function avg(arr) { 
+    if(arr.length === 0) return 0;
+    return arr.reduce((a,b)=>a+b,0)/arr.length; 
+}
+
+function stddev(arr, mean) {
+    if(arr.length === 0) return 0;
+    return Math.sqrt(arr.map(x=>Math.pow(x-mean,2)).reduce((a,b)=>a+b,0)/arr.length);
+}
+
+function addLog(msg, type = "info") {
+    let logPanel = document.getElementById("logPanel");
+    if(logPanel) {
+        let entry = document.createElement("div");
+        entry.className = `log-entry log-${type}`;
+        entry.textContent = `[${new Date().toLocaleTimeString()}] ${msg}`;
+        logPanel.appendChild(entry);
+        logPanel.scrollTop = logPanel.scrollHeight;
+        if(logPanel.children.length > 100) logPanel.removeChild(logPanel.firstChild);
+    }
+    console.log(msg);
+}
+
+function updateUI() {
+    let profitEl = document.getElementById("profit");
+    if(profitEl) profitEl.innerText = profit.toFixed(2);
+    
+    let balanceEl = document.getElementById("balance");
+    if(balanceEl) balanceEl.innerText = balance.toFixed(2);
+    
+    let stakeEl = document.getElementById("stake");
+    if(stakeEl) stakeEl.innerText = stake.toFixed(2);
+    
+    let statusEl = document.getElementById("status");
+    if(statusEl) statusEl.innerText = running ? (paused ? "PAUSA" : "ON") : "OFF";
+    
+    let statusBadge = document.getElementById("statusBadge");
+    if(statusBadge) {
+        if(!running) {
+            statusBadge.innerHTML = "⚪ DESCONECTADO";
+            statusBadge.className = "status-badge status-off";
+        } else if(paused) {
+            statusBadge.innerHTML = "⏸️ PAUSADO";
+            statusBadge.className = "status-badge status-paused";
+        } else {
+            statusBadge.innerHTML = "🟢 CONECTADO";
+            statusBadge.className = "status-badge status-on";
         }
-        
-        function stddev(arr, mean) {
-            if(arr.length === 0) return 0;
-            return Math.sqrt(arr.map(x=>Math.pow(x-mean,2)).reduce((a,b)=>a+b,0)/arr.length);
-        }
-        
-        function addLog(msg, type = "info") {
-            let logPanel = document.getElementById("logPanel");
-            if(logPanel) {
-                let entry = document.createElement("div");
-                entry.className = `log-entry log-${type}`;
-                entry.textContent = `[${new Date().toLocaleTimeString()}] ${msg}`;
-                logPanel.appendChild(entry);
-                logPanel.scrollTop = logPanel.scrollHeight;
-                if(logPanel.children.length > 100) logPanel.removeChild(logPanel.firstChild);
+    }
+}
+
+function stopBot() { 
+    if(ws) ws.close(); 
+    running = false; 
+    pendingTrade = null;
+    updateUI();
+    addLog("⏹️ Bot detenido", "error");
+}
+
+function executeTrade(symbol, type) {
+    let amount = Math.round(stake * 100) / 100;
+    if(amount < 0.35) amount = 0.35;
+    
+    pendingTrade = { symbol, type, amount };
+    addLog(`📡 Solicitando propuesta: ${symbol} ${type} $${amount}`, "info");
+    
+    ws.send(JSON.stringify({
+        proposal: 1,
+        amount: amount,
+        basis: "stake",
+        contract_type: type,
+        currency: "USD",
+        duration: 5,
+        duration_unit: "t",
+        symbol: symbol
+    }));
+}
+
+function startBot() {
+    if(running) {
+        addLog("⚠️ Bot ya está activo", "error");
+        return;
+    }
+    
+    let type = document.getElementById("accountType")?.value || "demo";
+    let token = tokens[type];
+    
+    if(!token || token.includes("TU_TOKEN") || token === "deriv-demo-TU_TOKEN_AQUI" || token === "deriv-live-TU_TOKEN_REAL_AQUI") {
+        addLog("❌ ERROR: Token no configurado. Edita el código y pon tu token real.", "error");
+        alert("❌ Configura tu token de Deriv en el código.\n\nDebe empezar con 'deriv-demo-' o 'deriv-live-'");
+        return;
+    }
+    
+    profit = 0;
+    losses = 0;
+    wins = 0;
+    paused = false;
+    hedgeMode = false;
+    lastDirection = null;
+    pendingTrade = null;
+    dataMap = {};
+    initialBalance = 0;
+    dailyLossLimit = 0;
+    
+    addLog(`🚀 Conectando a ${type.toUpperCase()}...`, "info");
+    
+    ws = new WebSocket("wss://ws.derivws.com/websockets/v3?app_id=1089");
+    
+    ws.onopen = () => {
+        addLog("✅ WebSocket conectado", "success");
+        ws.send(JSON.stringify({ authorize: token }));
+    };
+    
+    ws.onmessage = (event) => {
+        try {
+            let d = JSON.parse(event.data);
+            
+            if(d.error) {
+                addLog(`⚠️ Error API: ${d.error.message}`, "error");
+                if(d.error.message.includes("Invalid") || d.error.message.includes("authorize")) {
+                    addLog("❌ Token inválido", "error");
+                    stopBot();
+                }
+                return;
             }
-            console.log(msg);
-        }
-        
-        function updateUI() {
-            let profitEl = document.getElementById("profit");
-            if(profitEl) profitEl.innerText = profit.toFixed(2);
             
-            let balanceEl = document.getElementById("balance");
-            if(balanceEl) balanceEl.innerText = balance.toFixed(2);
+            if(d.msg_type === "authorize") {
+                addLog(`✅ Autenticado: ${d.authorize.loginid}`, "success");
+                running = true;
+                updateUI();
+                
+                // Suscribirse solo a activos disponibles
+                for(let s of symbols) {
+                    ws.send(JSON.stringify({ ticks: s, subscribe: 1 }));
+                    dataMap[s] = [];
+                }
+                addLog(`📡 Suscrito a: ${symbols.join(", ")}`, "success");
+                ws.send(JSON.stringify({ balance: 1 }));
+            }
             
-            let stakeEl = document.getElementById("stake");
-            if(stakeEl) stakeEl.innerText = stake.toFixed(2);
+            if(d.balance) {
+                balance = d.balance.balance;
+                
+                if(initialBalance === 0) {
+                    initialBalance = balance;
+                    dailyLossLimit = initialBalance * 0.03;
+                    let risk = 0.005;
+                    stake = Math.round(balance * risk * 100) / 100;
+                    if(stake < 0.35) stake = 0.35;
+                    addLog(`💰 Balance: $${balance.toFixed(2)}`, "success");
+                    addLog(`🛡️ Límite pérdida: $${dailyLossLimit.toFixed(2)} (3%)`, "warning");
+                    addLog(`🎯 Apuesta: $${stake.toFixed(2)} (0.5%)`, "info");
+                }
+                updateUI();
+            }
             
-            let statusEl = document.getElementById("status");
-            if(statusEl) statusEl.innerText = running ? (paused ? "PAUSA" : "ON") : "OFF";
+            if(d.msg_type === "proposal" && pendingTrade && d.proposal) {
+                let proposalId = d.proposal.id;
+                let askPrice = d.proposal.ask;
+                addLog(`💼 Compra: $${askPrice.toFixed(2)}`, "success");
+                ws.send(JSON.stringify({
+                    buy: proposalId,
+                    price: askPrice
+                }));
+                pendingTrade = null;
+            }
             
-            let statusBadge = document.getElementById("statusBadge");
-            if(statusBadge) {
-                if(!running) {
-                    statusBadge.innerHTML = "⚪ DESCONECTADO";
-                    statusBadge.className = "status-badge status-off";
-                } else if(paused) {
-                    statusBadge.innerHTML = "⏸️ PAUSADO";
-                    statusBadge.className = "status-badge status-paused";
+            if(d.msg_type === "tick" && running && !paused && !pendingTrade) {
+                let sym = d.tick.symbol;
+                let price = parseFloat(d.tick.quote);
+                
+                if(!dataMap[sym]) dataMap[sym] = [];
+                dataMap[sym].push(price);
+                if(dataMap[sym].length > 50) dataMap[sym].shift();
+                
+                let best = null;
+                let bestScore = 0;
+                
+                for(let s of symbols) {
+                    let arr = dataMap[s];
+                    if(!arr || arr.length < 30) continue;
+                    
+                    let returns = [];
+                    for(let i = 1; i < arr.length; i++) returns.push(arr[i] - arr[i-1]);
+                    
+                    let mean = avg(returns);
+                    let std = stddev(returns, mean);
+                    
+                    if(std < 0.0015 || std > 0.02) continue;
+                    
+                    let trend = returns.slice(-5).reduce((a,b)=>a+b, 0);
+                    let z = (returns[returns.length-1] - mean) / std;
+                    let score = Math.abs(trend * 0.4 + z * 0.6);
+                    
+                    if(score > bestScore) {
+                        bestScore = score;
+                        best = { sym: s, trend, z };
+                    }
+                }
+                
+                if(!best) return;
+                
+                let now = Date.now();
+                if(now - lastTradeTime < 7000) return;
+                
+                let decision = null;
+                
+                if(best.sym.includes("CRASH") && best.trend > 0) decision = "CALL";
+                if(best.sym.includes("BOOM") && best.trend > 0) decision = "PUT";
+                if(best.sym.includes("R_")) {
+                    if(best.z > 1.0) decision = "CALL";
+                    if(best.z < -1.0) decision = "PUT";
+                }
+                
+                if(hedgeMode && decision) {
+                    decision = lastDirection === "CALL" ? "PUT" : "CALL";
+                }
+                
+                if(decision) {
+                    addLog(`🎯 SEÑAL: ${best.sym} ${decision} | score: ${bestScore.toFixed(3)}`, "trade");
+                    executeTrade(best.sym, decision);
+                    lastDirection = decision;
+                    lastTradeTime = now;
+                }
+            }
+            
+            if(d.msg_type === "proposal_open_contract" && d.proposal_open_contract.is_sold) {
+                let pnl = parseFloat(d.proposal_open_contract.profit);
+                
+                profit += pnl;
+                
+                addLog(pnl > 0 ? `✅ GANANCIA: +$${pnl.toFixed(2)}` : `❌ PÉRDIDA: $${pnl.toFixed(2)}`, pnl > 0 ? "success" : "error");
+                
+                if(profit <= -dailyLossLimit && dailyLossLimit > 0) {
+                    addLog(`🛑 STOP LOSS DIARIO! Pérdida: $${profit.toFixed(2)}`, "error");
+                    stopBot();
+                    return;
+                }
+                
+                if(pnl > 0) {
+                    wins++;
+                    hedgeMode = false;
+                    let risk = 0.005;
+                    stake = Math.round(balance * risk * 100) / 100;
+                    if(stake < 0.35) stake = 0.35;
                 } else {
-                    statusBadge.innerHTML = "🟢 CONECTADO";
-                    statusBadge.className = "status-badge status-on";
+                    losses++;
+                    hedgeMode = true;
+                    let risk = 0.007;
+                    stake = Math.round(balance * risk * 100) / 100;
+                    if(stake < 0.35) stake = 0.35;
                 }
-            }
-        }
-        
-        function stopBot() { 
-            if(ws) ws.close(); 
-            running = false; 
-            pendingTrade = null;
-            updateUI();
-            addLog("⏹️ Bot detenido", "error");
-        }
-        
-        function executeTrade(symbol, type) {
-            let amount = Math.round(stake * 100) / 100;
-            if(amount < 0.35) amount = 0.35;
-            
-            pendingTrade = { symbol, type, amount };
-            addLog(`📡 Solicitando propuesta: ${symbol} ${type} $${amount}`, "info");
-            
-            ws.send(JSON.stringify({
-                proposal: 1,
-                amount: amount,
-                basis: "stake",
-                contract_type: type,
-                currency: "USD",
-                duration: 5,
-                duration_unit: "t",
-                symbol: symbol
-            }));
-        }
-        
-        function startBot() {
-            if(running) {
-                addLog("⚠️ Bot ya está activo", "error");
-                return;
-            }
-            
-            let type = document.getElementById("accountType")?.value || "demo";
-            let token = tokens[type];
-            
-            if(!token || token.includes("TU_TOKEN") || token === "deriv-demo-TU_TOKEN_AQUI" || token === "deriv-live-TU_TOKEN_REAL_AQUI") {
-                addLog("❌ ERROR: Token no configurado. Edita el código y pon tu token real.", "error");
-                alert("❌ Configura tu token de Deriv en el código.\n\nDebe empezar con 'deriv-demo-' o 'deriv-live-'");
-                return;
-            }
-            
-            // Reset variables
-            profit = 0;
-            losses = 0;
-            wins = 0;
-            paused = false;
-            hedgeMode = false;
-            lastDirection = null;
-            pendingTrade = null;
-            dataMap = {};
-            initialBalance = 0;
-            dailyLossLimit = 0;
-            
-            addLog(`🚀 Conectando a ${type.toUpperCase()}...`, "info");
-            
-            ws = new WebSocket("wss://ws.derivws.com/websockets/v3?app_id=1089");
-            
-            ws.onopen = () => {
-                addLog("✅ WebSocket conectado", "success");
-                ws.send(JSON.stringify({ authorize: token }));
-            };
-            
-            ws.onmessage = (event) => {
-                try {
-                    let d = JSON.parse(event.data);
-                    
-                    if(d.error) {
-                        addLog(`⚠️ Error API: ${d.error.message}`, "error");
-                        if(d.error.message.includes("Invalid") || d.error.message.includes("authorize")) {
-                            addLog("❌ Token inválido. Verifica que copiaste el token COMPLETO de Deriv.", "error");
-                            stopBot();
-                        }
-                        return;
-                    }
-                    
-                    if(d.msg_type === "authorize") {
-                        addLog(`✅ Autenticado: ${d.authorize.loginid}`, "success");
-                        running = true;
-                        updateUI();
-                        
-                        symbols.forEach(s => {
-                            ws.send(JSON.stringify({ ticks: s, subscribe: 1 }));
-                            dataMap[s] = [];
-                        });
-                        
-                        ws.send(JSON.stringify({ balance: 1 }));
-                        addLog("📡 Suscrito a activos", "success");
-                    }
-                    
-                    if(d.balance) {
-                        balance = d.balance.balance;
-                        
-                        if(initialBalance === 0) {
-                            initialBalance = balance;
-                            dailyLossLimit = initialBalance * 0.03;
-                            let risk = 0.005;
-                            stake = Math.round(balance * risk * 100) / 100;
-                            if(stake < 0.35) stake = 0.35;
-                            addLog(`💰 Balance: $${balance.toFixed(2)}`, "success");
-                            addLog(`🛡️ Límite pérdida diaria: $${dailyLossLimit.toFixed(2)} (3%)`, "warning");
-                            addLog(`🎯 Apuesta: $${stake.toFixed(2)} (0.5%)`, "info");
-                        }
-                        updateUI();
-                    }
-                    
-                    if(d.msg_type === "proposal" && pendingTrade && d.proposal) {
-                        let proposalId = d.proposal.id;
-                        let askPrice = d.proposal.ask;
-                        addLog(`💼 Comprando contrato: $${askPrice.toFixed(2)}`, "success");
-                        ws.send(JSON.stringify({
-                            buy: proposalId,
-                            price: askPrice
-                        }));
-                        pendingTrade = null;
-                    }
-                    
-                    if(d.msg_type === "tick" && running && !paused && !pendingTrade) {
-                        let sym = d.tick.symbol;
-                        let price = parseFloat(d.tick.quote);
-                        
-                        if(!dataMap[sym]) dataMap[sym] = [];
-                        dataMap[sym].push(price);
-                        if(dataMap[sym].length > 50) dataMap[sym].shift();
-                        
-                        let best = null;
-                        let bestScore = 0;
-                        
-                        for(let s of symbols) {
-                            let arr = dataMap[s];
-                            if(!arr || arr.length < 30) continue;
-                            
-                            let returns = [];
-                            for(let i = 1; i < arr.length; i++) returns.push(arr[i] - arr[i-1]);
-                            
-                            let mean = avg(returns);
-                            let std = stddev(returns, mean);
-                            
-                            if(std < 0.0015 || std > 0.02) continue;
-                            
-                            let trend = returns.slice(-5).reduce((a,b)=>a+b, 0);
-                            let z = (returns[returns.length-1] - mean) / std;
-                            let score = Math.abs(trend * 0.4 + z * 0.6);
-                            
-                            if(score > bestScore) {
-                                bestScore = score;
-                                best = { sym: s, trend, z };
-                            }
-                        }
-                        
-                        if(!best) return;
-                        
-                        let now = Date.now();
-                        if(now - lastTradeTime < 7000) return;
-                        
-                        let decision = null;
-                        
-                        if(best.sym.includes("CRASH") && best.trend > 0) decision = "CALL";
-                        if(best.sym.includes("BOOM") && best.trend > 0) decision = "PUT";
-                        if(best.sym.includes("R_")) {
-                            if(best.z > 1.0) decision = "CALL";
-                            if(best.z < -1.0) decision = "PUT";
-                        }
-                        
-                        if(hedgeMode && decision) {
-                            decision = lastDirection === "CALL" ? "PUT" : "CALL";
-                        }
-                        
-                        if(decision) {
-                            addLog(`🎯 SEÑAL: ${best.sym} ${decision} | score: ${bestScore.toFixed(3)}`, "trade");
-                            executeTrade(best.sym, decision);
-                            lastDirection = decision;
-                            lastTradeTime = now;
-                        }
-                    }
-                    
-                    if(d.msg_type === "proposal_open_contract" && d.proposal_open_contract.is_sold) {
-                        let pnl = parseFloat(d.proposal_open_contract.profit);
-                        
-                        profit += pnl;
-                        
-                        addLog(pnl > 0 ? `✅ GANANCIA: +$${pnl.toFixed(2)}` : `❌ PÉRDIDA: $${pnl.toFixed(2)}`, pnl > 0 ? "success" : "error");
-                        
-                        if(profit <= -dailyLossLimit && dailyLossLimit > 0) {
-                            addLog(`🛑 STOP LOSS DIARIO! Pérdida: $${profit.toFixed(2)}`, "error");
-                            stopBot();
-                            return;
-                        }
-                        
-                        if(pnl > 0) {
-                            wins++;
-                            hedgeMode = false;
-                            let risk = 0.005;
-                            stake = Math.round(balance * risk * 100) / 100;
-                            if(stake < 0.35) stake = 0.35;
-                        } else {
-                            losses++;
-                            hedgeMode = true;
-                            let risk = 0.007;
-                            stake = Math.round(balance * risk * 100) / 100;
-                            if(stake < 0.35) stake = 0.35;
-                        }
-                        
-                        updateUI();
-                        
-                        if(losses >= 3) {
-                            paused = true;
-                            updateUI();
-                            addLog(`⏸️ PAUSA de 2 minutos (${losses} pérdidas)`, "warning");
-                            setTimeout(() => {
-                                if(running) {
-                                    paused = false;
-                                    losses = 0;
-                                    updateUI();
-                                    addLog("▶️ Bot reactivado", "success");
-                                }
-                            }, 120000);
-                        }
-                    }
-                    
-                } catch(e) {
-                    addLog(`❌ Error: ${e.message}`, "error");
-                }
-            };
-            
-            ws.onerror = () => addLog("❌ Error WebSocket", "error");
-            ws.onclose = () => {
-                if(running) {
-                    addLog("🔌 Conexión perdida", "error");
-                    running = false;
+                
+                updateUI();
+                
+                if(losses >= 3) {
+                    paused = true;
                     updateUI();
+                    addLog(`⏸️ PAUSA 2min (${losses} pérdidas)`, "warning");
+                    setTimeout(() => {
+                        if(running) {
+                            paused = false;
+                            losses = 0;
+                            updateUI();
+                            addLog("▶️ Reactivado", "success");
+                        }
+                    }, 120000);
                 }
-            };
+            }
+            
+        } catch(e) {
+            addLog(`❌ Error: ${e.message}`, "error");
         }
-        
-        // Exponer funciones globalmente
-        window.startBot = startBot;
-        window.stopBot = stopBot;
-    </script>
-</body>
-</html>
+    };
+    
+    ws.onerror = () => addLog("❌ WebSocket error", "error");
+    ws.onclose = () => {
+        if(running) {
+            addLog("🔌 Conexión perdida", "error");
+            running = false;
+            updateUI();
+        }
+    };
+}
+
+window.startBot = startBot;
+window.stopBot = stopBot;
+</script>
