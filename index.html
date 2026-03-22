@@ -70,11 +70,10 @@ select { padding: 10px; margin: 5px; background: rgba(255,255,255,0.1); color: #
 </div>
 
 <script>
-// 🔐 TOKEN - PON AQUÍ TU TOKEN
+// 🔐 TOKEN
 const DEMO_TOKEN = "e1lRgxNoxWwBkzx";
 const REAL_TOKEN = "TU_TOKEN_REAL";
 
-// Solo activos que funcionan
 const symbols = ["R_100", "R_75", "R_50", "R_25", "R_10"];
 
 let ws = null;
@@ -123,11 +122,12 @@ function stopBot() {
     addLog("Bot detenido", "error");
 }
 
+// 🔧 FUNCIÓN CORREGIDA
 function executeTrade(sym, type) {
     if (paused) return;
     let stakeAmount = stake > 0 ? stake : 0.35;
     let stakeRounded = roundStake(stakeAmount);
-    addLog(`💼 Trade: ${sym} ${type} $${stakeRounded}`, "info");
+    addLog(`💼 Solicitando propuesta: ${sym} ${type} $${stakeRounded}`, "info");
     ws.send(JSON.stringify({
         proposal: 1,
         amount: stakeRounded,
@@ -138,7 +138,7 @@ function executeTrade(sym, type) {
         duration_unit: "t",
         symbol: sym
     }));
-    window.pendingTrade = { symbol: sym, type: type };
+    window.pendingTrade = { symbol: sym, type: type, amount: stakeRounded };
 }
 
 function startBot(accType) {
@@ -204,13 +204,20 @@ function startBot(accType) {
                     stake = roundStake(balance * risk);
                     addLog(`💰 Balance: $${balance.toFixed(2)}`, "success");
                     addLog(`🛡️ Límite pérdida: $${maxDailyLoss.toFixed(2)} (3%)`, "warning");
+                    addLog(`🎯 Apuesta: $${stake.toFixed(2)}`, "info");
                 }
                 updateUI();
             }
             
+            // 🔧 PARTE CORREGIDA - Manejo de propuesta
             if (d.proposal && window.pendingTrade) {
-                addLog(`💼 Comprando contrato`, "success");
-                ws.send(JSON.stringify({ buy: d.proposal.id, price: d.proposal.ask }));
+                let proposalId = d.proposal.id;
+                let askPrice = d.proposal.ask;
+                addLog(`💼 Comprando contrato ID: ${proposalId} por $${askPrice}`, "success");
+                ws.send(JSON.stringify({ 
+                    buy: proposalId, 
+                    price: askPrice 
+                }));
                 window.pendingTrade = null;
             }
             
