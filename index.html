@@ -1,95 +1,89 @@
 <!DOCTYPE html>
 <html>
 <head>
-<title>🔥 BOT NIVEL DIOS</title>
+<title>🤖 BOT PRO FINAL IA</title>
 <style>
 body { background:#0d0d0d; color:#fff; font-family:sans-serif; text-align:center; }
-button { padding:12px; margin:8px; border:none; border-radius:8px; font-weight:bold; }
+button { padding:12px; margin:8px; font-size:16px; border:none; border-radius:5px; }
 .start { background:green; }
 .stop { background:red; }
-.status { margin-top:10px; }
+select { padding:8px; margin:5px; background:#222; color:#fff; }
 </style>
 </head>
 <body>
 
-<h2>🤖 BOT NIVEL DIOS</h2>
+<h2>🤖 BOT PRO IA MULTI-ACTIVOS</h2>
 
-<select id="mode">
-<option value="safe">🛡️ Seguro</option>
-<option value="mid">⚖️ Balanceado</option>
-<option value="sniper">🔥 SNIPER</option>
+<select id="accountType">
+<option value="demo">🟢 Demo</option>
+<option value="real">🔴 Real</option>
 </select>
 
-<br>
+<select id="mode">
+<option value="safe">🛡️ Conservador</option>
+<option value="mid">⚖️ Balanceado</option>
+<option value="sniper">🔥 Sniper</option>
+</select>
 
-<button class="start" onclick="openModal()">INICIAR</button>
-<button class="stop" onclick="stopBot()">STOP</button>
+<button class="start" onclick="startConfirm()">Iniciar</button>
+<button class="stop" onclick="stopBot()">Stop</button>
 
 <p id="status">OFF</p>
-<p id="profit">0</p>
-
-<!-- MODAL -->
-<div id="modal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:#000a;">
-<div style="background:#111; padding:20px; margin:20% auto; width:250px; border-radius:10px;">
-<h3>Selecciona cuenta</h3>
-<button onclick="confirmStart('demo')">🟢 DEMO</button>
-<button onclick="confirmStart('real')">🔴 REAL</button>
-<br><br>
-<button onclick="closeModal()">Cancelar</button>
-</div>
-</div>
+<p id="balance">Balance: 0</p>
+<p id="profit">Profit: 0</p>
 
 <script>
 
 // 🔐 TOKENS
 const tokens = {
-demo: "1Hb1u22iSZQHosg",
-real: "TU_TOKEN_REAL"
+  demo: "***********Hosg",
+  real: "CR_TU_TOKEN_REAL"
 };
 
-const symbols = ["R_100","R_75","R_50","R_25","R_10","BOOM1000","CRASH1000"];
+// ACTIVOS
+const symbols = [
+"R_100","R_75","R_50","R_25","R_10",
+"BOOM1000","CRASH1000","BOOM500","CRASH500"
+];
 
 let ws, running=false;
 let balance=0, stake=0;
 let profit=0, wins=0, losses=0;
 let lastTradeTime=0;
-let dataMap={}, paused=false;
+let paused=false;
+
+let dataMap={};
+
+// IA simple
 let weights=[0.3,0.4,0.3];
 
-let strategyStats={
-volatility:{wins:0,losses:0,profit:0,trades:0},
-boom:{wins:0,losses:0,profit:0,trades:0},
-crash:{wins:0,losses:0,profit:0,trades:0}
-};
-
-let currentStrategy="volatility";
-
+//----------------------------------
+// 🔐 DOBLE CONFIRMACIÓN
 //----------------------------------
 
-function openModal(){ document.getElementById("modal").style.display="block"; }
-function closeModal(){ document.getElementById("modal").style.display="none"; }
+function startConfirm(){
+let type=document.getElementById("accountType").value;
 
-function confirmStart(type){
-closeModal();
+if(type==="real"){
+if(!confirm("⚠️ VAS A USAR DINERO REAL")) return;
+if(!confirm("⚠️ CONFIRMAR OPERAR EN REAL")) return;
+}
 
-// 🔴 DOBLE CONFIRMACIÓN
-let ok = confirm("¿Seguro que quieres usar cuenta " + type.toUpperCase() + "?");
-if(!ok) return;
-
-startBot(type);
+startBot();
 }
 
 //----------------------------------
 
-function startBot(type){
+function startBot(){
 
 if(running) return;
 
-let token = tokens[type];
+let type=document.getElementById("accountType").value;
+let token=tokens[type];
 
-// VALIDACIÓN TOKEN
-if(!token || token.length < 10){
-alert("Token inválido");
+// VALIDACIÓN CORRECTA
+if(!token || token.includes("TU_TOKEN")){
+alert("Coloca tus tokens DEMO y REAL");
 return;
 }
 
@@ -104,34 +98,17 @@ ws.onmessage=(msg)=>{
 
 let d=JSON.parse(msg.data);
 
+// ERROR
 if(d.error){
 alert(d.error.message);
 stopBot();
 return;
 }
 
-//----------------------------------
-// LOGIN
-//----------------------------------
-
+// AUTORIZADO
 if(d.msg_type==="authorize"){
 
-let id=d.authorize.loginid;
-
-// VALIDAR TIPO CUENTA
-if(type==="demo" && !id.startsWith("VRTC")){
-alert("Este token no es DEMO");
-stopBot();
-return;
-}
-
-if(type==="real" && id.startsWith("VRTC")){
-alert("Este token no es REAL");
-stopBot();
-return;
-}
-
-document.getElementById("status").innerText="ON "+type.toUpperCase();
+document.getElementById("status").innerText="ON";
 
 symbols.forEach(s=>{
 ws.send(JSON.stringify({ticks:s,subscribe:1}));
@@ -141,16 +118,25 @@ dataMap[s]=[];
 ws.send(JSON.stringify({balance:1}));
 }
 
-//----------------------------------
-
+// BALANCE
 if(d.balance){
 balance=d.balance.balance;
-if(stake===0){
-stake = Number((balance*0.003).toFixed(2));
-if(stake < 0.35) stake=0.35;
-}
+
+// riesgo automático
+let mode=document.getElementById("mode").value;
+
+let risk=0.005;
+if(mode==="safe") risk=0.003;
+if(mode==="sniper") risk=0.01;
+
+stake=parseFloat((balance*risk).toFixed(2));
+if(stake<0.35) stake=0.35;
+
+document.getElementById("balance").innerText="Balance: "+balance.toFixed(2);
 }
 
+//----------------------------------
+// 📊 TICKS + IA
 //----------------------------------
 
 if(d.msg_type==="tick" && !paused){
@@ -159,141 +145,98 @@ let sym=d.tick.symbol;
 let price=parseFloat(d.tick.quote);
 
 dataMap[sym].push(price);
-if(dataMap[sym].length>60) dataMap[sym].shift();
+if(dataMap[sym].length>50) dataMap[sym].shift();
 
 let t=dataMap[sym];
-if(t.length<40) return;
+if(t.length<30) return;
 
-// CALCULOS
+// cálculos
 let returns=[];
 for(let i=1;i<t.length;i++) returns.push(t[i]-t[i-1]);
 
 let mean=avg(returns);
 let std=stddev(returns,mean);
 
-let last=Math.abs(returns[returns.length-1]);
+let lastMove=Math.abs(returns[returns.length-1]);
 let trend=returns.slice(-5).reduce((a,b)=>a+b,0);
 let z=(returns[returns.length-1]-mean)/std;
 
-//----------------------------------
-// DETECTOR PRO
-//----------------------------------
+// FILTRO (detector)
+if(std<0.001 || std>0.02) return;
+if(lastMove>std*3) return;
 
-if(std<0.002 || std>0.018) return;
-if(last > std*2.5) return;
-
-//----------------------------------
-
+// IA score
 let score = trend*weights[0] + z*weights[1] + std*weights[2];
 
-//----------------------------------
 // SNIPER
-//----------------------------------
-
 let mode=document.getElementById("mode").value;
-
 if(mode==="sniper"){
-if(Math.abs(score)<0.9) return;
-if(Math.abs(z)<1.8) return;
+if(Math.abs(score)<0.8) return;
+if(Math.abs(z)<1.5) return;
 }
 
-//----------------------------------
-
+// cooldown
 let now=Date.now();
-if(now-lastTradeTime<8000) return;
+if(now-lastTradeTime<5000) return;
 
-//----------------------------------
-// AUTO ESTRATEGIA
-//----------------------------------
-
-chooseStrategy();
-
-//----------------------------------
-
+// decisión
 let decision=null;
 
-// CRASH
-if(currentStrategy==="crash" && sym.includes("CRASH")){
-if(score>0.6 && z<-1) decision="CALL";
+if(sym.includes("CRASH") && score>0.5) decision="CALL";
+if(sym.includes("BOOM") && score>0.5) decision="PUT";
+
+if(sym.includes("R_")){
+if(score>0.6) decision="CALL";
+if(score<-0.6) decision="PUT";
 }
 
-// BOOM
-if(currentStrategy==="boom" && sym.includes("BOOM")){
-if(score>0.6 && z>1) decision="PUT";
-}
-
-// VOLATILIDAD
-if(currentStrategy==="volatility" && sym.includes("R_")){
-if(score>0.7 && z>1) decision="CALL";
-if(score<-0.7 && z<-1) decision="PUT";
-}
-
-//----------------------------------
-
+// ejecutar
 if(decision){
-executeTrade(sym,decision);
+trade(sym,decision);
 lastTradeTime=now;
 }
 
 }
 
 //----------------------------------
-// RESULTADO
+// RESULTADOS
 //----------------------------------
-
-if(d.msg_type==="proposal"){
-if(window.pending){
-ws.send(JSON.stringify({buy:d.proposal.id,price:d.proposal.ask}));
-window.pending=null;
-}
-}
 
 if(d.msg_type==="proposal_open_contract"){
 if(d.proposal_open_contract.is_sold){
 
 let pnl=parseFloat(d.proposal_open_contract.profit);
-profit+=pnl;
 
-let sym=d.proposal_open_contract.symbol;
-let strat="volatility";
-if(sym.includes("BOOM")) strat="boom";
-if(sym.includes("CRASH")) strat="crash";
+profit+=pnl;
 
 if(pnl>0){
 wins++;
-strategyStats[strat].wins++;
-weights = weights.map(w=>Math.min(0.8,w+0.01));
-stake = Number((stake*1.02).toFixed(2));
+weights=weights.map(w=>Math.min(1,w+0.01));
+
+// subir stake suave
+stake=Math.min(balance*0.03, stake*1.02);
+
 }else{
 losses++;
-strategyStats[strat].losses++;
-weights = weights.map(w=>Math.max(-0.8,w-0.01));
-stake = Number((balance*0.003).toFixed(2));
+weights=weights.map(w=>Math.max(-1,w-0.01));
+
+// bajar riesgo
+stake=balance*0.003;
 }
 
-strategyStats[strat].profit+=pnl;
-strategyStats[strat].trades++;
-
-// LIMITES
-if(stake<0.35) stake=0.35;
-if(stake>balance*0.03) stake=Number((balance*0.03).toFixed(2));
-
-// PAUSA
-if(losses>=3){
+// anti-ruina
+if(losses>=5 || profit<-balance*0.1){
 paused=true;
+document.getElementById("status").innerText="PAUSA";
+
 setTimeout(()=>{
 paused=false;
 losses=0;
+document.getElementById("status").innerText="ON";
 },120000);
 }
 
-// STOP LOSS
-if(profit < -balance*0.03){
-alert("STOP LOSS");
-stopBot();
-}
-
-document.getElementById("profit").innerText=profit.toFixed(2);
+document.getElementById("profit").innerText="Profit: "+profit.toFixed(2);
 
 }
 }
@@ -305,11 +248,10 @@ running=true;
 
 //----------------------------------
 
-function executeTrade(sym,type){
+function trade(symbol,type){
 
-let amount = Number(stake.toFixed(2));
-
-if(amount < 0.35) amount=0.35;
+let amount=parseFloat(stake.toFixed(2));
+if(amount<0.35) amount=0.35;
 
 ws.send(JSON.stringify({
 proposal:1,
@@ -319,35 +261,11 @@ contract_type:type,
 currency:"USD",
 duration:5,
 duration_unit:"t",
-symbol:sym
+symbol:symbol
 }));
 
 window.pending=true;
-}
 
-//----------------------------------
-
-function chooseStrategy(){
-
-let best="volatility";
-let bestScore=-999;
-
-for(let s in strategyStats){
-let st=strategyStats[s];
-if(st.trades<5) continue;
-
-let wr=st.wins/st.trades;
-let avg=st.profit/st.trades;
-
-let score=wr*avg*Math.sqrt(st.trades);
-
-if(score>bestScore){
-bestScore=score;
-best=s;
-}
-}
-
-currentStrategy=best;
 }
 
 //----------------------------------
@@ -368,6 +286,5 @@ return Math.sqrt(arr.map(x=>Math.pow(x-mean,2))
 }
 
 </script>
-
 </body>
 </html>
