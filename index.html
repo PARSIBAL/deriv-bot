@@ -1,37 +1,3 @@
-<!DOCTYPE html>
-<html>
-<head>
-<title>🤖 BOT PRO FINAL IA</title>
-<style>
-body { background:#0d0d0d; color:#fff; font-family:sans-serif; text-align:center; }
-button { padding:12px; margin:8px; font-size:16px; border:none; border-radius:5px; }
-.start { background:green; }
-.stop { background:red; }
-select { padding:8px; margin:5px; background:#222; color:#fff; }
-</style>
-</head>
-<body>
-
-<h2>🤖 BOT PRO IA MULTI-ACTIVOS</h2>
-
-<select id="accountType">
-<option value="demo">🟢 Demo</option>
-<option value="real">🔴 Real</option>
-</select>
-
-<select id="mode">
-<option value="safe">🛡️ Conservador</option>
-<option value="mid">⚖️ Balanceado</option>
-<option value="sniper">🔥 Sniper</option>
-</select>
-
-<button class="start" onclick="startConfirm()">Iniciar</button>
-<button class="stop" onclick="stopBot()">Stop</button>
-
-<p id="status">OFF</p>
-<p id="balance">Balance: 0</p>
-<p id="profit">Profit: 0</p>
-
 <script>
 
 // 🔐 TOKENS
@@ -40,7 +6,6 @@ const tokens = {
   real: "CR_TU_TOKEN_REAL"
 };
 
-// ACTIVOS
 const symbols = [
 "R_100","R_75","R_50","R_25","R_10",
 "BOOM1000","CRASH1000","BOOM500","CRASH500"
@@ -48,64 +13,50 @@ const symbols = [
 
 let ws, running=false;
 let balance=0, stake=0;
-let profit=0, wins=0, losses=0;
+
+let profit=0, losses=0, wins=0;
 let lastTradeTime=0;
 let paused=false;
+let pendingTrade=null;
+
+let hedgeMode=false;
+let lastDirection=null;
+
+let dailyLossLimit=0;
+let initialBalance=0;
 
 let dataMap={};
-
-// IA simple
-let weights=[0.3,0.4,0.3];
-
-//----------------------------------
-// 🔐 DOBLE CONFIRMACIÓN
-//----------------------------------
-
-function startConfirm(){
-let type=document.getElementById("accountType").value;
-
-if(type==="real"){
-if(!confirm("⚠️ VAS A USAR DINERO REAL")) return;
-if(!confirm("⚠️ CONFIRMAR OPERAR EN REAL")) return;
-}
-
-startBot();
-}
 
 //----------------------------------
 
 function startBot(){
 
-if(running) return;
-
 let type=document.getElementById("accountType").value;
 let token=tokens[type];
 
-// VALIDACIÓN CORRECTA
 if(!token || token.includes("TU_TOKEN")){
-alert("Coloca tus tokens DEMO y REAL");
+alert("Coloca tokens");
 return;
 }
 
 ws=new WebSocket("wss://ws.derivws.com/websockets/v3?app_id=1089");
 
 ws.onopen=()=>{
-ws.send(JSON.stringify({authorize:token}));
-document.getElementById("status").innerText="Conectando...";
+setTimeout(()=>ws.send(JSON.stringify({authorize:token})),500);
 };
 
 ws.onmessage=(msg)=>{
 
 let d=JSON.parse(msg.data);
 
-// ERROR
+// errores
 if(d.error){
-alert(d.error.message);
+console.log(d.error);
 stopBot();
 return;
 }
 
-// AUTORIZADO
+// autorizado
 if(d.msg_type==="authorize"){
 
 document.getElementById("status").innerText="ON";
@@ -118,81 +69,96 @@ dataMap[s]=[];
 ws.send(JSON.stringify({balance:1}));
 }
 
-// BALANCE
+// balance
 if(d.balance){
 balance=d.balance.balance;
 
-// riesgo automático
-let mode=document.getElementById("mode").value;
+if(initialBalance===0){
+initialBalance=balance;
+dailyLossLimit = initialBalance * 0.03;
+}
 
-let risk=0.005;
-if(mode==="safe") risk=0.003;
-if(mode==="sniper") risk=0.01;
+// 🔥 stake institucional
+let risk=0.005; // 0.5%
+stake = Math.round(balance * risk * 100) / 100;
 
-stake=parseFloat((balance*risk).toFixed(2));
-if(stake<0.35) stake=0.35;
-
-document.getElementById("balance").innerText="Balance: "+balance.toFixed(2);
+if(stake < 0.35) stake = 0.35;
 }
 
 //----------------------------------
-// 📊 TICKS + IA
+// 🧠 FILTRO + SELECCIÓN
 //----------------------------------
 
-if(d.msg_type==="tick" && !paused){
+if(d.msg_type==="tick" && !paused && !pendingTrade){
 
+let best=null;
+let bestScore=0;
+
+symbols.forEach(sym=>{
+
+let arr=dataMap[sym];
+if(!arr || arr.length<30) return;
+
+let ret=[];
+for(let i=1;i<arr.length;i++) ret.push(arr[i]-arr[i-1]);
+
+let mean=avg(ret);
+let std=stddev(ret,mean);
+
+if(std<0.0015 || std>0.02) return;
+
+let trend=ret.slice(-5).reduce((a,b)=>a+b,0);
+let z=(ret[ret.length-1]-mean)/std;
+
+let score=Math.abs(trend*0.4 + z*0.6);
+
+if(score>bestScore){
+bestScore=score;
+best={sym,trend,z};
+}
+
+});
+
+// actualizar data
 let sym=d.tick.symbol;
 let price=parseFloat(d.tick.quote);
 
 dataMap[sym].push(price);
 if(dataMap[sym].length>50) dataMap[sym].shift();
 
-let t=dataMap[sym];
-if(t.length<30) return;
+if(!best) return;
 
-// cálculos
-let returns=[];
-for(let i=1;i<t.length;i++) returns.push(t[i]-t[i-1]);
+//----------------------------------
 
-let mean=avg(returns);
-let std=stddev(returns,mean);
-
-let lastMove=Math.abs(returns[returns.length-1]);
-let trend=returns.slice(-5).reduce((a,b)=>a+b,0);
-let z=(returns[returns.length-1]-mean)/std;
-
-// FILTRO (detector)
-if(std<0.001 || std>0.02) return;
-if(lastMove>std*3) return;
-
-// IA score
-let score = trend*weights[0] + z*weights[1] + std*weights[2];
-
-// SNIPER
-let mode=document.getElementById("mode").value;
-if(mode==="sniper"){
-if(Math.abs(score)<0.8) return;
-if(Math.abs(z)<1.5) return;
-}
-
-// cooldown
 let now=Date.now();
-if(now-lastTradeTime<5000) return;
+if(now-lastTradeTime<7000) return;
 
-// decisión
+//----------------------------------
+
 let decision=null;
 
-if(sym.includes("CRASH") && score>0.5) decision="CALL";
-if(sym.includes("BOOM") && score>0.5) decision="PUT";
+// lógica institucional
+if(best.sym.includes("CRASH") && best.trend>0) decision="CALL";
+if(best.sym.includes("BOOM") && best.trend>0) decision="PUT";
 
-if(sym.includes("R_")){
-if(score>0.6) decision="CALL";
-if(score<-0.6) decision="PUT";
+if(best.sym.includes("R_")){
+if(best.z>1.0) decision="CALL";
+if(best.z<-1.0) decision="PUT";
 }
 
-// ejecutar
+//----------------------------------
+// HEDGE CONTROLADO
+//----------------------------------
+
+if(hedgeMode){
+decision = lastDirection === "CALL" ? "PUT" : "CALL";
+}
+
+//----------------------------------
+
 if(decision){
-trade(sym,decision);
+executeTrade(best.sym,decision);
+lastDirection=decision;
 lastTradeTime=now;
 }
 
@@ -209,23 +175,33 @@ let pnl=parseFloat(d.proposal_open_contract.profit);
 
 profit+=pnl;
 
+// 🔴 STOP DIARIO
+if(profit <= -dailyLossLimit){
+alert("STOP LOSS DIARIO ALCANZADO");
+stopBot();
+return;
+}
+
 if(pnl>0){
 wins++;
-weights=weights.map(w=>Math.min(1,w+0.01));
+hedgeMode=false;
 
-// subir stake suave
-stake=Math.min(balance*0.03, stake*1.02);
+// crecimiento lento
+stake = Math.round(balance*0.005*100)/100;
 
 }else{
 losses++;
-weights=weights.map(w=>Math.max(-1,w-0.01));
+hedgeMode=true;
 
-// bajar riesgo
-stake=balance*0.003;
+// hedge leve
+stake = Math.round(balance*0.007*100)/100;
 }
 
-// anti-ruina
-if(losses>=5 || profit<-balance*0.1){
+// reset
+pendingTrade=null;
+
+// pausa institucional
+if(losses>=3){
 paused=true;
 document.getElementById("status").innerText="PAUSA";
 
@@ -243,15 +219,19 @@ document.getElementById("profit").innerText="Profit: "+profit.toFixed(2);
 
 };
 
+//----------------------------------
+
 running=true;
 }
 
 //----------------------------------
 
-function trade(symbol,type){
+function executeTrade(symbol,type){
 
-let amount=parseFloat(stake.toFixed(2));
+let amount = Math.round(stake * 100) / 100;
 if(amount<0.35) amount=0.35;
+
+pendingTrade=true;
 
 ws.send(JSON.stringify({
 proposal:1,
@@ -264,15 +244,27 @@ duration_unit:"t",
 symbol:symbol
 }));
 
-window.pending=true;
-
 }
+
+//----------------------------------
+
+ws.onmessage = (msg)=>{
+let d=JSON.parse(msg.data);
+
+if(d.msg_type==="proposal" && pendingTrade){
+ws.send(JSON.stringify({
+buy:d.proposal.id,
+price:d.proposal.ask
+}));
+}
+};
 
 //----------------------------------
 
 function stopBot(){
 if(ws) ws.close();
 running=false;
+pendingTrade=null;
 document.getElementById("status").innerText="OFF";
 }
 
@@ -286,5 +278,3 @@ return Math.sqrt(arr.map(x=>Math.pow(x-mean,2))
 }
 
 </script>
-</body>
-</html>
