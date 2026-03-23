@@ -70,7 +70,7 @@ select { padding: 10px; margin: 5px; background: rgba(255,255,255,0.1); color: #
 </div>
 
 <script>
-// 🔐 TOKEN
+// 🔐 TOKEN - PON AQUÍ TU TOKEN REAL
 const DEMO_TOKEN = "e1lRgxNoxWwBkzx";
 const REAL_TOKEN = "TU_TOKEN_REAL";
 
@@ -122,28 +122,28 @@ function stopBot() {
     addLog("Bot detenido", "error");
 }
 
-// 🔧 FUNCIÓN CORREGIDA - Usa el formato correcto para Deriv
+// 🔧 FUNCIÓN CORREGIDA - Primero pide propuesta, luego compra
 function executeTrade(sym, type) {
     if (paused) return;
     let stakeAmount = stake > 0 ? stake : 0.35;
     let stakeRounded = roundStake(stakeAmount);
     
-    addLog(`💼 Trade: ${sym} ${type} $${stakeRounded}`, "info");
+    addLog(`💼 Solicitando propuesta: ${sym} ${type} $${stakeRounded}`, "info");
     
-    // Formato correcto según documentación de Deriv
+    // Paso 1: Pedir propuesta
     ws.send(JSON.stringify({
-        buy: 1,
-        price: stakeRounded,
-        parameters: {
-            amount: stakeRounded,
-            basis: "stake",
-            contract_type: type,
-            currency: "USD",
-            duration: 5,
-            duration_unit: "t",
-            symbol: sym
-        }
+        proposal: 1,
+        amount: stakeRounded,
+        basis: "stake",
+        contract_type: type,
+        currency: "USD",
+        duration: 5,
+        duration_unit: "t",
+        symbol: sym
     }));
+    
+    // Guardar datos para cuando llegue la propuesta
+    window.pendingTrade = { symbol: sym, type: type, amount: stakeRounded };
 }
 
 function startBot(accType) {
@@ -167,6 +167,7 @@ function startBot(accType) {
     paused = false;
     dataMap = {};
     stake = 0.35;
+    window.pendingTrade = null;
     
     addLog(`🚀 Conectando ${accType}...`, "info");
     
@@ -212,6 +213,19 @@ function startBot(accType) {
                     addLog(`🎯 Apuesta: $${stake.toFixed(2)}`, "info");
                 }
                 updateUI();
+            }
+            
+            // 🔧 PASO 2: Recibir propuesta y ejecutar compra
+            if (d.proposal && window.pendingTrade) {
+                let proposalId = d.proposal.id;
+                let askPrice = d.proposal.ask;
+                addLog(`💼 Comprando contrato ID: ${proposalId} por $${askPrice}`, "success");
+                
+                ws.send(JSON.stringify({ 
+                    buy: proposalId, 
+                    price: askPrice 
+                }));
+                window.pendingTrade = null;
             }
             
             if (d.tick && running && !paused) {
