@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-<title>Deriv Bot HEDGE v5</title>
+<title>Deriv Bot - R_50 Ultra Conservador</title>
 <style>
 body { 
     background: linear-gradient(135deg, #0a0a0a 0%, #1a1a2e 100%);
@@ -11,7 +11,7 @@ body {
     margin: 0;
     padding: 20px;
 }
-.container { max-width: 600px; margin: 0 auto; }
+.container { max-width: 500px; margin: 0 auto; }
 .card { background: rgba(255,255,255,0.05); backdrop-filter: blur(10px); border-radius: 20px; padding: 20px; margin: 20px 0; }
 button { padding: 12px 24px; margin: 8px; font-size: 16px; border: none; border-radius: 10px; cursor: pointer; font-weight: bold; }
 .start { background: #00c853; color: white; }
@@ -37,7 +37,8 @@ select { padding: 10px; margin: 5px; background: rgba(255,255,255,0.1); color: #
 </head>
 <body>
 <div class="container">
-    <h2>🤖 Bot HEDGE v5</h2>
+    <h2>🤖 Bot R_50 Ultra Conservador</h2>
+    <p style="font-size:12px;">📊 Un solo activo: R_50 | 🛡️ Máx 3% pérdida/día</p>
     <div class="card">
         <select id="mode">
             <option value="safe">🛡️ Ultra Conservador (0.35%)</option>
@@ -55,7 +56,7 @@ select { padding: 10px; margin: 5px; background: rgba(255,255,255,0.1); color: #
             <div class="stat-item"><div>🏆 WINRATE</div><div class="stat-value" id="winrate">0%</div></div>
         </div>
         <div class="log" id="logPanel">
-            <div class="log-entry log-info">🤖 Bot listo</div>
+            <div class="log-entry log-info">🤖 Bot R_50 listo</div>
         </div>
     </div>
 </div>
@@ -70,11 +71,12 @@ select { padding: 10px; margin: 5px; background: rgba(255,255,255,0.1); color: #
 </div>
 
 <script>
-// 🔐 TOKEN - PON AQUÍ TU TOKEN REAL
+// 🔐 TOKEN - PON AQUÍ TU TOKEN
 const DEMO_TOKEN = "e1lRgxNoxWwBkzx";
 const REAL_TOKEN = "TU_TOKEN_REAL";
 
-const symbols = ["R_100", "R_75", "R_50", "R_25", "R_10"];
+// 🎯 UN SOLO ACTIVO - R_50 (el más estable)
+const SYMBOL = "R_50";
 
 let ws = null;
 let running = false;
@@ -88,7 +90,7 @@ let maxDailyLoss = 0;
 let lastTradeTime = 0;
 let cooldown = 10000;
 let currentMode = "safe";
-let dataMap = {};
+let priceHistory = [];
 
 function addLog(msg, type) {
     let log = document.getElementById("logPanel");
@@ -122,15 +124,13 @@ function stopBot() {
     addLog("Bot detenido", "error");
 }
 
-// 🔧 FUNCIÓN CORREGIDA - Primero pide propuesta, luego compra
-function executeTrade(sym, type) {
+function executeTrade(type) {
     if (paused) return;
     let stakeAmount = stake > 0 ? stake : 0.35;
     let stakeRounded = roundStake(stakeAmount);
     
-    addLog(`💼 Solicitando propuesta: ${sym} ${type} $${stakeRounded}`, "info");
+    addLog(`💼 Solicitando propuesta: ${SYMBOL} ${type} $${stakeRounded}`, "info");
     
-    // Paso 1: Pedir propuesta
     ws.send(JSON.stringify({
         proposal: 1,
         amount: stakeRounded,
@@ -139,11 +139,10 @@ function executeTrade(sym, type) {
         currency: "USD",
         duration: 5,
         duration_unit: "t",
-        symbol: sym
+        symbol: SYMBOL
     }));
     
-    // Guardar datos para cuando llegue la propuesta
-    window.pendingTrade = { symbol: sym, type: type, amount: stakeRounded };
+    window.pendingTrade = { type: type, amount: stakeRounded };
 }
 
 function startBot(accType) {
@@ -165,7 +164,7 @@ function startBot(accType) {
     wins = 0;
     totalTrades = 0;
     paused = false;
-    dataMap = {};
+    priceHistory = [];
     stake = 0.35;
     window.pendingTrade = null;
     
@@ -194,12 +193,10 @@ function startBot(accType) {
                 document.getElementById("statusBadge").innerHTML = "🟢 CONECTADO";
                 document.getElementById("statusBadge").className = "status-on";
                 
-                symbols.forEach(s => {
-                    ws.send(JSON.stringify({ ticks: s, subscribe: 1 }));
-                    dataMap[s] = [];
-                });
+                // Suscribirse al tick del activo R_50
+                ws.send(JSON.stringify({ ticks: SYMBOL, subscribe: 1 }));
                 ws.send(JSON.stringify({ balance: 1 }));
-                addLog(`📡 Activos: ${symbols.join(", ")}`, "success");
+                addLog(`📡 Suscrito a: ${SYMBOL}`, "success");
             }
             
             if (d.balance) {
@@ -215,7 +212,7 @@ function startBot(accType) {
                 updateUI();
             }
             
-            // 🔧 PASO 2: Recibir propuesta y ejecutar compra
+            // Recibir propuesta y ejecutar compra
             if (d.proposal && window.pendingTrade) {
                 let proposalId = d.proposal.id;
                 let askPrice = d.proposal.ask;
@@ -228,37 +225,39 @@ function startBot(accType) {
                 window.pendingTrade = null;
             }
             
+            // Procesar ticks en tiempo real
             if (d.tick && running && !paused) {
-                let sym = d.tick.symbol;
                 let price = parseFloat(d.tick.quote);
+                priceHistory.push(price);
+                if (priceHistory.length > 30) priceHistory.shift();
                 
-                if (!dataMap[sym]) dataMap[sym] = [];
-                dataMap[sym].push(price);
-                if (dataMap[sym].length > 50) dataMap[sym].shift();
+                if (priceHistory.length < 20) return;
                 
-                let arr = dataMap[sym];
-                if (arr.length < 30) return;
+                // Calcular z-score
+                let returns = [];
+                for (let i = 1; i < priceHistory.length; i++) {
+                    returns.push(priceHistory[i] - priceHistory[i-1]);
+                }
                 
-                let ret = [];
-                for (let i = 1; i < arr.length; i++) ret.push(arr[i] - arr[i-1]);
-                let mean = ret.reduce((a,b)=>a+b,0)/ret.length;
-                let std = Math.sqrt(ret.map(x=>Math.pow(x-mean,2)).reduce((a,b)=>a+b,0)/ret.length);
-                if (std < 0.002 || std > 0.02) return;
+                let mean = returns.reduce((a,b)=>a+b,0) / returns.length;
+                let variance = returns.map(x => Math.pow(x - mean, 2)).reduce((a,b)=>a+b,0) / returns.length;
+                let std = Math.sqrt(variance);
                 
-                let z = (ret[ret.length-1] - mean) / std;
+                if (std < 0.002) return;
+                
+                let lastReturn = returns[returns.length-1];
+                let z = (lastReturn - mean) / std;
                 
                 let now = Date.now();
                 if (now - lastTradeTime < cooldown) return;
                 
                 let decision = null;
-                if (sym.includes("R_")) {
-                    if (z > 1.0) decision = "CALL";
-                    if (z < -1.0) decision = "PUT";
-                }
+                if (z > 1.2) decision = "CALL";
+                if (z < -1.2) decision = "PUT";
                 
                 if (decision) {
-                    addLog(`🎯 SEÑAL: ${sym} ${decision} | z: ${z.toFixed(2)}`, "trade");
-                    executeTrade(sym, decision);
+                    addLog(`🎯 SEÑAL: ${SYMBOL} ${decision} | z-score: ${z.toFixed(2)}`, "trade");
+                    executeTrade(decision);
                     lastTradeTime = now;
                 }
             }
@@ -274,6 +273,18 @@ function startBot(accType) {
                 if (dailyProfit <= -maxDailyLoss) {
                     addLog(`🛑 STOP LOSS! Pérdida: $${dailyProfit.toFixed(2)}`, "error");
                     stopBot();
+                }
+                
+                // Pausa por racha negativa
+                if (pnl < 0 && losses >= 2) {
+                    paused = true;
+                    addLog(`⏸️ Pausa 2 minutos por racha negativa`, "warning");
+                    setTimeout(() => {
+                        if (running) {
+                            paused = false;
+                            addLog("▶️ Reactivado", "success");
+                        }
+                    }, 120000);
                 }
             }
             
@@ -299,7 +310,7 @@ function mostrarModal() {
 function cerrarModal() { document.getElementById("modalConfirm").style.display = "none"; }
 function confirmarStart(accType) { cerrarModal(); startBot(accType); }
 
-addLog("🛡️ Bot listo - 3% pérdida diaria", "warning");
+addLog("🛡️ Bot R_50 Ultra Conservador - 3% pérdida diaria", "warning");
 </script>
 </body>
 </html>
