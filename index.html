@@ -1,20 +1,20 @@
 <!DOCTYPE html>
 <html>
 <head>
-<title>Bot R_50 PRO</title>
+<title>Bot R_50 Nivel Dios</title>
 <style>
 body { background:#0a0a0a; color:#fff; font-family:sans-serif; text-align:center; }
-.card { background:#1a1a2e; padding:20px; border-radius:15px; max-width:400px; margin:auto; }
+.card { background:#1a1a2e; padding:20px; border-radius:15px; max-width:420px; margin:auto; }
 button { padding:10px; margin:5px; border:none; border-radius:8px; font-weight:bold; }
-.start { background:green; color:white; }
-.stop { background:red; color:white; }
-.log { background:black; height:200px; overflow:auto; font-size:10px; text-align:left; padding:10px; }
+.start { background:#00c853; color:white; }
+.stop { background:#d32f2f; color:white; }
+.log { background:black; height:220px; overflow:auto; font-size:10px; text-align:left; padding:10px; }
 </style>
 </head>
 <body>
 
 <div class="card">
-<h2>🤖 BOT R_50 PRO</h2>
+<h2>🤖 BOT R_50 NIVEL DIOS</h2>
 
 <button class="start" onclick="startBot()">INICIAR</button>
 <button class="stop" onclick="stopBot()">DETENER</button>
@@ -33,17 +33,20 @@ button { padding:10px; margin:5px; border:none; border-radius:8px; font-weight:b
 const TOKEN = "e1lRgxNoxWwBkzx";
 const SYMBOL = "R_50";
 
-let ws, balance=0, stake=0.5;
+let ws, balance=0, stake=0.35;
 let running=false, wins=0, total=0;
-let profit=0, losses=0, winStreak=0, lossStreak=0;
+let profit=0, winStreak=0, lossStreak=0;
 let priceHistory=[], lastTrade=0;
+let pauseUntil=0;
 
+// 🔹 LOG
 function log(msg){
  let el=document.getElementById("log");
  el.innerHTML += msg+"<br>";
  el.scrollTop=el.scrollHeight;
 }
 
+// 🔹 UI
 function updateUI(){
  document.getElementById("balance").innerText=balance.toFixed(2);
  document.getElementById("profit").innerText=profit.toFixed(2);
@@ -52,24 +55,40 @@ function updateUI(){
  document.getElementById("wr").innerText=wr+"%";
 }
 
+// 🔹 STAKE INTELIGENTE
 function adjustStake(){
- let risk=0.005;
- if(lossStreak>=3) risk=0.0035;
- if(winStreak>=3) risk=0.007;
+ let risk=0.004;
 
- let calc = balance*risk;
+ if(lossStreak>=2) risk=0.0025;
+ if(winStreak>=3) risk=0.006;
+
+ let calc=balance*risk;
+
  if(calc>1) calc=1;
  if(calc<0.35) calc=0.35;
 
- stake = Math.floor(calc*100)/100;
+ stake=Math.floor(calc*100)/100;
 }
 
+// 🔹 FILTRO AVANZADO
+function shouldTrade(z, trend, std){
+
+ if(std < 0.003) return false;   // mercado muerto
+ if(std > 0.018) return false;   // mercado loco
+
+ if(Math.abs(z) < 1.6) return false; // señal débil
+
+ if(z > 0 && trend < 0) return false;
+ if(z < 0 && trend > 0) return false;
+
+ return true;
+}
+
+// 🔹 BOT
 function startBot(){
  ws = new WebSocket("wss://ws.binaryws.com/websockets/v3?app_id=1089");
 
- ws.onopen=()=>{
-  ws.send(JSON.stringify({authorize:TOKEN}));
- }
+ ws.onopen=()=> ws.send(JSON.stringify({authorize:TOKEN}));
 
  ws.onmessage=(e)=>{
   let d=JSON.parse(e.data);
@@ -87,10 +106,14 @@ function startBot(){
   }
 
   if(d.tick && running){
+   let now=Date.now();
+
+   if(now < pauseUntil) return;
+
    let price=d.tick.quote;
    priceHistory.push(price);
-   if(priceHistory.length>30) priceHistory.shift();
-   if(priceHistory.length<20) return;
+   if(priceHistory.length>40) priceHistory.shift();
+   if(priceHistory.length<25) return;
 
    let returns=[];
    for(let i=1;i<priceHistory.length;i++){
@@ -99,45 +122,35 @@ function startBot(){
 
    let mean=returns.reduce((a,b)=>a+b,0)/returns.length;
    let std=Math.sqrt(returns.map(x=>(x-mean)**2).reduce((a,b)=>a+b,0)/returns.length);
+   let last=returns[returns.length-1];
+   let z=(last-mean)/std;
 
-   if(std<0.003 || std>0.02) return;
+   let trend = priceHistory[priceHistory.length-1] - priceHistory[priceHistory.length-8];
 
-   let z=(returns[returns.length-1]-mean)/std;
+   if(now-lastTrade<20000) return;
 
-   let trend = priceHistory[priceHistory.length-1] - priceHistory[priceHistory.length-5];
+   if(!shouldTrade(z, trend, std)) return;
 
-   let now=Date.now();
-   if(now-lastTrade<15000) return;
+   let decision = z>0 ? "CALL" : "PUT";
 
-   let decision=null;
-   if(z>1.5 && trend>0) decision="CALL";
-   if(z<-1.5 && trend<0) decision="PUT";
+   adjustStake();
 
-   if(decision){
-    if(lossStreak>=3){
-     log("⏸️ Pausa por pérdidas");
-     return;
+   ws.send(JSON.stringify({
+    buy:1,
+    price:stake,
+    parameters:{
+     amount:stake,
+     basis:"stake",
+     contract_type:decision,
+     currency:"USD",
+     duration:5,
+     duration_unit:"t",
+     symbol:SYMBOL
     }
+   }));
 
-    adjustStake();
-
-    ws.send(JSON.stringify({
-     buy:1,
-     price:stake,
-     parameters:{
-      amount:stake,
-      basis:"stake",
-      contract_type:decision,
-      currency:"USD",
-      duration:5,
-      duration_unit:"t",
-      symbol:SYMBOL
-     }
-    }));
-
-    log("📊 "+decision+" $"+stake);
-    lastTrade=now;
-   }
+   log("📊 "+decision+" $"+stake+" | z:"+z.toFixed(2));
+   lastTrade=now;
   }
 
   if(d.buy){
@@ -167,8 +180,19 @@ function startBot(){
 
    updateUI();
 
+   // 🔴 PROTECCIONES NIVEL DIOS
+   if(lossStreak>=3){
+    pauseUntil = Date.now() + 60000; // pausa 1 min
+    log("⏸️ Pausa por pérdidas");
+   }
+
    if(profit <= -(balance*0.03)){
     log("🛑 STOP LOSS");
+    stopBot();
+   }
+
+   if(profit >= (balance*0.05)){
+    log("🎯 TAKE PROFIT");
     stopBot();
    }
   }
