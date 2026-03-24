@@ -1,209 +1,715 @@
 <!DOCTYPE html>
-<html>
+<html lang="es">
 <head>
-<title>Bot R_50 Nivel Dios</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BOT APEX — Multi Mercado Pro</title>
 <style>
-body { background:#0a0a0a; color:#fff; font-family:sans-serif; text-align:center; }
-.card { background:#1a1a2e; padding:20px; border-radius:15px; max-width:420px; margin:auto; }
-button { padding:10px; margin:5px; border:none; border-radius:8px; font-weight:bold; }
-.start { background:#00c853; color:white; }
-.stop { background:#d32f2f; color:white; }
-.log { background:black; height:220px; overflow:auto; font-size:10px; text-align:left; padding:10px; }
+  @import url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Orbitron:wght@400;700;900&display=swap');
+
+  :root {
+    --green: #00ff88;
+    --red: #ff3355;
+    --gold: #ffd700;
+    --blue: #00cfff;
+    --bg: #060810;
+    --card: #0d1117;
+    --border: #1a2535;
+    --text: #c9d1d9;
+    --dim: #4a5568;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Share Tech Mono', monospace;
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    background-image:
+      radial-gradient(ellipse at 20% 50%, rgba(0,207,255,0.04) 0%, transparent 60%),
+      radial-gradient(ellipse at 80% 20%, rgba(0,255,136,0.04) 0%, transparent 60%);
+  }
+
+  .card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    max-width: 460px;
+    width: 100%;
+    overflow: hidden;
+    box-shadow: 0 0 40px rgba(0,207,255,0.07), 0 20px 60px rgba(0,0,0,0.5);
+  }
+
+  .header {
+    background: linear-gradient(135deg, #0d1117 0%, #111827 100%);
+    border-bottom: 1px solid var(--border);
+    padding: 20px 24px 16px;
+    position: relative;
+  }
+
+  .header::after {
+    content: '';
+    position: absolute;
+    bottom: 0; left: 0; right: 0;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, var(--blue), var(--green), transparent);
+  }
+
+  .title {
+    font-family: 'Orbitron', monospace;
+    font-size: 18px;
+    font-weight: 900;
+    letter-spacing: 3px;
+    color: #fff;
+    text-transform: uppercase;
+  }
+
+  .subtitle {
+    font-size: 10px;
+    color: var(--dim);
+    letter-spacing: 2px;
+    margin-top: 3px;
+  }
+
+  .status-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-size: 11px;
+    font-family: 'Orbitron', monospace;
+    letter-spacing: 1px;
+    margin-top: 10px;
+    border: 1px solid var(--dim);
+    color: var(--dim);
+    transition: all 0.3s;
+  }
+
+  .status-pill.on {
+    border-color: var(--green);
+    color: var(--green);
+    box-shadow: 0 0 10px rgba(0,255,136,0.2);
+  }
+
+  .status-dot {
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: currentColor;
+  }
+
+  .status-pill.on .status-dot {
+    animation: pulse 1.2s infinite;
+  }
+
+  @keyframes pulse {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.4; transform: scale(0.7); }
+  }
+
+  .controls {
+    display: flex;
+    gap: 10px;
+    padding: 16px 24px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .btn {
+    flex: 1;
+    padding: 11px;
+    border: none;
+    border-radius: 8px;
+    font-family: 'Orbitron', monospace;
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 1px;
+    cursor: pointer;
+    transition: all 0.2s;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .btn-start {
+    background: linear-gradient(135deg, #00c853, #00ff88);
+    color: #000;
+  }
+
+  .btn-start:hover { transform: translateY(-1px); box-shadow: 0 4px 20px rgba(0,255,136,0.3); }
+  .btn-start:active { transform: translateY(0); }
+
+  .btn-stop {
+    background: linear-gradient(135deg, #c62828, #ff3355);
+    color: #fff;
+  }
+
+  .btn-stop:hover { transform: translateY(-1px); box-shadow: 0 4px 20px rgba(255,51,85,0.3); }
+  .btn-stop:active { transform: translateY(0); }
+
+  .stats-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1px;
+    background: var(--border);
+    border-bottom: 1px solid var(--border);
+  }
+
+  .stat-box {
+    background: var(--card);
+    padding: 14px 18px;
+  }
+
+  .stat-label {
+    font-size: 9px;
+    color: var(--dim);
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    margin-bottom: 4px;
+  }
+
+  .stat-value {
+    font-family: 'Orbitron', monospace;
+    font-size: 20px;
+    font-weight: 700;
+    color: #fff;
+    transition: color 0.3s;
+  }
+
+  .stat-value.positive { color: var(--green); }
+  .stat-value.negative { color: var(--red); }
+  .stat-value.gold { color: var(--gold); }
+  .stat-value.blue { color: var(--blue); }
+
+  .market-bar {
+    padding: 10px 24px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    font-size: 10px;
+  }
+
+  .market-label { color: var(--dim); letter-spacing: 1px; }
+
+  .market-pills { display: flex; gap: 6px; }
+
+  .market-pill {
+    padding: 3px 10px;
+    border-radius: 10px;
+    border: 1px solid var(--border);
+    color: var(--dim);
+    font-size: 10px;
+    transition: all 0.3s;
+  }
+
+  .market-pill.active {
+    border-color: var(--gold);
+    color: var(--gold);
+    box-shadow: 0 0 8px rgba(255,215,0,0.2);
+  }
+
+  .mode-bar {
+    padding: 8px 24px;
+    border-bottom: 1px solid var(--border);
+    font-size: 10px;
+    color: var(--dim);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  .mode-tag {
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-size: 9px;
+    letter-spacing: 1px;
+    background: rgba(0,207,255,0.1);
+    color: var(--blue);
+    border: 1px solid rgba(0,207,255,0.2);
+  }
+
+  .log-wrap { padding: 14px; }
+
+  .log {
+    background: #050709;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    height: 200px;
+    overflow-y: auto;
+    padding: 10px 12px;
+    font-size: 10px;
+    line-height: 1.7;
+    scrollbar-width: thin;
+    scrollbar-color: var(--border) transparent;
+  }
+
+  .log::-webkit-scrollbar { width: 4px; }
+  .log::-webkit-scrollbar-track { background: transparent; }
+  .log::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+
+  .log-entry { display: flex; gap: 6px; align-items: baseline; }
+  .log-time { color: var(--dim); font-size: 9px; flex-shrink: 0; }
+  .log-win { color: var(--green); }
+  .log-loss { color: var(--red); }
+  .log-info { color: var(--blue); }
+  .log-warn { color: var(--gold); }
+  .log-stop { color: var(--red); }
+
+  .footer {
+    padding: 10px 24px 14px;
+    text-align: center;
+    font-size: 9px;
+    color: var(--dim);
+    letter-spacing: 1px;
+    border-top: 1px solid var(--border);
+  }
+
+  .protection-bar {
+    height: 3px;
+    background: var(--border);
+    margin: 0;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .protection-fill {
+    height: 100%;
+    width: 0%;
+    background: linear-gradient(90deg, var(--green), var(--gold));
+    transition: width 0.5s ease, background 0.5s;
+  }
 </style>
 </head>
 <body>
 
 <div class="card">
-<h2>🤖 BOT R_50 NIVEL DIOS</h2>
 
-<button class="start" onclick="startBot()">INICIAR</button>
-<button class="stop" onclick="stopBot()">DETENER</button>
+  <div class="header">
+    <div class="title">⚡ BOT APEX</div>
+    <div class="subtitle">MULTI MERCADO — SISTEMA UNIFICADO v3.0</div>
+    <div class="status-pill" id="statusPill">
+      <div class="status-dot"></div>
+      <span id="statusText">OFFLINE</span>
+    </div>
+  </div>
 
-<h3 id="status">🔴 OFF</h3>
+  <div class="controls">
+    <button class="btn btn-start" onclick="startBot()">▶ INICIAR</button>
+    <button class="btn btn-stop" onclick="stopBot()">■ DETENER</button>
+  </div>
 
-<p>💰 Balance: <span id="balance">0</span></p>
-<p>📈 Ganancia: <span id="profit">0</span></p>
-<p>🎯 Stake: <span id="stake">0</span></p>
-<p>🏆 Winrate: <span id="wr">0%</span></p>
+  <div class="stats-grid">
+    <div class="stat-box">
+      <div class="stat-label">💰 Balance</div>
+      <div class="stat-value blue" id="balance">0.00</div>
+    </div>
+    <div class="stat-box">
+      <div class="stat-label">📈 Ganancia</div>
+      <div class="stat-value" id="profit">0.00</div>
+    </div>
+    <div class="stat-box">
+      <div class="stat-label">🎯 Stake</div>
+      <div class="stat-value gold" id="stake">0.35</div>
+    </div>
+    <div class="stat-box">
+      <div class="stat-label">🏆 Winrate</div>
+      <div class="stat-value" id="wr">0%</div>
+    </div>
+  </div>
 
-<div class="log" id="log"></div>
+  <div class="protection-bar">
+    <div class="protection-fill" id="protectionBar"></div>
+  </div>
+
+  <div class="market-bar">
+    <span class="market-label">MERCADOS</span>
+    <div class="market-pills">
+      <div class="market-pill" id="pill-R_25">R_25</div>
+      <div class="market-pill" id="pill-R_50">R_50</div>
+      <div class="market-pill" id="pill-R_75">R_75</div>
+    </div>
+  </div>
+
+  <div class="mode-bar">
+    <span id="modeInfo">Esperando señal...</span>
+    <span class="mode-tag" id="modeTag">IDLE</span>
+  </div>
+
+  <div class="log-wrap">
+    <div class="log" id="log"></div>
+  </div>
+
+  <div class="footer">STOP LOSS 3% · TAKE PROFIT 6% · PAUSA AUTO</div>
 </div>
 
 <script>
-const TOKEN = "e1lRgxNoxWwBkzx";
-const SYMBOL = "R_50";
+// ══════════════════════════════════════════
+// CONFIG — Cambia solo tu TOKEN
+// ══════════════════════════════════════════
+const TOKEN   = "e1lRgxNoxWwBkzx";
+const MARKETS = ["R_25", "R_50", "R_75"];
 
-let ws, balance=0, stake=0.35;
-let running=false, wins=0, total=0;
-let profit=0, winStreak=0, lossStreak=0;
-let priceHistory=[], lastTrade=0;
-let pauseUntil=0;
+// ══════════════════════════════════════════
+// ESTADO GLOBAL
+// ══════════════════════════════════════════
+let ws;
+let balance = 0, initialBalance = 0;
+let stake = 0.35;
+let running = false;
+let wins = 0, total = 0, profit = 0;
+let winStreak = 0, lossStreak = 0;
+let lastTrade = 0, pauseUntil = 0;
+let activeMarket = null;
+let histories = { R_25: [], R_50: [], R_75: [] };
 
-// 🔹 LOG
-function log(msg){
- let el=document.getElementById("log");
- el.innerHTML += msg+"<br>";
- el.scrollTop=el.scrollHeight;
+// ══════════════════════════════════════════
+// LOG
+// ══════════════════════════════════════════
+function log(msg, type = "info") {
+  const el = document.getElementById("log");
+  const now = new Date();
+  const time = now.toTimeString().slice(0, 8);
+  const cls = { win: "log-win", loss: "log-loss", info: "log-info", warn: "log-warn", stop: "log-stop" }[type] || "log-info";
+  el.innerHTML += `<div class="log-entry"><span class="log-time">${time}</span><span class="${cls}">${msg}</span></div>`;
+  el.scrollTop = el.scrollHeight;
 }
 
-// 🔹 UI
-function updateUI(){
- document.getElementById("balance").innerText=balance.toFixed(2);
- document.getElementById("profit").innerText=profit.toFixed(2);
- document.getElementById("stake").innerText=stake.toFixed(2);
- let wr = total? (wins/total*100).toFixed(1):0;
- document.getElementById("wr").innerText=wr+"%";
-}
+// ══════════════════════════════════════════
+// UI
+// ══════════════════════════════════════════
+function updateUI() {
+  const wr = total ? (wins / total * 100).toFixed(1) : 0;
 
-// 🔹 STAKE INTELIGENTE
-function adjustStake(){
- let risk=0.004;
+  document.getElementById("balance").innerText = balance.toFixed(2);
 
- if(lossStreak>=2) risk=0.0025;
- if(winStreak>=3) risk=0.006;
+  const profitEl = document.getElementById("profit");
+  profitEl.innerText = (profit >= 0 ? "+" : "") + profit.toFixed(2);
+  profitEl.className = "stat-value " + (profit > 0 ? "positive" : profit < 0 ? "negative" : "");
 
- let calc=balance*risk;
+  document.getElementById("stake").innerText = stake.toFixed(2);
 
- if(calc>1) calc=1;
- if(calc<0.35) calc=0.35;
+  const wrEl = document.getElementById("wr");
+  wrEl.innerText = wr + "%";
+  wrEl.className = "stat-value " + (wr >= 52.6 ? "positive" : wr > 0 ? "gold" : "");
 
- stake=Math.floor(calc*100)/100;
-}
-
-// 🔹 FILTRO AVANZADO
-function shouldTrade(z, trend, std){
-
- if(std < 0.003) return false;   // mercado muerto
- if(std > 0.018) return false;   // mercado loco
-
- if(Math.abs(z) < 1.6) return false; // señal débil
-
- if(z > 0 && trend < 0) return false;
- if(z < 0 && trend > 0) return false;
-
- return true;
-}
-
-// 🔹 BOT
-function startBot(){
- ws = new WebSocket("wss://ws.binaryws.com/websockets/v3?app_id=1089");
-
- ws.onopen=()=> ws.send(JSON.stringify({authorize:TOKEN}));
-
- ws.onmessage=(e)=>{
-  let d=JSON.parse(e.data);
-
-  if(d.authorize){
-   running=true;
-   document.getElementById("status").innerText="🟢 ON";
-   ws.send(JSON.stringify({ticks:SYMBOL, subscribe:1}));
-   ws.send(JSON.stringify({balance:1}));
+  // Barra de protección (muestra qué tan cerca está del stop loss)
+  if (initialBalance > 0) {
+    const maxLoss = initialBalance * 0.03;
+    const pct = Math.max(0, Math.min(100, ((maxLoss + profit) / maxLoss) * 100));
+    const bar = document.getElementById("protectionBar");
+    bar.style.width = pct + "%";
+    bar.style.background = pct > 60 ? "linear-gradient(90deg,#00ff88,#00cfff)"
+                         : pct > 30 ? "linear-gradient(90deg,#ffd700,#ff9800)"
+                         : "linear-gradient(90deg,#ff3355,#c62828)";
   }
 
-  if(d.balance){
-   balance=d.balance.balance;
-   updateUI();
-  }
+  // Pills de mercado
+  MARKETS.forEach(m => {
+    const pill = document.getElementById("pill-" + m);
+    pill.className = "market-pill" + (m === activeMarket ? " active" : "");
+  });
+}
 
-  if(d.tick && running){
-   let now=Date.now();
+function setStatus(on) {
+  const pill = document.getElementById("statusPill");
+  const text = document.getElementById("statusText");
+  pill.className = "status-pill" + (on ? " on" : "");
+  text.innerText = on ? "ONLINE" : "OFFLINE";
+}
 
-   if(now < pauseUntil) return;
+// ══════════════════════════════════════════
+// AJUSTE DE STAKE — Conservador progresivo
+// ══════════════════════════════════════════
+function adjustStake() {
+  let risk = 0.003;
+  if (lossStreak >= 2) risk = 0.002;   // reducir en rachas negativas
+  if (winStreak  >= 3) risk = 0.005;   // crecer moderado en rachas positivas
 
-   let price=d.tick.quote;
-   priceHistory.push(price);
-   if(priceHistory.length>40) priceHistory.shift();
-   if(priceHistory.length<25) return;
+  let calc = balance * risk;
+  if (calc > 1)    calc = 1;
+  if (calc < 0.35) calc = 0.35;
+  stake = Math.floor(calc * 100) / 100;
+}
 
-   let returns=[];
-   for(let i=1;i<priceHistory.length;i++){
-    returns.push(priceHistory[i]-priceHistory[i-1]);
-   }
+// ══════════════════════════════════════════
+// SELECCIÓN DE MEJOR MERCADO (Bot 2)
+// ══════════════════════════════════════════
+function getBestMarket() {
+  let best = null, bestScore = 0;
 
-   let mean=returns.reduce((a,b)=>a+b,0)/returns.length;
-   let std=Math.sqrt(returns.map(x=>(x-mean)**2).reduce((a,b)=>a+b,0)/returns.length);
-   let last=returns[returns.length-1];
-   let z=(last-mean)/std;
+  for (const m of MARKETS) {
+    const p = histories[m];
+    if (p.length < 25) continue;
 
-   let trend = priceHistory[priceHistory.length-1] - priceHistory[priceHistory.length-8];
+    const returns = [];
+    for (let i = 1; i < p.length; i++) returns.push(p[i] - p[i-1]);
 
-   if(now-lastTrade<20000) return;
+    const mean = returns.reduce((a,b) => a+b, 0) / returns.length;
+    const std  = Math.sqrt(returns.map(x => (x-mean)**2).reduce((a,b) => a+b, 0) / returns.length);
 
-   if(!shouldTrade(z, trend, std)) return;
-
-   let decision = z>0 ? "CALL" : "PUT";
-
-   adjustStake();
-
-   ws.send(JSON.stringify({
-    buy:1,
-    price:stake,
-    parameters:{
-     amount:stake,
-     basis:"stake",
-     contract_type:decision,
-     currency:"USD",
-     duration:5,
-     duration_unit:"t",
-     symbol:SYMBOL
+    // Preferimos mercados con volatilidad en rango óptimo
+    if (std >= 0.003 && std <= 0.018) {
+      // Score = cuánto se acerca al centro del rango óptimo
+      const center = (0.003 + 0.018) / 2;
+      const score = 1 / (1 + Math.abs(std - center));
+      if (score > bestScore) {
+        bestScore = score;
+        best = m;
+      }
     }
-   }));
+  }
+  return best;
+}
 
-   log("📊 "+decision+" $"+stake+" | z:"+z.toFixed(2));
-   lastTrade=now;
+// ══════════════════════════════════════════
+// SEÑAL HÍBRIDA (Bot 3 mejorado)
+// ══════════════════════════════════════════
+function getSignal(prices) {
+  const returns = [];
+  for (let i = 1; i < prices.length; i++) returns.push(prices[i] - prices[i-1]);
+
+  const mean = returns.reduce((a,b) => a+b, 0) / returns.length;
+  const variance = returns.map(x => (x-mean)**2).reduce((a,b) => a+b, 0) / returns.length;
+  const std = Math.sqrt(variance);
+  const last = returns[returns.length-1];
+  const z = std > 0 ? (last - mean) / std : 0;
+
+  // Tendencia corta (8 velas) y larga (15 velas)
+  const trendShort = prices[prices.length-1] - prices[prices.length-8];
+  const trendLong  = prices[prices.length-1] - prices[prices.length-15];
+
+  // FILTRO DE VOLATILIDAD
+  if (std < 0.003 || std > 0.018) return null;
+
+  // FILTRO Z-SCORE — umbral alto del Bot 3
+  if (Math.abs(z) < 1.6) return null;
+
+  // FILTRO DE COHERENCIA — Z y tendencia corta deben coincidir
+  if (z > 0 && trendShort < 0) return null;
+  if (z < 0 && trendShort > 0) return null;
+
+  // CONFIRMACIÓN ADICIONAL — tendencia larga no debe contradecir
+  if (z > 0 && trendLong < -0.01) return null;
+  if (z < 0 && trendLong > 0.01)  return null;
+
+  // SEÑAL SNIPER corregida (Bug Bot 1 fix)
+  const l = prices.length;
+  const a = prices[l-1], b = prices[l-2], c = prices[l-3];
+  let sniperConfirm = null;
+  if (c > b && b > a) sniperConfirm = "PUT";
+  if (c < b && b < a) sniperConfirm = "CALL";
+
+  // Decisión final: Z-score + confirmación sniper opcional
+  const zDecision = z > 0 ? "CALL" : "PUT";
+
+  if (sniperConfirm && sniperConfirm !== zDecision) return null; // contradicción → no operar
+
+  return { signal: zDecision, z: z.toFixed(2), std: std.toFixed(5), confirmed: !!sniperConfirm };
+}
+
+// ══════════════════════════════════════════
+// MOTOR PRINCIPAL — Se ejecuta en cada tick
+// ══════════════════════════════════════════
+function onTick() {
+  const now = Date.now();
+
+  // ¿Estamos en pausa?
+  if (now < pauseUntil) {
+    const secs = Math.ceil((pauseUntil - now) / 1000);
+    document.getElementById("modeInfo").innerText = `⏸ Pausa activa — ${secs}s restantes`;
+    document.getElementById("modeTag").innerText = "PAUSA";
+    return;
   }
 
-  if(d.buy){
-   ws.send(JSON.stringify({
-    proposal_open_contract:1,
-    contract_id:d.buy.contract_id,
-    subscribe:1
-   }));
+  // Cooldown entre operaciones (20 seg)
+  if (now - lastTrade < 20000) return;
+
+  // Seleccionar mejor mercado
+  const market = getBestMarket();
+  if (!market) {
+    document.getElementById("modeInfo").innerText = "Esperando datos suficientes...";
+    document.getElementById("modeTag").innerText = "WAIT";
+    return;
   }
 
-  if(d.proposal_open_contract && d.proposal_open_contract.is_sold){
-   let pnl=parseFloat(d.proposal_open_contract.profit);
+  activeMarket = market;
+  const prices = histories[market];
+  if (prices.length < 25) return;
 
-   profit+=pnl;
-   total++;
+  // Obtener señal
+  const result = getSignal(prices);
+  if (!result) {
+    document.getElementById("modeInfo").innerText = `${market} — sin señal válida`;
+    document.getElementById("modeTag").innerText = "SCAN";
+    updateUI();
+    return;
+  }
 
-   if(pnl>0){
+  const { signal, z, std, confirmed } = result;
+
+  adjustStake();
+
+  // Enviar orden
+  ws.send(JSON.stringify({
+    buy: 1,
+    price: stake,
+    parameters: {
+      amount: stake,
+      basis: "stake",
+      contract_type: signal,
+      currency: "USD",
+      duration: 5,
+      duration_unit: "t",
+      symbol: market
+    }
+  }));
+
+  const confirmTag = confirmed ? " ⚡SNIPER" : "";
+  log(`${signal} ${market} $${stake} | z:${z} std:${std}${confirmTag}`, "info");
+  document.getElementById("modeInfo").innerText = `${signal} en ${market} — z:${z}`;
+  document.getElementById("modeTag").innerText = confirmed ? "SNIPER" : "TREND";
+  lastTrade = now;
+  updateUI();
+}
+
+// ══════════════════════════════════════════
+// RESULTADO DE OPERACIÓN
+// ══════════════════════════════════════════
+function onResult(pnl) {
+  profit += pnl;
+  total++;
+
+  if (pnl > 0) {
     wins++;
     winStreak++;
-    lossStreak=0;
-    log("✅ +"+pnl);
-   } else {
+    lossStreak = 0;
+    log(`✅ WIN +${pnl.toFixed(2)} USD`, "win");
+  } else {
     lossStreak++;
-    winStreak=0;
-    log("❌ "+pnl);
-   }
-
-   updateUI();
-
-   // 🔴 PROTECCIONES NIVEL DIOS
-   if(lossStreak>=3){
-    pauseUntil = Date.now() + 60000; // pausa 1 min
-    log("⏸️ Pausa por pérdidas");
-   }
-
-   if(profit <= -(balance*0.03)){
-    log("🛑 STOP LOSS");
-    stopBot();
-   }
-
-   if(profit >= (balance*0.05)){
-    log("🎯 TAKE PROFIT");
-    stopBot();
-   }
+    winStreak = 0;
+    log(`❌ LOSS ${pnl.toFixed(2)} USD`, "loss");
   }
- };
+
+  updateUI();
+
+  // PROTECCIÓN: pausa tras 3 pérdidas consecutivas
+  if (lossStreak >= 3) {
+    pauseUntil = Date.now() + 90000;
+    log("⏸ Pausa 90s por racha negativa", "warn");
+  }
+
+  // STOP LOSS: -3% del balance inicial
+  if (profit <= -(initialBalance * 0.03)) {
+    log("🛑 STOP LOSS alcanzado — sesión cerrada", "stop");
+    stopBot();
+    return;
+  }
+
+  // TAKE PROFIT: +6% del balance inicial
+  if (profit >= (initialBalance * 0.06)) {
+    log("🎯 TAKE PROFIT alcanzado — sesión cerrada", "win");
+    stopBot();
+    return;
+  }
 }
 
-function stopBot(){
- if(ws) ws.close();
- running=false;
- document.getElementById("status").innerText="🔴 OFF";
- log("Bot detenido");
+// ══════════════════════════════════════════
+// WEBSOCKET
+// ══════════════════════════════════════════
+function startBot() {
+  if (running) return;
+
+  // Reset de estado por sesión
+  wins = 0; total = 0; profit = 0;
+  winStreak = 0; lossStreak = 0;
+  lastTrade = 0; pauseUntil = 0;
+  activeMarket = null;
+  histories = { R_25: [], R_50: [], R_75: [] };
+
+  ws = new WebSocket("wss://ws.binaryws.com/websockets/v3?app_id=1089");
+
+  ws.onopen = () => {
+    ws.send(JSON.stringify({ authorize: TOKEN }));
+  };
+
+  ws.onmessage = (e) => {
+    const d = JSON.parse(e.data);
+
+    // — Autorización
+    if (d.authorize) {
+      running = true;
+      setStatus(true);
+      initialBalance = d.authorize.balance;
+      balance = initialBalance;
+      log("🔐 Conexión autorizada", "info");
+      log(`💰 Balance inicial: $${balance.toFixed(2)}`, "info");
+      updateUI();
+
+      // Suscribir todos los mercados
+      MARKETS.forEach(m => ws.send(JSON.stringify({ ticks: m, subscribe: 1 })));
+      ws.send(JSON.stringify({ balance: 1 }));
+    }
+
+    // — Balance en tiempo real
+    if (d.balance) {
+      balance = d.balance.balance;
+      updateUI();
+    }
+
+    // — Tick de precio
+    if (d.tick) {
+      const m = d.tick.symbol;
+      if (histories[m] !== undefined) {
+        histories[m].push(d.tick.quote);
+        if (histories[m].length > 50) histories[m].shift();
+      }
+      if (running) onTick();
+    }
+
+    // — Compra ejecutada → suscribir al contrato
+    if (d.buy) {
+      ws.send(JSON.stringify({
+        proposal_open_contract: 1,
+        contract_id: d.buy.contract_id,
+        subscribe: 1
+      }));
+    }
+
+    // — Resultado del contrato
+    if (d.proposal_open_contract && d.proposal_open_contract.is_sold) {
+      const pnl = parseFloat(d.proposal_open_contract.profit);
+      onResult(pnl);
+    }
+
+    // — Errores de API
+    if (d.error) {
+      log(`⚠ API Error: ${d.error.message}`, "warn");
+    }
+  };
+
+  ws.onerror = () => log("❌ Error de conexión WebSocket", "stop");
+  ws.onclose = () => {
+    if (running) {
+      running = false;
+      setStatus(false);
+      log("🔌 Conexión cerrada", "warn");
+    }
+  };
+}
+
+function stopBot() {
+  if (ws) ws.close();
+  running = false;
+  setStatus(false);
+  activeMarket = null;
+  updateUI();
+  log("⏹ Bot detenido", "warn");
+  document.getElementById("modeInfo").innerText = "Esperando señal...";
+  document.getElementById("modeTag").innerText = "IDLE";
 }
 </script>
 
