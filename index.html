@@ -175,7 +175,7 @@ body {
     <!-- HORARIO INTELIGENTE -->
     <div class="time-badge">
       <div>
-        <div class="time-badge-left">HORA GMT</div>
+        <div class="time-badge-left">COLOMBIA</div>
         <div class="time-badge-val" id="gmtTime">--:--</div>
       </div>
       <div>
@@ -261,26 +261,27 @@ const CFG = {
 };
 
 // ══════════════════════════════════════════════
-// HORARIO INTELIGENTE GMT
-// Basado en investigación: mejores ventanas para
-// synthetics son 06:00-12:00 GMT y 18:00-00:00 GMT
-// Pico especial R_50: 11:00 GMT y 23:00 GMT
+// HORARIO INTELIGENTE — COLOMBIA (GMT-5)
+// 🟢 ÓPTIMA:  1:00AM–7:00AM  y  1:00PM–7:00PM
+// 🟡 NORMAL:  7:00AM–10:00AM y  8:00PM–1:00AM
+// 🔴 BAJA:   10:00AM–1:00PM  y  7:00PM–8:00PM
 // ══════════════════════════════════════════════
 function getSession() {
   const now = new Date();
-  const h = now.getUTCHours();
-  const m = now.getUTCMinutes();
+  const col = new Date(now.getTime() - 5 * 60 * 60 * 1000);
+  const h = col.getUTCHours();
+  const m = col.getUTCMinutes();
   const dec = h + m/60;
 
-  // 🟢 SESIÓN ÓPTIMA — máxima efectividad
-  if ((dec >= 6 && dec < 12) || (dec >= 18 && dec < 24))
-    return { name:"ÓPTIMA", level:"hot", trade:true,  z:1.65 };
+  // 🟢 ÓPTIMA: 1:00AM–7:00AM y 1:00PM–7:00PM
+  if ((dec >= 1 && dec < 7) || (dec >= 13 && dec < 19))
+    return { name:"ÓPTIMA", level:"hot",  trade:true,  z:1.65 };
 
-  // 🟡 SESIÓN NORMAL — operar con más cuidado
-  if ((dec >= 12 && dec < 15) || (dec >= 1 && dec < 6))
+  // 🟡 NORMAL: 7:00AM–10:00AM y 8:00PM–1:00AM
+  if ((dec >= 7 && dec < 10) || (dec >= 20 && dec < 24) || dec < 1)
     return { name:"NORMAL", level:"warm", trade:true,  z:1.80 };
 
-  // 🔴 SESIÓN BAJA — no operar
+  // 🔴 BAJA: 10:00AM–1:00PM y 7:00PM–8:00PM
   return   { name:"BAJA",   level:"cold", trade:false, z:99   };
 }
 
@@ -509,9 +510,12 @@ function updateUI(){
 
 function updateClock(){
   const now=new Date();
-  const hh=String(now.getUTCHours()).padStart(2,"0");
-  const mm=String(now.getUTCMinutes()).padStart(2,"0");
-  document.getElementById("gmtTime").innerText=`${hh}:${mm}`;
+  const col=new Date(now.getTime()-5*60*60*1000);
+  const rawH=col.getUTCHours();
+  const mm=String(col.getUTCMinutes()).padStart(2,"0");
+  const ampm=rawH<12?"AM":"PM";
+  const h12=rawH%12||12;
+  document.getElementById("gmtTime").innerText=`${h12}:${mm} ${ampm}`;
   const s=getSession();
   document.getElementById("sessionName").innerText=s.name;
   const pill=document.getElementById("sessionPill");
