@@ -297,7 +297,7 @@ body{
     <div class="hdr-top">
       <div class="brand">
         <div class="brand-name">⚡ BOT APEX</div>
-        <div class="brand-sub">PATTERN MASTER v11 · R_50 · 12 IND · 3T</div>
+        <div class="brand-sub">PATTERN MASTER v11.1 · R_50 · 5 CORE + 7 EXTRA · 3T</div>
       </div>
       <div class="badge" id="badge"><span class="dot"></span><span id="badgeText">OFFLINE</span></div>
     </div>
@@ -355,32 +355,36 @@ body{
     <span class="mode-chip" id="modeChip">IDLE</span>
   </div>
 
-  <!-- INDICADORES BASE (8) -->
+  <!-- INDICADORES CORE (5 obligatorios) -->
   <div class="ind-section-lbl">
-    <span>INDICADORES BASE</span>
-    <span id="baseScore" style="color:var(--g1);">0/8</span>
+    <span>⭐ CORE — OBLIGATORIOS</span>
+    <span id="baseScore" style="color:var(--g1);">0/5</span>
   </div>
   <div class="ind-grid">
     <div class="ind" id="ind-vol">  <div class="ind-icon">📊</div><div class="ind-name">VOLAT</div></div>
     <div class="ind" id="ind-z">    <div class="ind-icon">📐</div><div class="ind-name">Z-SCORE</div></div>
     <div class="ind" id="ind-slope"><div class="ind-icon">📉</div><div class="ind-name">SLOPE</div></div>
     <div class="ind" id="ind-rsi">  <div class="ind-icon">⚖️</div><div class="ind-name">RSI</div></div>
-    <div class="ind" id="ind-burst"><div class="ind-icon">⚡</div><div class="ind-name">BURST</div></div>
-    <div class="ind" id="ind-atr">  <div class="ind-icon">💪</div><div class="ind-name">ATR</div></div>
-    <div class="ind" id="ind-bband"><div class="ind-icon">🎯</div><div class="ind-name">BBAND</div></div>
     <div class="ind" id="ind-macd"> <div class="ind-icon">〽️</div><div class="ind-name">MACD</div></div>
+    <div class="ind" style="opacity:.3;border-style:dashed;"><div class="ind-icon">—</div><div class="ind-name">—</div></div>
+    <div class="ind" style="opacity:.3;border-style:dashed;"><div class="ind-icon">—</div><div class="ind-name">—</div></div>
+    <div class="ind" style="opacity:.3;border-style:dashed;"><div class="ind-icon">—</div><div class="ind-name">—</div></div>
   </div>
 
-  <!-- PATRONES NUEVOS (4) -->
+  <!-- INDICADORES EXTRA (7 confirmadores) -->
   <div class="ind-section-lbl">
-    <span>PATRONES R_50</span>
-    <span id="patScore" style="color:var(--pink);">0/4</span>
+    <span>🔍 EXTRA — CONFIRMADORES</span>
+    <span id="patScore" style="color:var(--pink);">0/7</span>
   </div>
   <div class="ind-grid" style="padding-bottom:10px;">
+    <div class="ind" id="ind-burst">  <div class="ind-icon">⚡</div><div class="ind-name">BURST</div></div>
+    <div class="ind" id="ind-atr">    <div class="ind-icon">💪</div><div class="ind-name">ATR</div></div>
+    <div class="ind" id="ind-bband">  <div class="ind-icon">🎯</div><div class="ind-name">BBAND</div></div>
     <div class="ind" id="ind-vcp">    <div class="ind-icon">🌀</div><div class="ind-name">VCP</div></div>
     <div class="ind" id="ind-squeeze"><div class="ind-icon">🔥</div><div class="ind-name">SQUEEZE</div></div>
     <div class="ind" id="ind-vshape"> <div class="ind-icon">🔻</div><div class="ind-name">V-SHAPE</div></div>
     <div class="ind" id="ind-diverg"> <div class="ind-icon">🔀</div><div class="ind-name">DIVERG</div></div>
+    <div class="ind" style="opacity:.3;border-style:dashed;"><div class="ind-icon">—</div><div class="ind-name">—</div></div>
   </div>
 
   <!-- SCORE TOTAL -->
@@ -403,7 +407,7 @@ body{
 
   <div class="ftr">
     <span id="ftrLeft">TP $5 · SL $3</span>
-    <span>12 PATRONES · PAROLI · 3T</span>
+    <span>5 CORE + 7 EXTRA · PAROLI · 3T</span>
     <span>R_50</span>
   </div>
 </div>
@@ -417,22 +421,20 @@ const SYMBOL = "R_50";
 
 const CFG = {
   TICKS:      3,
-  COOLDOWN:   18000,
-  PAUSE_MS:   90000,
-  MIN_BARS:   40,
-  HISTORY:    150,
-  VOL_MIN:    0.004,
-  VOL_MAX:    0.016,
-  Z_MIN:      1.65,
-  RSI_HI:     62,
-  RSI_LO:     38,
-  // Mínimos para operar:
-  // Base: mínimo 6/8
-  // Patrones: mínimo 2/4
-  // Total mínimo: 8/12
-  MIN_BASE:   6,
-  MIN_PAT:    2,
-  MIN_TOTAL:  8,
+  COOLDOWN:   10000,  // ⚡ 10s entre ops (antes 18s)
+  PAUSE_MS:   60000,  // ⚡ pausa 60s (antes 90s)
+  MIN_BARS:   25,     // ⚡ arranca con 25 ticks (antes 40)
+  HISTORY:    100,    // historial reducido (antes 150)
+  VOL_MIN:    0.003,  // rango más amplio
+  VOL_MAX:    0.018,
+  Z_MIN:      1.55,   // umbral más accesible en sesión óptima
+  RSI_HI:     65,
+  RSI_LO:     35,
+  // NUEVA LÓGICA DE SCORING:
+  // 5 CORE obligatorios (Z, VOL, SLOPE, RSI, MACD) — los más efectivos
+  // 7 EXTRA confirmadores — necesita mínimo 2
+  MIN_CORE:   4,      // mínimo 4/5 core
+  MIN_EXTRA:  2,      // mínimo 2/7 extra
   MAX_OPS:    20,
 };
 
@@ -476,7 +478,7 @@ function updateSummary(){
     `📋 Stake: $${s.toFixed(2)} → $${(s*2).toFixed(2)} → $${(s*4).toFixed(2)}\n`+
     `🎯 TP: +$${tp}  🛡 SL: -$${sl}\n`+
     `~${wins} wins para meta · Riesgo ciclo: $${(s+s*2+s*4).toFixed(2)}\n`+
-    `🔍 Mínimo 8/12 indicadores para operar`;
+    `🔍 Core: 4/5 mínimo · Extra: 2/7 mínimo · Total: 6+/12`;
 }
 
 function launchBot(){
@@ -672,9 +674,12 @@ function calcMACDDivergence(p,dir){
 }
 
 // ══════════════════════════════════════════════
-// MOTOR DE SEÑAL — 12 INDICADORES TOTAL
-// Base: 8 · Patrones: 4
-// Necesita: ≥6 base + ≥2 patrones + macro ok
+// MOTOR DE SEÑAL — NUEVA LÓGICA CORE + EXTRA
+// 5 CORE (los más efectivos para R_50):
+//   Z-SCORE, VOLATILIDAD, SLOPE, RSI, MACD
+// 7 EXTRA (confirmadores adicionales):
+//   BURST, ATR, BBAND, VCP, SQUEEZE, V-SHAPE, DIVERGENCIA
+// Necesita: ≥4/5 core + ≥2/7 extra + macro ok
 // ══════════════════════════════════════════════
 function getSignal(zThresh){
   if(prices.length<CFG.MIN_BARS) return null;
@@ -686,91 +691,108 @@ function getSignal(zThresh){
   const z=std>0?(last-mean)/std:0;
   const dir=z>0?1:-1;
 
-  // ── INDICADORES BASE (8) ──
-  const f1 = std>=CFG.VOL_MIN && std<=CFG.VOL_MAX;
-  const f2 = Math.abs(z)>=zThresh;
-  const f3 = Math.sign(calcSlope(prices.slice(-8)))===dir && Math.sign(calcSlope(prices.slice(-20)))===dir;
+  // ══ 5 CORE — los más fiables estadísticamente para R_50 ══
+  // C1: Volatilidad en rango óptimo (el filtro más importante)
+  const c1 = std>=CFG.VOL_MIN && std<=CFG.VOL_MAX;
+
+  // C2: Z-Score fuerte — señal estadística principal
+  const c2 = Math.abs(z)>=zThresh;
+
+  // C3: Slope doble — tendencia real confirmada
+  const c3 = Math.sign(calcSlope(prices.slice(-8)))===dir &&
+             Math.sign(calcSlope(prices.slice(-15)))===dir;
+
+  // C4: RSI no en extremo opuesto
   const rsiVal=calcRSI(prices);
-  const f4 = z>0?rsiVal<CFG.RSI_HI:rsiVal>CFG.RSI_LO;
-  const burst=calcBurst(prices);
-  const f5 = burst.detected && burst.dir===dir;
-  const atr=calcATR(prices);
-  const f6 = atr>0 && Math.abs(last)>=atr*0.8;
-  const bb=calcBollinger(prices);
-  const f7 = z>0?bb.pct>0.55:bb.pct<0.45;
+  const c4 = z>0 ? rsiVal<CFG.RSI_HI : rsiVal>CFG.RSI_LO;
+
+  // C5: MACD histograma confirma dirección
   const macd=calcMACD(prices);
-  const f8 = z>0?macd.hist>0:macd.hist<0;
+  const c5 = z>0 ? macd.hist>0 : macd.hist<0;
 
-  // ── PATRONES R_50 (4) ──
-  const p1 = calcVCP(prices);
+  const coreArr=[c1,c2,c3,c4,c5];
+  const coreScore=coreArr.filter(Boolean).length;
+
+  // ══ 7 EXTRA — confirmadores adicionales ══
+  const burst=calcBurst(prices);
+  const e1 = burst.detected && burst.dir===dir;     // BURST
+
+  const atr=calcATR(prices);
+  const e2 = atr>0 && Math.abs(last)>=atr*0.75;    // ATR (umbral bajado)
+
+  const bb=calcBollinger(prices);
+  const e3 = z>0 ? bb.pct>0.52 : bb.pct<0.48;      // BBAND (más permisivo)
+
+  const p1=calcVCP(prices);
+  const e4 = p1;                                     // VCP
+
   const squeeze=calcBBSqueeze(prices);
-  const p2 = squeeze.squeeze && squeeze.dir===dir;
-  const p3 = calcVShape(prices,dir);
-  const p4 = calcMACDDivergence(prices,dir);
+  const e5 = squeeze.squeeze && squeeze.dir===dir;  // SQUEEZE
 
-  // ── MACRO ──
+  const e6 = calcVShape(prices,dir);                // V-SHAPE
+
+  const e7 = calcMACDDivergence(prices,dir);        // DIVERGENCIA
+
+  const extraArr=[e1,e2,e3,e4,e5,e6,e7];
+  const extraScore=extraArr.filter(Boolean).length;
+
+  const totalScore=coreScore+extraScore;
+  const conf=Math.round((totalScore/12)*100);
+
+  // ── MACRO (no bloquea, solo penaliza) ──
   const macro=calcMacro(prices);
   const macroOk=macro.dir===0||macro.dir===dir;
 
-  // ── SCORING ──
-  const baseArr=[f1,f2,f3,f4,f5,f6,f7,f8];
-  const patArr=[p1,p2,p3,p4];
-  const baseScore=baseArr.filter(Boolean).length;
-  const patScore=patArr.filter(Boolean).length;
-  const totalScore=baseScore+patScore;
-  const conf=Math.round((totalScore/12)*100);
+  // Actualizar UI — CORE
+  setInd("ind-vol",   c1, false, "");
+  setInd("ind-z",     c2, false, "");
+  setInd("ind-slope", c3, false, "");
+  setInd("ind-rsi",   c4, false, "");
+  setInd("ind-macd",  c5, false, "");
 
-  // Actualizar UI indicadores base
-  setInd("ind-vol",   f1, false, "");
-  setInd("ind-z",     f2, false, "");
-  setInd("ind-slope", f3, false, "");
-  setInd("ind-rsi",   f4, false, "");
-  setInd("ind-burst", f5, f5,   "burst-ok");
-  setInd("ind-atr",   f6, false, "");
-  setInd("ind-bband", f7, false, "");
-  setInd("ind-macd",  f8, false, "");
+  // Actualizar UI — EXTRA (reusa slots disponibles)
+  setInd("ind-burst",  e1, e1,  "burst-ok");
+  setInd("ind-atr",    e2, false, "");
+  setInd("ind-bband",  e3, false, "");
+  setInd("ind-vcp",    e4, false, "");
+  setInd("ind-squeeze",e5, false, e5?"squeeze-ok":"");
+  setInd("ind-vshape", e6, false, e6?"vshape-ok":"");
+  setInd("ind-diverg", e7, false, "");
 
-  // Actualizar UI patrones
-  setInd("ind-vcp",    p1, false, "");
-  setInd("ind-squeeze",p2, false, p2?"squeeze-ok":"");
-  setInd("ind-vshape", p3, false, p3?"vshape-ok":"");
-  setInd("ind-diverg", p4, false, "");
-
-  // Score bar
-  updateScoreBar(baseScore, patScore, totalScore);
+  updateScoreBar(coreScore, extraScore, totalScore);
   updateConf(conf);
-  document.getElementById("baseScore").innerText=`${baseScore}/8`;
-  document.getElementById("patScore").innerText=`${patScore}/4`;
+  document.getElementById("baseScore").innerText=`${coreScore}/5`;
+  document.getElementById("patScore").innerText=`${extraScore}/7`;
 
-  // ── DECISIÓN ──
-  if(baseScore<CFG.MIN_BASE || patScore<CFG.MIN_PAT || totalScore<CFG.MIN_TOTAL || !macroOk){
+  // ── DECISIÓN — más rápida ──
+  if(coreScore<CFG.MIN_CORE || extraScore<CFG.MIN_EXTRA || !macroOk){
     const failed=[];
-    if(!f1)failed.push("vol");if(!f2)failed.push(`z:${z.toFixed(2)}`);
-    if(!f3)failed.push("slope");if(!f4)failed.push(`rsi:${rsiVal.toFixed(0)}`);
-    if(!f5)failed.push("burst");if(!f6)failed.push("atr");
-    if(!f7)failed.push("bband");if(!f8)failed.push("macd");
-    if(!p1)failed.push("vcp");if(!p2)failed.push("squeeze");
-    if(!p3)failed.push("v-shape");if(!p4)failed.push("diverg");
+    if(!c1)failed.push("vol");
+    if(!c2)failed.push(`z:${z.toFixed(2)}`);
+    if(!c3)failed.push("slope");
+    if(!c4)failed.push(`rsi:${rsiVal.toFixed(0)}`);
+    if(!c5)failed.push("macd");
+    if(extraScore<CFG.MIN_EXTRA)failed.push(`extra:${extraScore}/7`);
     if(!macroOk)failed.push("macro");
     invalidated++;
     document.getElementById("invCount").innerText=invalidated;
-    if(totalScore>=7) log(`— inv [${failed.join(",")}] score:${totalScore}/12`,"inv");
+    // Solo loguea si estuvo cerca (6+ de 12)
+    if(totalScore>=6) log(`— inv [${failed.join(",")}] ${totalScore}/12`,"inv");
     return null;
   }
 
-  // Determinar tipo de patrón dominante
   let patternType="TREND";
-  if(f5)          patternType="BURST";
-  else if(p3)     patternType="V-SHAPE";
-  else if(p2)     patternType="SQUEEZE";
+  if(e1) patternType="BURST";
+  else if(e6) patternType="V-SHAPE";
+  else if(e5) patternType="SQUEEZE";
 
   return {
     signal: z>0?"CALL":"PUT",
     z: z.toFixed(2),
     rsi: rsiVal.toFixed(0),
-    conf, totalScore,
+    conf, totalScore, coreScore, extraScore,
     patternType,
-    isBurst:f5, isVShape:p3, isSqueeze:p2
+    isBurst:e1, isVShape:e6, isSqueeze:e5
   };
 }
 
@@ -938,7 +960,7 @@ function startBot(){
       log(`🔐 Conectado · $${balance.toFixed(2)}`,"i");
       log(`⚡ Paroli: $${BASE_STAKE.toFixed(2)} → $${(BASE_STAKE*2).toFixed(2)} → $${(BASE_STAKE*4).toFixed(2)}`,"i");
       log(`🎯 Meta: +$${DAILY_GOAL} · Stop: -$${DAILY_STOP}`,"i");
-      log(`🔍 Mínimo requerido: ${CFG.MIN_BASE}/8 base + ${CFG.MIN_PAT}/4 patrones`,"i");
+      log(`🔍 Core 4/5 + Extra 2/7 → entrada ejecutada`,"i");
       ws.send(JSON.stringify({ticks:SYMBOL,subscribe:1}));
       ws.send(JSON.stringify({balance:1}));
       updateUI();
