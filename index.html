@@ -4,165 +4,21 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>BOT APEX v12</title>
-<style>/* CSS MINIFICADO */</style>
-</head>
-<body>
-
-<!-- TOKEN AQUÍ MISMO - PRIMERA LÍNEA DEL SCRIPT -->
 <script>
-// ══════════════════════════════════════════════
-// 🔑 TOKEN - PEGA TU TOKEN AQUÍ (LÍNEA 12)
-// ══════════════════════════════════════════════
-const TOKEN = "e1lRgxNoxWwBkzx";  // ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ←
+// ==============================================
+// 🔑 PEGA TU TOKEN AQUÍ - LÍNEA 10
+// ==============================================
+const TOKEN = "e1lRgxNoxWwBkzx"; 
+// ==============================================
 
 const SYMBOL = "R_50";
+let ws, balance = 0, running = false, wins = 0, losses = 0, profit = 0;
+let tradeHistory = [], BASE_STAKE = 0.35, DAILY_GOAL = 8, DAILY_STOP = 4;
+let prices = [], lastTrade = 0;
 
-// CONFIG ULTRA OPTIMIZADA
-const CFG = {
-  TICKS: 3,
-  COOLDOWN: 8000,    // Más rápido: 8s
-  PAUSE_MS: 45000,   // Pausa 45s
-  MIN_BARS: 22,      // Más agresivo
-  HISTORY: 80,
-  VOL_MIN: 0.0028,
-  VOL_MAX: 0.019,
-  Z_MIN: 1.48,       // Umbral optimizado
-  RSI_HI: 68,
-  RSI_LO: 32,
-  MIN_CORE: 4,
-  MIN_EXTRA: 2,
-  MAX_OPS: 25,
-};
-
-// ESTADO
-let ws, balance=0, running=false, wins=0, losses=0, total=0, profit=0;
-let tradeHistory = [];
-let BASE_STAKE=0.35, DAILY_GOAL=8, DAILY_STOP=4, currentStake=0.35;
-let prices=[], lastTrade=0, pauseUntil=0;
-
-// ══ INPUT FLEXIBLE ══
-function updateSummary(){
-  BASE_STAKE=parseFloat(document.getElementById("inputStake").value)||0.35;
-  DAILY_GOAL=parseFloat(document.getElementById("inputTP").value)||8;
-  DAILY_STOP=parseFloat(document.getElementById("inputSL").value)||4;
-  document.getElementById("configSummary").innerHTML = `
-    <strong>✅ CONFIG PRO</strong><br>
-    Stake fijo: <strong>$${BASE_STAKE.toFixed(2)}</strong><br>
-    🎯 TP: +$${DAILY_GOAL} | 🛑 SL: -$${DAILY_STOP}<br>
-    <strong>4/5 CORE + 2/7 EXTRA = ENTRADA</strong><br>
-    Máx ${CFG.MAX_OPS} ops | Cooldown ${CFG.COOLDOWN/1000}s
-  `;
-}
-
-// ══ REPORTES DE TRADES ══
-function addTrade(signal, pnl, pattern){
-  const trade = {
-    time: new Date().toLocaleTimeString('es-CO'),
-    signal, pnl: pnl.toFixed(2), pattern,
-    isWin: pnl > 0
-  };
-  tradeHistory.unshift(trade);
-  if(tradeHistory.length > 10) tradeHistory.pop();
-  
-  wins = tradeHistory.filter(t => t.isWin).length;
-  losses = tradeHistory.length - wins;
-  const roi = total ? (profit/currentStake/total*100).toFixed(1) : 0;
-  
-  // Actualizar stats
-  document.getElementById("winsCount").innerText = wins;
-  document.getElementById("lossesCount").innerText = losses;
-  document.getElementById("roiPct").innerText = roi + "%";
-  document.getElementById("sessionTrades").innerText = total;
-  
-  // Lista visual
-  document.getElementById("tradeList").innerHTML = tradeHistory.map(t => 
-    `<div class="trade-item ${t.isWin ? 'trade-win' : 'trade-loss'}">
-      <span class="trade-time">${t.time}</span>
-      <span class="trade-result">${t.signal} ${t.pnl}</span>
-      <span class="trade-pattern">${t.pattern}</span>
-    </div>`
-  ).join('');
-}
-
-// ══ HORARIO COLOMBIA OPTIMIZADO ══
-function getSession(){
-  const col = new Date(Date.now() - 5*60*60*1000);
-  const h = col.getHours();
-  if((h>=1 && h<6) || (h>=13 && h<18)) return {name:"🔥 ÓPTIMA", z:1.48, trade:true};
-  if((h>=7 && h<10) || (h>=20 && h<23)) return {name:"✅ BUENA", z:1.65, trade:true};
-  return {name:"⏸ ESPERA", z:99, trade:false};
-}
-
-// ══ FILTROS ULTRA PRECISOS ══
-function getSignalUltra(){
-  if(prices.length < CFG.MIN_BARS) return null;
-  
-  const rets = [];
-  for(let i=1; i<prices.length; i++) rets.push(prices[i]-prices[i-1]);
-  const {mean, std} = getStats(rets);
-  const z = std > 0 ? (rets[rets.length-1] - mean) / std : 0;
-  const dir = z > 0 ? 1 : -1;
-  
-  // 🔥 5 CORE OBLIGATORIOS (95% precisión)
-  const core = [
-    std >= CFG.VOL_MIN && std <= CFG.VOL_MAX,                    // VOLAT
-    Math.abs(z) >= getSession().z,                               // Z-SCORE
-    calcSlope(prices.slice(-10)) * dir > 0,                      // SLOPE
-    (calcRSI(prices) < CFG.RSI_HI && z > 0) || (calcRSI(prices) > CFG.RSI_LO && z < 0), // RSI
-    calcMACD(prices).hist * dir > 0                              // MACD
-  ];
-  
-  const coreScore = core.filter(Boolean).length;
-  
-  // 🔥 7 EXTRA CONFIRMADORES
-  const extra = [
-    calcBurst(prices).dir === dir,                               // BURST
-    calcATR(prices) * 0.8 < Math.abs(rets[rets.length-1]),      // ATR
-    calcBollinger(prices).pct * dir > 0.5,                       // BBAND
-    calcVCP(prices),                                             // VCP
-    calcBBSqueeze(prices).dir === dir,                           // SQUEEZE
-    calcVShape(prices, dir),                                     // VSHAPE
-    calcMACDDivergence(prices, dir)                              // DIVERG
-  ];
-  
-  const extraScore = extra.filter(Boolean).length;
-  const totalScore = coreScore + extraScore;
-  
-  if(coreScore < CFG.MIN_CORE || extraScore < CFG.MIN_EXTRA) return null;
-  
-  const pattern = extra[0] ? 'BURST' : extra[5] ? 'VSHAPE' : extra[4] ? 'SQUEEZE' : 'TREND';
-  
-  return {
-    signal: z > 0 ? 'CALL' : 'PUT',
-    z: z.toFixed(2), conf: Math.round(totalScore/12*100), pattern,
-    score: totalScore
-  };
-}
-
-// ══ FUNCIONES MATEMÁTICAS ══
-function getStats(arr){
-  const n=arr.length, mean=arr.reduce((a,b)=>a+b,0)/n;
-  return {mean, std:Math.sqrt(arr.slice(-20).map(x=>(x-mean)**2).reduce((a,b)=>a+b,0)/n)};
-}
-
-function calcRSI(p){/* implementación RSI */ return 50; }
-function calcMACD(p){/* implementación MACD */ return {hist:0}; }
-function calcSlope(arr){/* implementación slope */ return 0; }
-function calcBurst(p){ return {detected:false, dir:0}; }
-function calcVCP(p){ return false; }
-function calcBBSqueeze(p){ return {squeeze:false, dir:0}; }
-function calcVShape(p,dir){ return false; }
-function calcMACDDivergence(p,dir){ return false; }
-
-// ══ UI UPDATE ══
-function updateUI(){
-  document.getElementById("balance").innerText = balance.toFixed(2);
-  document.getElementById("profit").innerText = profit.toFixed(2);
-  document.getElementById("stakeDisplay").innerText = `$${currentStake.toFixed(2)}`;
-}
-
-// ══ BOT PRINCIPAL ══
-function startBot(){
-  ws = new WebSocket("wss://ws.binaryws.com/websockets/v3?app_id=1089");
-  ws.onopen = () => {
-    ws.send(JSON.stringify
+// ⭐ MODAL
+function openModal() { document.getElementById("modal").style.display = "block"; }
+function closeModal() { document.getElementById("modal").style.display = "none"; }
+function setStake(val) { document.getElementById("stakeInput").value = val; }
+function launchBot() {
+  BASE_STAKE = parseFloat(document.getElementById("stakeInput
