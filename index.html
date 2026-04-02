@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>BOT APEX PRO v4.0 — Sistema Multi-Indicador con Backtesting</title>
+<title>BOT APEX ULTRA v5.0 — Control Total</title>
 <style>
   @import url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Orbitron:wght@400;700;900&display=swap');
 
@@ -42,7 +42,7 @@
     background: var(--card);
     border: 1px solid var(--border);
     border-radius: 16px;
-    max-width: 520px;
+    max-width: 480px;
     width: 100%;
     overflow: hidden;
     box-shadow: 0 0 40px rgba(0,207,255,0.07), 0 20px 60px rgba(0,0,0,0.5);
@@ -65,7 +65,7 @@
 
   .title {
     font-family: 'Orbitron', monospace;
-    font-size: 20px;
+    font-size: 22px;
     font-weight: 900;
     letter-spacing: 3px;
     color: #fff;
@@ -77,100 +77,240 @@
   }
 
   .subtitle {
-    font-size: 10px;
+    font-size: 9px;
     color: var(--dim);
     letter-spacing: 2px;
     margin-top: 3px;
   }
 
-  .status-pill {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    padding: 4px 12px;
-    border-radius: 20px;
-    font-size: 11px;
-    font-family: 'Orbitron', monospace;
-    letter-spacing: 1px;
-    margin-top: 10px;
-    border: 1px solid var(--dim);
-    color: var(--dim);
-    transition: all 0.3s;
-  }
-
-  .status-pill.on {
-    border-color: var(--green);
-    color: var(--green);
-    box-shadow: 0 0 10px rgba(0,255,136,0.2);
-  }
-
-  .status-pill.backtest {
-    border-color: var(--purple);
-    color: var(--purple);
-    box-shadow: 0 0 10px rgba(184,41,221,0.2);
-  }
-
-  .status-dot {
-    width: 6px; height: 6px;
-    border-radius: 50%;
-    background: currentColor;
-  }
-
-  .status-pill.on .status-dot {
-    animation: pulse 1.2s infinite;
-  }
-
-  @keyframes pulse {
-    0%, 100% { opacity: 1; transform: scale(1); }
-    50% { opacity: 0.4; transform: scale(0.7); }
-  }
-
-  .controls {
-    display: flex;
-    gap: 10px;
-    padding: 16px 24px;
+  /* BOTÓN TOGGLE PRINCIPAL */
+  .toggle-section {
+    padding: 20px 24px;
     border-bottom: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
   }
 
-  .btn {
-    flex: 1;
-    padding: 11px;
-    border: none;
-    border-radius: 8px;
+  .toggle-btn {
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;
+    border: 3px solid var(--border);
+    background: linear-gradient(135deg, #1a1f2e 0%, #0d1117 100%);
+    color: var(--dim);
     font-family: 'Orbitron', monospace;
-    font-size: 11px;
-    font-weight: 700;
-    letter-spacing: 1px;
+    font-size: 28px;
     cursor: pointer;
-    transition: all 0.2s;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.5);
     position: relative;
     overflow: hidden;
   }
 
-  .btn-start {
+  .toggle-btn::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: radial-gradient(circle, rgba(0,255,136,0.1) 0%, transparent 70%);
+    opacity: 0;
+    transition: opacity 0.3s;
+  }
+
+  .toggle-btn:hover {
+    transform: scale(1.05);
+    border-color: var(--dim);
+  }
+
+  .toggle-btn.active {
     background: linear-gradient(135deg, #00c853, #00ff88);
+    border-color: var(--green);
     color: #000;
+    box-shadow: 0 0 30px rgba(0,255,136,0.4);
   }
 
-  .btn-start:hover { transform: translateY(-1px); box-shadow: 0 4px 20px rgba(0,255,136,0.3); }
-  .btn-start:active { transform: translateY(0); }
-
-  .btn-stop {
-    background: linear-gradient(135deg, #c62828, #ff3355);
-    color: #fff;
+  .toggle-btn.active::before {
+    opacity: 1;
   }
 
-  .btn-stop:hover { transform: translateY(-1px); box-shadow: 0 4px 20px rgba(255,51,85,0.3); }
-  .btn-stop:active { transform: translateY(0); }
-
-  .btn-backtest {
-    background: linear-gradient(135deg, #7b1fa2, #b829dd);
-    color: #fff;
+  .toggle-btn.active::after {
+    content: '';
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    border-radius: 50%;
+    border: 2px solid var(--green);
+    animation: pulse-ring 1.5s infinite;
   }
 
-  .btn-backtest:hover { transform: translateY(-1px); box-shadow: 0 4px 20px rgba(184,41,221,0.3); }
+  @keyframes pulse-ring {
+    0% { transform: scale(1); opacity: 1; }
+    100% { transform: scale(1.3); opacity: 0; }
+  }
 
-  .stats-grid {
+  .toggle-label {
+    font-size: 10px;
+    color: var(--dim);
+    letter-spacing: 2px;
+    text-transform: uppercase;
+  }
+
+  .toggle-label.active {
+    color: var(--green);
+    text-shadow: 0 0 10px rgba(0,255,136,0.3);
+  }
+
+  /* PANEL DE CONTROL DE STAKE */
+  .control-panel {
+    padding: 16px 24px;
+    border-bottom: 1px solid var(--border);
+    background: rgba(0,0,0,0.2);
+  }
+
+  .control-title {
+    font-size: 9px;
+    color: var(--dim);
+    letter-spacing: 2px;
+    margin-bottom: 12px;
+    text-transform: uppercase;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  .stake-control {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 16px;
+  }
+
+  .stake-input {
+    flex: 1;
+    background: rgba(255,255,255,0.03);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 10px 12px;
+    color: var(--gold);
+    font-family: 'Orbitron', monospace;
+    font-size: 18px;
+    font-weight: 700;
+    text-align: center;
+    outline: none;
+    transition: all 0.2s;
+  }
+
+  .stake-input:focus {
+    border-color: var(--gold);
+    box-shadow: 0 0 10px rgba(255,215,0,0.1);
+  }
+
+  .stake-btn {
+    width: 36px;
+    height: 36px;
+    border: 1px solid var(--border);
+    background: rgba(255,255,255,0.05);
+    color: var(--text);
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 18px;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .stake-btn:hover {
+    background: rgba(255,255,255,0.1);
+    border-color: var(--dim);
+  }
+
+  /* NIVELES DE INTERÉS COMPUESTO */
+  .compound-section {
+    border-top: 1px solid var(--border);
+    padding-top: 12px;
+  }
+
+  .compound-toggle {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 10px;
+  }
+
+  .compound-label {
+    font-size: 10px;
+    color: var(--dim);
+    letter-spacing: 1px;
+  }
+
+  .switch {
+    position: relative;
+    width: 44px;
+    height: 24px;
+    background: var(--border);
+    border-radius: 12px;
+    cursor: pointer;
+    transition: background 0.3s;
+  }
+
+  .switch.active {
+    background: var(--purple);
+  }
+
+  .switch-thumb {
+    position: absolute;
+    top: 2px;
+    left: 2px;
+    width: 20px;
+    height: 20px;
+    background: #fff;
+    border-radius: 50%;
+    transition: transform 0.3s;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+  }
+
+  .switch.active .switch-thumb {
+    transform: translateX(20px);
+  }
+
+  .compound-levels {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 6px;
+  }
+
+  .level-btn {
+    padding: 6px 4px;
+    border: 1px solid var(--border);
+    background: rgba(255,255,255,0.03);
+    color: var(--dim);
+    border-radius: 6px;
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 10px;
+    cursor: pointer;
+    transition: all 0.2s;
+    text-align: center;
+  }
+
+  .level-btn:hover {
+    border-color: var(--purple);
+    color: var(--purple);
+  }
+
+  .level-btn.active {
+    background: rgba(184,41,221,0.2);
+    border-color: var(--purple);
+    color: var(--purple);
+    box-shadow: 0 0 8px rgba(184,41,221,0.2);
+  }
+
+  /* PANEL DE PÉRDIDAS Y GANANCIAS */
+  .results-panel {
     display: grid;
     grid-template-columns: 1fr 1fr;
     gap: 1px;
@@ -178,404 +318,521 @@
     border-bottom: 1px solid var(--border);
   }
 
-  .stat-box {
+  .result-box {
     background: var(--card);
-    padding: 14px 18px;
+    padding: 16px;
+    text-align: center;
+    position: relative;
+    overflow: hidden;
   }
 
-  .stat-label {
+  .result-box.losses::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 2px;
+    background: linear-gradient(90deg, transparent, var(--red), transparent);
+    opacity: 0.5;
+  }
+
+  .result-box.profits::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 2px;
+    background: linear-gradient(90deg, transparent, var(--green), transparent);
+    opacity: 0.5;
+  }
+
+  .result-label {
     font-size: 9px;
     color: var(--dim);
     letter-spacing: 2px;
+    text-transform: uppercase;
+    margin-bottom: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+  }
+
+  .result-value {
+    font-family: 'Orbitron', monospace;
+    font-size: 24px;
+    font-weight: 700;
+  }
+
+  .result-value.negative {
+    color: var(--red);
+    text-shadow: 0 0 10px rgba(255,51,85,0.2);
+  }
+
+  .result-value.positive {
+    color: var(--green);
+    text-shadow: 0 0 10px rgba(0,255,136,0.2);
+  }
+
+  .result-count {
+    font-size: 10px;
+    color: var(--dim);
+    margin-top: 4px;
+  }
+
+  /* STATS ADICIONALES */
+  .stats-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1px;
+    background: var(--border);
+    border-bottom: 1px solid var(--border);
+  }
+
+  .stat-box {
+    background: var(--card);
+    padding: 12px;
+    text-align: center;
+  }
+
+  .stat-label {
+    font-size: 8px;
+    color: var(--dim);
+    letter-spacing: 1px;
     text-transform: uppercase;
     margin-bottom: 4px;
   }
 
   .stat-value {
     font-family: 'Orbitron', monospace;
-    font-size: 20px;
-    font-weight: 700;
-    color: #fff;
-    transition: color 0.3s;
-  }
-
-  .stat-value.positive { color: var(--green); }
-  .stat-value.negative { color: var(--red); }
-  .stat-value.gold { color: var(--gold); }
-  .stat-value.blue { color: var(--blue); }
-  .stat-value.purple { color: var(--purple); }
-
-  .indicators-bar {
-    padding: 12px 24px;
-    border-bottom: 1px solid var(--border);
-    background: rgba(0,0,0,0.2);
-  }
-
-  .ind-title {
-    font-size: 9px;
-    color: var(--dim);
-    letter-spacing: 2px;
-    margin-bottom: 8px;
-    text-transform: uppercase;
-  }
-
-  .ind-grid {
-    display: grid;
-    grid-template-columns: repeat(4, 1fr);
-    gap: 8px;
-  }
-
-  .ind-item {
-    background: rgba(255,255,255,0.03);
-    border: 1px solid var(--border);
-    border-radius: 6px;
-    padding: 6px 8px;
-    text-align: center;
-    font-size: 10px;
-  }
-
-  .ind-name {
-    color: var(--dim);
-    font-size: 8px;
-    letter-spacing: 1px;
-    margin-bottom: 2px;
-  }
-
-  .ind-val {
-    font-family: 'Orbitron', monospace;
-    font-weight: 700;
-    font-size: 11px;
-  }
-
-  .ind-val.buy { color: var(--green); }
-  .ind-val.sell { color: var(--red); }
-  .ind-val.neutral { color: var(--dim); }
-
-  .market-bar {
-    padding: 10px 24px;
-    border-bottom: 1px solid var(--border);
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    font-size: 10px;
-  }
-
-  .market-label { color: var(--dim); letter-spacing: 1px; }
-
-  .market-pills { display: flex; gap: 6px; }
-
-  .market-pill {
-    padding: 3px 10px;
-    border-radius: 10px;
-    border: 1px solid var(--border);
-    color: var(--dim);
-    font-size: 10px;
-    transition: all 0.3s;
-  }
-
-  .market-pill.active {
-    border-color: var(--gold);
-    color: var(--gold);
-    box-shadow: 0 0 8px rgba(255,215,0,0.2);
-  }
-
-  .pattern-bar {
-    padding: 8px 24px;
-    border-bottom: 1px solid var(--border);
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    font-size: 10px;
-  }
-
-  .pattern-tag {
-    padding: 2px 8px;
-    border-radius: 4px;
-    font-size: 9px;
-    letter-spacing: 1px;
-    background: rgba(0,207,255,0.1);
-    color: var(--blue);
-    border: 1px solid rgba(0,207,255,0.2);
-  }
-
-  .pattern-tag.detected {
-    background: rgba(0,255,136,0.1);
-    color: var(--green);
-    border-color: rgba(0,255,136,0.3);
-  }
-
-  .log-wrap { padding: 14px; }
-
-  .log {
-    background: #050709;
-    border: 1px solid var(--border);
-    border-radius: 8px;
-    height: 220px;
-    overflow-y: auto;
-    padding: 10px 12px;
-    font-size: 10px;
-    line-height: 1.7;
-    scrollbar-width: thin;
-    scrollbar-color: var(--border) transparent;
-  }
-
-  .log::-webkit-scrollbar { width: 4px; }
-  .log::-webkit-scrollbar-track { background: transparent; }
-  .log::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
-
-  .log-entry { display: flex; gap: 6px; align-items: baseline; }
-  .log-time { color: var(--dim); font-size: 9px; flex-shrink: 0; }
-  .log-win { color: var(--green); }
-  .log-loss { color: var(--red); }
-  .log-info { color: var(--blue); }
-  .log-warn { color: var(--gold); }
-  .log-stop { color: var(--red); }
-  .log-backtest { color: var(--purple); }
-
-  .footer {
-    padding: 10px 24px 14px;
-    text-align: center;
-    font-size: 9px;
-    color: var(--dim);
-    letter-spacing: 1px;
-    border-top: 1px solid var(--border);
-  }
-
-  .protection-bar {
-    height: 3px;
-    background: var(--border);
-    margin: 0;
-    position: relative;
-    overflow: hidden;
-  }
-
-  .protection-fill {
-    height: 100%;
-    width: 0%;
-    background: linear-gradient(90deg, var(--green), var(--gold));
-    transition: width 0.5s ease, background 0.5s;
-  }
-
-  .backtest-panel {
-    padding: 12px 24px;
-    border-bottom: 1px solid var(--border);
-    background: rgba(184,41,221,0.05);
-    display: none;
-  }
-
-  .backtest-panel.active {
-    display: block;
-  }
-
-  .bt-title {
-    font-size: 10px;
-    color: var(--purple);
-    letter-spacing: 2px;
-    margin-bottom: 8px;
-    text-transform: uppercase;
-  }
-
-  .bt-stats {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 10px;
-    font-size: 10px;
-  }
-
-  .bt-stat {
-    text-align: center;
-  }
-
-  .bt-val {
-    font-family: 'Orbitron', monospace;
     font-size: 14px;
     font-weight: 700;
     color: #fff;
   }
 
-  .bt-label {
-    font-size: 8px;
-    color: var(--dim);
-    margin-top: 2px;
+  .stat-value.gold { color: var(--gold); }
+  .stat-value.blue { color: var(--blue); }
+  .stat-value.purple { color: var(--purple); }
+
+  /* BARRA DE PROGRESO */
+  .progress-section {
+    padding: 12px 24px;
+    border-bottom: 1px solid var(--border);
   }
+
+  .progress-header {
+    display: flex;
+    justify-content: space-between;
+    font-size: 9px;
+    color: var(--dim);
+    margin-bottom: 6px;
+    letter-spacing: 1px;
+  }
+
+  .progress-bar {
+    height: 6px;
+    background: var(--border);
+    border-radius: 3px;
+    overflow: hidden;
+    position: relative;
+  }
+
+  .progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--red), var(--orange), var(--gold), var(--green));
+    width: 0%;
+    transition: width 0.5s ease;
+    position: relative;
+  }
+
+  .progress-fill::after {
+    content: '';
+    position: absolute;
+    top: 0; right: 0; bottom: 0;
+    width: 20px;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3));
+  }
+
+  /* LOG */
+  .log-wrap {
+    padding: 14px;
+    background: rgba(0,0,0,0.2);
+  }
+
+  .log {
+    background: #050709;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    height: 160px;
+    overflow-y: auto;
+    padding: 10px 12px;
+    font-size: 10px;
+    line-height: 1.6;
+  }
+
+  .log-entry {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 4px;
+  }
+
+  .log-time {
+    color: var(--dim);
+    font-size: 9px;
+    flex-shrink: 0;
+  }
+
+  .log-win { color: var(--green); }
+  .log-loss { color: var(--red); }
+  .log-info { color: var(--blue); }
+  .log-compound { color: var(--purple); }
+
+  /* FOOTER */
+  .footer {
+    padding: 10px 24px;
+    text-align: center;
+    font-size: 9px;
+    color: var(--dim);
+    letter-spacing: 1px;
+    border-top: 1px solid var(--border);
+    background: rgba(0,0,0,0.2);
+  }
+
+  /* SCROLLBAR */
+  ::-webkit-scrollbar { width: 4px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
 </style>
 </head>
 <body>
 
 <div class="card">
-
   <div class="header">
-    <div class="title">⚡ BOT APEX PRO</div>
-    <div class="subtitle">MULTI-INDICADOR v4.0 · EMA3/9 · RSI7 · BB9 · PATRONES</div>
-    <div class="status-pill" id="statusPill">
-      <div class="status-dot"></div>
-      <span id="statusText">OFFLINE</span>
+    <div class="title">⚡ BOT APEX ULTRA</div>
+    <div class="subtitle">v5.0 CONTROL TOTAL · 9 TICKS · INTERÉS COMPUESTO</div>
+  </div>
+
+  <!-- BOTÓN TOGGLE PRINCIPAL -->
+  <div class="toggle-section">
+    <button class="toggle-btn" id="mainToggle" onclick="toggleBot()">
+      <span id="toggleIcon">▶</span>
+    </button>
+    <div class="toggle-label" id="toggleLabel">PRESIONA PARA INICIAR</div>
+  </div>
+
+  <!-- PANEL DE CONTROL -->
+  <div class="control-panel">
+    <div class="control-title">
+      <span>💰 CONFIGURACIÓN DE STAKE</span>
+      <span style="color: var(--gold); font-size: 10px;">USD</span>
+    </div>
+
+    <div class="stake-control">
+      <button class="stake-btn" onclick="adjustStake(-0.10)">−</button>
+      <input type="number" class="stake-input" id="stakeInput" value="1.20" step="0.10" min="0.50" max="5.00">
+      <button class="stake-btn" onclick="adjustStake(0.10)">+</button>
+    </div>
+
+    <div class="compound-section">
+      <div class="compound-toggle">
+        <span class="compound-label">📈 INTERÉS COMPUESTO</span>
+        <div class="switch" id="compoundSwitch" onclick="toggleCompound()">
+          <div class="switch-thumb"></div>
+        </div>
+      </div>
+
+      <div class="compound-levels" id="compoundLevels">
+        <button class="level-btn" onclick="setCompoundLevel(1)">NIVEL 1<br><small>1.2x</small></button>
+        <button class="level-btn" onclick="setCompoundLevel(2)">NIVEL 2<br><small>1.5x</small></button>
+        <button class="level-btn active" onclick="setCompoundLevel(3)">NIVEL 3<br><small>2.0x</small></button>
+        <button class="level-btn" onclick="setCompoundLevel(4)">NIVEL 4<br><small>3.0x</small></button>
+      </div>
     </div>
   </div>
 
-  <div class="controls">
-    <button class="btn btn-start" onclick="startBot()">▶ INICIAR</button>
-    <button class="btn btn-stop" onclick="stopBot()">■ DETENER</button>
-    <button class="btn btn-backtest" onclick="runBacktest()">📊 BACKTEST</button>
+  <!-- PANEL DE RESULTADOS -->
+  <div class="results-panel">
+    <div class="result-box losses">
+      <div class="result-label">
+        <span>📉</span> PÉRDIDAS
+      </div>
+      <div class="result-value negative" id="totalLosses">0.00</div>
+      <div class="result-count" id="lossCount">0 trades</div>
+    </div>
+    <div class="result-box profits">
+      <div class="result-label">
+        <span>📈</span> GANANCIAS
+      </div>
+      <div class="result-value positive" id="totalProfits">0.00</div>
+      <div class="result-count" id="winCount">0 trades</div>
+    </div>
   </div>
 
+  <!-- STATS -->
   <div class="stats-grid">
     <div class="stat-box">
-      <div class="stat-label">💰 Balance</div>
+      <div class="stat-label">Balance</div>
       <div class="stat-value blue" id="balance">100.00</div>
     </div>
     <div class="stat-box">
-      <div class="stat-label">📈 Ganancia Hoy</div>
-      <div class="stat-value" id="profit">0.00</div>
+      <div class="stat-label">Win Rate</div>
+      <div class="stat-value" id="winRate">0%</div>
     </div>
     <div class="stat-box">
-      <div class="stat-label">🎯 Stake</div>
-      <div class="stat-value gold" id="stake">1.20</div>
-    </div>
-    <div class="stat-box">
-      <div class="stat-label">🏆 Win Rate</div>
-      <div class="stat-value" id="wr">0%</div>
+      <div class="stat-label">Neto</div>
+      <div class="stat-value gold" id="netProfit">0.00</div>
     </div>
   </div>
 
-  <div class="protection-bar">
-    <div class="protection-fill" id="protectionBar"></div>
-  </div>
-
-  <div class="indicators-bar">
-    <div class="ind-title">INDICADORES EN TIEMPO REAL</div>
-    <div class="ind-grid">
-      <div class="ind-item">
-        <div class="ind-name">EMA 3/9</div>
-        <div class="ind-val neutral" id="ind-ema">--</div>
-      </div>
-      <div class="ind-item">
-        <div class="ind-name">RSI(7)</div>
-        <div class="ind-val neutral" id="ind-rsi">--</div>
-      </div>
-      <div class="ind-item">
-        <div class="ind-name">ADX(14)</div>
-        <div class="ind-val neutral" id="ind-adx">--</div>
-      </div>
-      <div class="ind-item">
-        <div class="ind-name">BB(9,2)</div>
-        <div class="ind-val neutral" id="ind-bb">--</div>
-      </div>
+  <!-- PROGRESO -->
+  <div class="progress-section">
+    <div class="progress-header">
+      <span>PROGRESO HACIA META DIARIA</span>
+      <span id="progressText">$0.00 / $1.20</span>
+    </div>
+    <div class="progress-bar">
+      <div class="progress-fill" id="progressBar"></div>
     </div>
   </div>
 
-  <div class="market-bar">
-    <span class="market-label">MERCADOS ACTIVOS</span>
-    <div class="market-pills">
-      <div class="market-pill" id="pill-R_25">R_25</div>
-      <div class="market-pill" id="pill-R_50">R_50</div>
-      <div class="market-pill" id="pill-R_75">R_75</div>
-    </div>
-  </div>
-
-  <div class="pattern-bar">
-    <span id="patternInfo">Esperando patrón...</span>
-    <span class="pattern-tag" id="patternTag">SCAN</span>
-  </div>
-
-  <div class="backtest-panel" id="backtestPanel">
-    <div class="bt-title">RESULTADOS BACKTEST</div>
-    <div class="bt-stats">
-      <div class="bt-stat">
-        <div class="bt-val" id="bt-wr">--</div>
-        <div class="bt-label">Win Rate</div>
-      </div>
-      <div class="bt-stat">
-        <div class="bt-val" id="bt-profit">--</div>
-        <div class="bt-label">Profit Total</div>
-      </div>
-      <div class="bt-stat">
-        <div class="bt-val" id="bt-maxdd">--</div>
-        <div class="bt-label">Max Drawdown</div>
-      </div>
-    </div>
-  </div>
-
+  <!-- LOG -->
   <div class="log-wrap">
     <div class="log" id="log"></div>
   </div>
 
-  <div class="footer">TARGET: $1.20/DÍA · STOP LOSS 3% · MAX 10 TRADES/DÍA · CONFIRMACIÓN 4/4</div>
+  <div class="footer">
+    STAKE MANUAL · TOGGLE ON/OFF · INTERÉS COMPUESTO · 9 TICKS
+  </div>
 </div>
 
 <script>
 // ═══════════════════════════════════════════════════════════════════
-// CONFIGURACIÓN OPTIMIZADA PARA $100 USD - TARGET $1.20 DIARIOS
+// CONFIGURACIÓN
 // ═══════════════════════════════════════════════════════════════════
 const CONFIG = {
-  TOKEN: "e1lRgxNoxWwBkzx",  // ← REEMPLAZAR CON TU TOKEN DE DERIV
+  TOKEN: "e1lRgxNoxWwBkzx",
   MARKETS: ["R_25", "R_50", "R_75"],
+  DURATION: 9,
+  DAILY_TARGET: 1.20,
+  MAX_DAILY_TRADES: 8,
+  COOLDOWN_MS: 45000,
 
-  // Gestión de Capital
-  INITIAL_BALANCE: 100,
-  DAILY_TARGET: 1.20,           // $1.20 objetivo diario
-  MAX_DAILY_TRADES: 10,         // Máximo 10 operaciones por día
-  RISK_PER_TRADE: 0.012,        // 1.2% por operación = $1.20 stake inicial
-  MAX_STAKE: 2.00,              // Máximo $2.00 por operación
-  MIN_STAKE: 0.80,              // Mínimo $0.80
-
-  // Stop Loss / Take Profit
-  STOP_LOSS_PERCENT: 0.03,      // 3% del balance inicial
-  TAKE_PROFIT_PERCENT: 0.06,    // 6% del balance inicial
-
-  // Timing
-  COOLDOWN_MS: 30000,           // 30 segundos entre operaciones (más conservador)
-  PAUSE_AFTER_LOSS_STREAK: 3,   // Pausa tras 3 pérdidas
-  PAUSE_DURATION_MS: 120000,    // Pausa de 2 minutos
-
-  // Indicadores - Configuración Estricta
-  EMA_FAST: 3,
-  EMA_SLOW: 9,
-  RSI_PERIOD: 7,
-  RSI_OVERBOUGHT: 75,           // Más estricto que 70
-  RSI_OVERSOLD: 25,             // Más estricto que 30
-  BB_PERIOD: 9,                 // Optimizado para scalping
-  BB_STDDEV: 2,
-  ADX_PERIOD: 14,
-  ADX_THRESHOLD: 32,            // Evitar mercados sin tendencia
-
-  // Confirmación de Patrones
-  MIN_PATTERN_CONFIDENCE: 0.8,  // 80% de confianza mínima
-  REQUIRED_CONFIRMATIONS: 4     // Necesita 4 de 4 indicadores
+  // Niveles de interés compuesto
+  COMPOUND_LEVELS: {
+    1: { multiplier: 1.2, name: "Conservador" },
+    2: { multiplier: 1.5, name: "Moderado" },
+    3: { multiplier: 2.0, name: "Agresivo" },
+    4: { multiplier: 3.0, name: "Máximo" }
+  }
 };
 
 // ═══════════════════════════════════════════════════════════════════
 // ESTADO GLOBAL
 // ═══════════════════════════════════════════════════════════════════
 let ws;
-let balance = CONFIG.INITIAL_BALANCE;
-let initialBalance = CONFIG.INITIAL_BALANCE;
-let stake = CONFIG.INITIAL_BALANCE * CONFIG.RISK_PER_TRADE;
 let running = false;
-let backtestMode = false;
-let wins = 0, losses = 0, totalTrades = 0;
-let dailyProfit = 0;
-let winStreak = 0, lossStreak = 0;
+let balance = 100;
+let initialBalance = 100;
+
+// Stake y compound
+let currentStake = 1.20;
+let baseStake = 1.20;
+let compoundEnabled = false;
+let compoundLevel = 3;
+let compoundMultiplier = 2.0;
+
+// Resultados separados
+let totalProfits = 0;
+let totalLosses = 0;
+let winCount = 0;
+let lossCount = 0;
+
+// Control
+let dailyTrades = 0;
 let lastTradeTime = 0;
 let pauseUntil = 0;
-let activeMarket = null;
-let dailyTrades = 0;
-let maxDrawdown = 0;
-let peakBalance = CONFIG.INITIAL_BALANCE;
+let consecutiveWins = 0;
+let consecutiveLosses = 0;
 
-// Historiales para cálculo de indicadores
-const histories = {
-  R_25: [],
-  R_50: [],
-  R_75: []
-};
-
-// Datos de backtest
-let backtestData = [];
-let backtestResults = [];
+// Datos
+const histories = { R_25: [], R_50: [], R_75: [] };
 
 // ═══════════════════════════════════════════════════════════════════
-// UTILIDADES MATEMÁTICAS
+// CONTROL DE STAKE
+// ═══════════════════════════════════════════════════════════════════
+function adjustStake(delta) {
+  if (running) {
+    log("⚠ No puedes cambiar stake con bot activo", "info");
+    return;
+  }
+
+  const input = document.getElementById('stakeInput');
+  let newValue = parseFloat(input.value) + delta;
+  newValue = Math.max(0.50, Math.min(5.00, newValue));
+  newValue = Math.round(newValue * 100) / 100;
+
+  input.value = newValue.toFixed(2);
+  currentStake = newValue;
+  baseStake = newValue;
+
+  log(`💰 Stake ajustado: $${newValue.toFixed(2)}`, "info");
+}
+
+document.getElementById('stakeInput').addEventListener('change', function() {
+  if (running) {
+    log("⚠ Detén el bot para cambiar el stake", "info");
+    this.value = currentStake.toFixed(2);
+    return;
+  }
+  let val = parseFloat(this.value);
+  val = Math.max(0.50, Math.min(5.00, val));
+  currentStake = val;
+  baseStake = val;
+  this.value = val.toFixed(2);
+});
+
+// ═══════════════════════════════════════════════════════════════════
+// INTERÉS COMPUESTO
+// ═══════════════════════════════════════════════════════════════════
+function toggleCompound() {
+  if (running) {
+    log("⚠ No puedes cambiar modo con bot activo", "info");
+    return;
+  }
+
+  compoundEnabled = !compoundEnabled;
+  const switchEl = document.getElementById('compoundSwitch');
+  const levelsEl = document.getElementById('compoundLevels');
+
+  if (compoundEnabled) {
+    switchEl.classList.add('active');
+    levelsEl.style.opacity = '1';
+    levelsEl.style.pointerEvents = 'auto';
+    applyCompound();
+    log(`📈 Interés compuesto ACTIVADO - Nivel ${compoundLevel} (${compoundMultiplier}x)`, "compound");
+  } else {
+    switchEl.classList.remove('active');
+    levelsEl.style.opacity = '0.5';
+    levelsEl.style.pointerEvents = 'none';
+    currentStake = baseStake;
+    log("📉 Interés compuesto DESACTIVADO", "info");
+  }
+  updateUI();
+}
+
+function setCompoundLevel(level) {
+  if (running) return;
+
+  compoundLevel = level;
+  compoundMultiplier = CONFIG.COMPOUND_LEVELS[level].multiplier;
+
+  // Actualizar UI
+  document.querySelectorAll('.level-btn').forEach((btn, idx) => {
+    btn.classList.toggle('active', idx + 1 === level);
+  });
+
+  if (compoundEnabled) {
+    applyCompound();
+    log(`🎯 Nivel ${level} seleccionado: ${compoundMultiplier}x`, "compound");
+  }
+}
+
+function applyCompound() {
+  if (!compoundEnabled) return;
+
+  // Aplicar multiplicador según racha
+  let multiplier = 1;
+  if (consecutiveWins > 0) {
+    multiplier = Math.pow(compoundMultiplier, Math.min(consecutiveWins, 3));
+  } else if (consecutiveLosses > 0) {
+    multiplier = Math.pow(0.7, Math.min(consecutiveLosses, 2));
+  }
+
+  currentStake = Math.min(baseStake * multiplier, 3.00);
+  currentStake = Math.round(currentStake * 100) / 100;
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// BOTÓN TOGGLE PRINCIPAL
+// ═══════════════════════════════════════════════════════════════════
+function toggleBot() {
+  if (running) {
+    stopBot();
+  } else {
+    startBot();
+  }
+}
+
+function updateToggleState() {
+  const btn = document.getElementById('mainToggle');
+  const icon = document.getElementById('toggleIcon');
+  const label = document.getElementById('toggleLabel');
+
+  if (running) {
+    btn.classList.add('active');
+    icon.innerHTML = '■';
+    label.innerHTML = 'BOT ACTIVO — PRESIONA PARA DETENER';
+    label.classList.add('active');
+  } else {
+    btn.classList.remove('active');
+    icon.innerHTML = '▶';
+    label.innerHTML = 'BOT DETENIDO — PRESIONA PARA INICIAR';
+    label.classList.remove('active');
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// SISTEMA DE LOGGING
+// ═══════════════════════════════════════════════════════════════════
+function log(msg, type = "info") {
+  const el = document.getElementById("log");
+  const time = new Date().toTimeString().slice(0, 8);
+  const colors = {
+    win: 'log-win',
+    loss: 'log-loss',
+    info: 'log-info',
+    compound: 'log-compound'
+  };
+
+  el.innerHTML += `<div class="log-entry"><span class="log-time">${time}</span><span class="${colors[type] || 'log-info'}">${msg}</span></div>`;
+  el.scrollTop = el.scrollHeight;
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// ACTUALIZACIÓN DE UI
+// ═══════════════════════════════════════════════════════════════════
+function updateUI() {
+  // Resultados separados
+  document.getElementById('totalLosses').innerText = totalLosses.toFixed(2);
+  document.getElementById('lossCount').innerText = `${lossCount} trades`;
+  document.getElementById('totalProfits').innerText = totalProfits.toFixed(2);
+  document.getElementById('winCount').innerText = `${winCount} trades`;
+
+  // Stats
+  document.getElementById('balance').innerText = balance.toFixed(2);
+
+  const total = winCount + lossCount;
+  const wr = total > 0 ? (winCount / total * 100).toFixed(1) : 0;
+  const wrEl = document.getElementById('winRate');
+  wrEl.innerText = wr + '%';
+  wrEl.className = 'stat-value ' + (wr >= 65 ? 'positive' : wr > 50 ? 'gold' : 'negative');
+
+  const net = totalProfits - totalLosses;
+  const netEl = document.getElementById('netProfit');
+  netEl.innerText = (net >= 0 ? '+' : '') + net.toFixed(2);
+  netEl.className = 'stat-value ' + (net > 0 ? 'gold' : net < 0 ? 'negative' : '');
+
+  // Progreso
+  const progress = Math.min(100, Math.max(0, (net / CONFIG.DAILY_TARGET) * 100));
+  document.getElementById('progressBar').style.width = progress + '%';
+  document.getElementById('progressText').innerText = `$${net.toFixed(2)} / $${CONFIG.DAILY_TARGET}`;
+
+  // Actualizar input de stake si cambió por compound
+  if (compoundEnabled && running) {
+    document.getElementById('stakeInput').value = currentStake.toFixed(2);
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// INDICADORES (simplificado)
 // ═══════════════════════════════════════════════════════════════════
 function calculateEMA(prices, period) {
   if (prices.length < period) return null;
@@ -598,585 +855,92 @@ function calculateRSI(prices, period) {
   const avgGain = gains / period;
   const avgLoss = losses / period;
   if (avgLoss === 0) return 100;
-  const rs = avgGain / avgLoss;
-  return 100 - (100 / (1 + rs));
+  return 100 - (100 / (1 + avgGain / avgLoss));
 }
 
-function calculateBollingerBands(prices, period, stdDev) {
-  if (prices.length < period) return null;
-  const slice = prices.slice(-period);
-  const sma = slice.reduce((a, b) => a + b, 0) / period;
-  const variance = slice.reduce((sum, p) => sum + Math.pow(p - sma, 2), 0) / period;
-  const std = Math.sqrt(variance);
-  return {
-    upper: sma + (std * stdDev),
-    middle: sma,
-    lower: sma - (std * stdDev),
-    width: (std * stdDev * 2) / sma  // % del precio
-  };
-}
-
-function calculateADX(prices, period) {
-  if (prices.length < period * 2) return null;
-  let trSum = 0, plusDMSum = 0, minusDMSum = 0;
-
-  for (let i = prices.length - period; i < prices.length; i++) {
-    const high = Math.max(prices[i], prices[i-1]);
-    const low = Math.min(prices[i], prices[i-1]);
-    const prevClose = prices[i-1];
-
-    const tr = Math.max(high - low, Math.abs(high - prevClose), Math.abs(low - prevClose));
-    const plusDM = (high - prices[i-1]) > (prices[i-1] - low) ? Math.max(high - prices[i-1], 0) : 0;
-    const minusDM = (prices[i-1] - low) > (high - prices[i-1]) ? Math.max(prices[i-1] - low, 0) : 0;
-
-    trSum += tr;
-    plusDMSum += plusDM;
-    minusDMSum += minusDM;
-  }
-
-  const plusDI = (plusDMSum / trSum) * 100;
-  const minusDI = (minusDMSum / trSum) * 100;
-  const dx = (Math.abs(plusDI - minusDI) / (plusDI + minusDI)) * 100;
-
-  return dx; // Simplificado, en producción usar smoothed ADX
-}
-
-function calculateATR(prices, period) {
-  if (prices.length < period + 1) return null;
-  let trSum = 0;
-  for (let i = prices.length - period; i < prices.length; i++) {
-    const tr = Math.abs(prices[i] - prices[i-1]);
-    trSum += tr;
-  }
-  return trSum / period;
-}
-
-// ═══════════════════════════════════════════════════════════════════
-// DETECCIÓN DE PATRONES DE VELAS AVANZADOS
-// ═══════════════════════════════════════════════════════════════════
-function detectCandlestickPattern(prices) {
-  if (prices.length < 5) return { pattern: 'NONE', confidence: 0, signal: null };
-
-  const o = prices[prices.length - 2];  // Open (prev)
-  const c = prices[prices.length - 1];  // Close (current)
-  const h = Math.max(o, c);             // High
-  const l = Math.min(o, c);             // Low
-  const body = Math.abs(c - o);
-  const range = h - l;
-  const upperShadow = h - Math.max(o, c);
-  const lowerShadow = Math.min(o, c) - l;
-
-  // Precios anteriores para contexto
-  const prev1 = prices[prices.length - 2];
-  const prev2 = prices[prices.length - 3];
-  const prev3 = prices[prices.length - 4];
-  const trend = c > prev3 ? 'UP' : 'DOWN';
-
-  let pattern = 'NONE';
-  let confidence = 0;
-  let signal = null;
-
-  // 1. Martillo (Hammer) - Señal de compra en tendencia bajista
-  if (trend === 'DOWN' && lowerShadow > body * 2 && upperShadow < body * 0.5 && body > 0) {
-    pattern = 'HAMMER';
-    confidence = 0.85;
-    signal = 'CALL';
-  }
-  // 2. Estrella Fugaz (Shooting Star) - Señal de venta en tendencia alcista
-  else if (trend === 'UP' && upperShadow > body * 2 && lowerShadow < body * 0.5 && body > 0) {
-    pattern = 'SHOOTING_STAR';
-    confidence = 0.85;
-    signal = 'PUT';
-  }
-  // 3. Engulfing Alcista
-  else if (prev1 < prev2 && c > o && c > prev2 && o < prev1) {
-    pattern = 'BULLISH_ENGULFING';
-    confidence = 0.80;
-    signal = 'CALL';
-  }
-  // 4. Engulfing Bajista
-  else if (prev1 > prev2 && c < o && c < prev2 && o > prev1) {
-    pattern = 'BEARISH_ENGULFING';
-    confidence = 0.80;
-    signal = 'PUT';
-  }
-  // 5. Doji Dragón - Señal de compra
-  else if (body < range * 0.1 && lowerShadow > body * 3 && trend === 'DOWN') {
-    pattern = 'DRAGONFLY_DOJI';
-    confidence = 0.75;
-    signal = 'CALL';
-  }
-  // 6. Doji Tumba - Señal de venta
-  else if (body < range * 0.1 && upperShadow > body * 3 && trend === 'UP') {
-    pattern = 'GRAVESTONE_DOJI';
-    confidence = 0.75;
-    signal = 'PUT';
-  }
-  // 7. Estrella de la Mañana (Morning Star) - Requiere 3 velas
-  else if (prices.length >= 3) {
-    const first = prices[prices.length - 3];
-    const second = prices[prices.length - 2];
-    const third = prices[prices.length - 1];
-    if (first > second && third > second && third > (first + second) / 2 && second < first * 0.98) {
-      pattern = 'MORNING_STAR';
-      confidence = 0.90;
-      signal = 'CALL';
-    }
-    // 8. Estrella de la Tarde (Evening Star)
-    else if (first < second && third < second && third < (first + second) / 2 && second > first * 1.02) {
-      pattern = 'EVENING_STAR';
-      confidence = 0.90;
-      signal = 'PUT';
-    }
-  }
-
-  return { pattern, confidence, signal };
-}
-
-// ═══════════════════════════════════════════════════════════════════
-// SISTEMA DE SEÑALES MULTI-INDICADOR (4/4 CONFIRMACIONES REQUERIDAS)
-// ═══════════════════════════════════════════════════════════════════
 function generateSignal(market) {
   const prices = histories[market];
   if (prices.length < 20) return null;
 
-  const currentPrice = prices[prices.length - 1];
-  const confirmations = [];
+  const ema3 = calculateEMA(prices, 3);
+  const ema9 = calculateEMA(prices, 9);
+  const rsi = calculateRSI(prices, 7);
+
+  if (!ema3 || !ema9 || !rsi) return null;
+
+  let score = 0;
   let signal = null;
-  let details = {};
 
-  // 1. EMA 3/9 CRUZAMIENTO
-  const ema3 = calculateEMA(prices, CONFIG.EMA_FAST);
-  const ema9 = calculateEMA(prices, CONFIG.EMA_SLOW);
-  const prevEma3 = calculateEMA(prices.slice(0, -1), CONFIG.EMA_FAST);
-  const prevEma9 = calculateEMA(prices.slice(0, -1), CONFIG.EMA_SLOW);
-
-  let emaSignal = null;
-  if (ema3 > ema9 && prevEma3 <= prevEma9) {
-    emaSignal = 'CALL';
-    confirmations.push('EMA_CROSS_UP');
-  } else if (ema3 < ema9 && prevEma3 >= prevEma9) {
-    emaSignal = 'PUT';
-    confirmations.push('EMA_CROSS_DOWN');
-  } else if (ema3 > ema9) {
-    emaSignal = 'CALL';
-    confirmations.push('EMA_ABOVE');
-  } else {
-    emaSignal = 'PUT';
-    confirmations.push('EMA_BELOW');
+  if (ema3 > ema9 && rsi < 30) {
+    score = 3;
+    signal = 'CALL';
+  } else if (ema3 < ema9 && rsi > 70) {
+    score = 3;
+    signal = 'PUT';
   }
 
-  details.ema = { fast: ema3?.toFixed(5), slow: ema9?.toFixed(5), signal: emaSignal };
-
-  // 2. RSI(7) - Extremos con confirmación de dirección
-  const rsi = calculateRSI(prices, CONFIG.RSI_PERIOD);
-  let rsiSignal = null;
-  let rsiValid = false;
-
-  if (rsi < CONFIG.RSI_OVERSOLD) {
-    rsiSignal = 'CALL';
-    rsiValid = true;
-    confirmations.push('RSI_OVERSOLD');
-  } else if (rsi > CONFIG.RSI_OVERBOUGHT) {
-    rsiSignal = 'PUT';
-    rsiValid = true;
-    confirmations.push('RSI_OVERBOUGHT');
-  } else if (rsi > 45 && rsi < 55) {
-    // Zona neutral - rechazar
-    rsiValid = false;
-  } else {
-    // Dirección del RSI
-    rsiSignal = rsi > 50 ? 'CALL' : 'PUT';
-    rsiValid = true;
-    confirmations.push(rsi > 50 ? 'RSI_BULLISH' : 'RSI_BEARISH');
-  }
-
-  details.rsi = { value: rsi?.toFixed(2), signal: rsiSignal, valid: rsiValid };
-
-  // 3. BOLLINGER BANDS(9,2) - Rebote en bandas + Squeeze detection
-  const bb = calculateBollingerBands(prices, CONFIG.BB_PERIOD, CONFIG.BB_STDDEV);
-  let bbSignal = null;
-  let bbValid = false;
-
-  if (bb) {
-    const bandWidth = bb.width;
-    const position = (currentPrice - bb.lower) / (bb.upper - bb.lower);
-
-    // Squeeze: bandas muy juntas = evitar
-    if (bandWidth < 0.002) {
-      bbValid = false;
-      details.bb = { squeeze: true };
-    } else {
-      if (currentPrice <= bb.lower * 1.001) {
-        bbSignal = 'CALL';
-        bbValid = true;
-        confirmations.push('BB_LOWER_TOUCH');
-      } else if (currentPrice >= bb.upper * 0.999) {
-        bbSignal = 'PUT';
-        bbValid = true;
-        confirmations.push('BB_UPPER_TOUCH');
-      } else if (position < 0.3) {
-        bbSignal = 'CALL';
-        bbValid = true;
-        confirmations.push('BB_LOWER_ZONE');
-      } else if (position > 0.7) {
-        bbSignal = 'PUT';
-        bbValid = true;
-        confirmations.push('BB_UPPER_ZONE');
-      }
-
-      details.bb = { 
-        upper: bb.upper.toFixed(5), 
-        lower: bb.lower.toFixed(5), 
-        position: position.toFixed(2),
-        width: bandWidth.toFixed(5)
-      };
-    }
-  }
-
-  // 4. ADX(14) - Fuerza de tendencia
-  const adx = calculateADX(prices, CONFIG.ADX_PERIOD);
-  let adxValid = false;
-
-  if (adx !== null) {
-    adxValid = adx < CONFIG.ADX_THRESHOLD; // Solo operar si NO hay tendencia fuerte (mejor para mean reversion)
-    if (adxValid) confirmations.push('ADX_RANGE');
-    details.adx = { value: adx.toFixed(2), valid: adxValid };
-  }
-
-  // 5. PATRÓN DE VELAS
-  const pattern = detectCandlestickPattern(prices);
-  let patternValid = false;
-
-  if (pattern.confidence >= CONFIG.MIN_PATTERN_CONFIDENCE) {
-    patternValid = true;
-    confirmations.push(`PATTERN_${pattern.pattern}`);
-    details.pattern = pattern;
-  }
-
-  // DECISIÓN FINAL: Requiere mínimo 4 confirmaciones de 5 posibles
-  // Y TODOS los indicadores deben estar alineados (EMA, RSI, BB, Pattern)
-  const signals = [emaSignal, rsiSignal, bbSignal, pattern.signal].filter(s => s !== null);
-  const allCall = signals.every(s => s === 'CALL');
-  const allPut = signals.every(s => s === 'PUT');
-
-  if (confirmations.length >= CONFIG.REQUIRED_CONFIRMATIONS && (allCall || allPut)) {
-    signal = allCall ? 'CALL' : 'PUT';
-
-    // Filtro adicional: ATR para evitar operar en mercado plano
-    const atr = calculateATR(prices, 10);
-    if (atr && atr < 0.0005) {
-      return null; // Mercado demasiado plano
-    }
-
-    return {
-      signal,
-      confirmations: confirmations.length,
-      details,
-      confidence: (confirmations.length / 5 * 100).toFixed(1)
-    };
-  }
-
-  return null;
-}
-
-// ═══════════════════════════════════════════════════════════════════
-// BACKTESTING ENGINE
-// ═══════════════════════════════════════════════════════════════════
-function runBacktest() {
-  if (running) {
-    log("⚠ Detén el bot antes de iniciar backtest", "warn");
-    return;
-  }
-
-  backtestMode = true;
-  document.getElementById('backtestPanel').classList.add('active');
-  document.getElementById('statusPill').className = 'status-pill backtest';
-  document.getElementById('statusText').innerText = 'BACKTEST';
-
-  log("📊 Iniciando backtest con datos históricos simulados...", "backtest");
-
-  // Simulación de 30 días de datos históricos
-  const simulatedDays = 30;
-  const tradesPerDay = 8;
-  backtestResults = [];
-
-  let btBalance = CONFIG.INITIAL_BALANCE;
-  let btPeak = btBalance;
-  let btMaxDD = 0;
-  let btWins = 0;
-  let btTotal = 0;
-
-  for (let day = 1; day <= simulatedDays; day++) {
-    const dailyTrades = Math.floor(Math.random() * 3) + 6; // 6-8 trades por día
-    let dailyProfit = 0;
-
-    for (let trade = 0; trade < dailyTrades; trade++) {
-      // Simulación de señal con 68% win rate (realista con esta configuración)
-      const win = Math.random() < 0.68;
-      const stake = Math.min(btBalance * CONFIG.RISK_PER_TRADE, CONFIG.MAX_STAKE);
-      const payout = stake * 0.80; // 80% payout típico de Deriv
-
-      const pnl = win ? payout : -stake;
-      btBalance += pnl;
-      dailyProfit += pnl;
-
-      if (win) btWins++;
-      btTotal++;
-
-      // Track drawdown
-      if (btBalance > btPeak) btPeak = btBalance;
-      const dd = (btPeak - btBalance) / btPeak;
-      if (dd > btMaxDD) btMaxDD = dd;
-    }
-
-    backtestResults.push({
-      day,
-      profit: dailyProfit,
-      balance: btBalance,
-      trades: dailyTrades
-    });
-  }
-
-  const winRate = (btWins / btTotal * 100).toFixed(1);
-  const totalProfit = (btBalance - CONFIG.INITIAL_BALANCE).toFixed(2);
-  const avgDaily = (parseFloat(totalProfit) / simulatedDays).toFixed(2);
-
-  document.getElementById('bt-wr').innerText = winRate + '%';
-  document.getElementById('bt-wr').style.color = winRate >= 60 ? 'var(--green)' : 'var(--red)';
-  document.getElementById('bt-profit').innerText = '+' + totalProfit;
-  document.getElementById('bt-profit').style.color = 'var(--green)';
-  document.getElementById('bt-maxdd').innerText = (btMaxDD * 100).toFixed(1) + '%';
-  document.getElementById('bt-maxdd').style.color = btMaxDD < 0.05 ? 'var(--green)' : 'var(--orange)';
-
-  log(`✅ Backtest completado: ${btTotal} trades, ${winRate}% WR, Profit: $${totalProfit}`, "backtest");
-  log(`📈 Promedio diario: $${avgDaily} | Max Drawdown: ${(btMaxDD * 100).toFixed(1)}%`, "backtest");
-
-  setTimeout(() => {
-    backtestMode = false;
-    document.getElementById('statusPill').className = 'status-pill';
-    document.getElementById('statusText').innerText = 'OFFLINE';
-  }, 3000);
+  return score >= 3 ? { signal, score } : null;
 }
 
 // ═══════════════════════════════════════════════════════════════════
 // GESTIÓN DE OPERACIONES
 // ═══════════════════════════════════════════════════════════════════
-function adjustStake() {
-  // Kelly Criterion simplificado
-  const winRate = totalTrades > 0 ? wins / totalTrades : 0.5;
-  const kelly = winRate - ((1 - winRate) / 0.8); // 0.8 es payout ratio
-
-  let newStake = balance * CONFIG.RISK_PER_TRADE;
-
-  // Ajustar por racha
-  if (lossStreak >= 2) newStake *= 0.7;
-  if (lossStreak >= 3) newStake *= 0.5;
-  if (winStreak >= 3) newStake *= 1.1;
-
-  // Límites
-  newStake = Math.max(CONFIG.MIN_STAKE, Math.min(CONFIG.MAX_STAKE, newStake));
-  stake = Math.floor(newStake * 100) / 100;
-}
-
-function canTrade() {
-  const now = Date.now();
-
-  // Verificar pausa
-  if (now < pauseUntil) return false;
-
-  // Cooldown entre trades
-  if (now - lastTradeTime < CONFIG.COOLDOWN_MS) return false;
-
-  // Límite diario de operaciones
-  if (dailyTrades >= CONFIG.MAX_DAILY_TRADES) return false;
-
-  // Target diario alcanzado
-  if (dailyProfit >= CONFIG.DAILY_TARGET) return false;
-
-  return true;
-}
-
-function executeTrade(signal, market) {
-  if (!canTrade()) return;
-
-  adjustStake();
-
-  const tradeData = {
-    buy: 1,
-    price: stake,
-    parameters: {
-      amount: stake,
-      basis: "stake",
-      contract_type: signal,
-      currency: "USD",
-      duration: 5,
-      duration_unit: "t",
-      symbol: market
-    }
-  };
-
-  if (ws && ws.readyState === WebSocket.OPEN) {
-    ws.send(JSON.stringify(tradeData));
-
-    log(`${signal} ${market} $${stake} | Conf: ${signal.confirmations}/5`, "info");
-    document.getElementById('patternInfo').innerText = 
-      `${signal} ${market} — Confianza: ${signal.confidence}%`;
-    document.getElementById('patternTag').innerText = "ACTIVE";
-    document.getElementById('patternTag').className = "pattern-tag detected";
-
-    lastTradeTime = Date.now();
-    dailyTrades++;
-  }
-}
-
 function onTradeResult(pnl) {
-  dailyProfit += pnl;
-  totalTrades++;
-
   if (pnl > 0) {
-    wins++;
-    winStreak++;
-    lossStreak = 0;
-    log(`✅ WIN +${pnl.toFixed(2)} USD | Total: ${dailyProfit.toFixed(2)}`, "win");
+    totalProfits += pnl;
+    winCount++;
+    consecutiveWins++;
+    consecutiveLosses = 0;
+    log(`✅ WIN +$${pnl.toFixed(2)} | Stake: $${currentStake.toFixed(2)}`, "win");
   } else {
-    losses++;
-    lossStreak++;
-    winStreak = 0;
-    log(`❌ LOSS ${pnl.toFixed(2)} USD | Racha: ${lossStreak}`, "loss");
+    totalLosses += Math.abs(pnl);
+    lossCount++;
+    consecutiveLosses++;
+    consecutiveWins = 0;
+    log(`❌ LOSS -$${Math.abs(pnl).toFixed(2)} | Stake: $${currentStake.toFixed(2)}`, "loss");
   }
 
-  // Actualizar drawdown
-  if (balance > peakBalance) peakBalance = balance;
-  const currentDD = (peakBalance - balance) / peakBalance;
-  if (currentDD > maxDrawdown) maxDrawdown = currentDD;
-
-  // Pausa por racha negativa
-  if (lossStreak >= CONFIG.PAUSE_AFTER_LOSS_STREAK) {
-    pauseUntil = Date.now() + CONFIG.PAUSE_DURATION_MS;
-    log(`⏸ Pausa 2min por racha de ${lossStreak} pérdidas`, "warn");
+  // Aplicar compound para siguiente trade
+  if (compoundEnabled) {
+    applyCompound();
+    if (consecutiveWins > 0) {
+      log(`📈 Compound: ${consecutiveWins} wins → Stake $${currentStake.toFixed(2)}`, "compound");
+    } else if (consecutiveLosses > 0) {
+      log(`📉 Compound: Reduciendo → Stake $${currentStake.toFixed(2)}`, "compound");
+    }
   }
 
-  // Stop Loss
-  if (dailyProfit <= -(initialBalance * CONFIG.STOP_LOSS_PERCENT)) {
-    log("🛑 STOP LOSS alcanzado — Sesión cerrada", "stop");
-    stopBot();
-    return;
-  }
-
-  // Take Profit diario
-  if (dailyProfit >= CONFIG.DAILY_TARGET) {
-    log(`🎯 TARGET DIARIO $${CONFIG.DAILY_TARGET} alcanzado — Cerrando`, "win");
-    stopBot();
-    return;
-  }
-
+  dailyTrades++;
   updateUI();
-}
 
-// ═══════════════════════════════════════════════════════════════════
-// UI Y LOGGING
-// ═══════════════════════════════════════════════════════════════════
-function log(msg, type = "info") {
-  const el = document.getElementById("log");
-  const now = new Date();
-  const time = now.toTimeString().slice(0, 8);
-  const cls = {
-    win: "log-win",
-    loss: "log-loss", 
-    info: "log-info",
-    warn: "log-warn",
-    stop: "log-stop",
-    backtest: "log-backtest"
-  }[type] || "log-info";
-
-  el.innerHTML += `<div class="log-entry"><span class="log-time">${time}</span><span class="${cls}">${msg}</span></div>`;
-  el.scrollTop = el.scrollHeight;
-}
-
-function updateUI() {
-  const wr = totalTrades ? (wins / totalTrades * 100).toFixed(1) : 0;
-
-  document.getElementById("balance").innerText = balance.toFixed(2);
-
-  const profitEl = document.getElementById("profit");
-  profitEl.innerText = (dailyProfit >= 0 ? "+" : "") + dailyProfit.toFixed(2);
-  profitEl.className = "stat-value " + (dailyProfit > 0 ? "positive" : dailyProfit < 0 ? "negative" : "");
-
-  document.getElementById("stake").innerText = stake.toFixed(2);
-
-  const wrEl = document.getElementById("wr");
-  wrEl.innerText = wr + "%";
-  wrEl.className = "stat-value " + (wr >= 60 ? "positive" : wr > 0 ? "gold" : "");
-
-  // Barra de protección
-  const maxLoss = initialBalance * CONFIG.STOP_LOSS_PERCENT;
-  const pct = Math.max(0, Math.min(100, ((maxLoss + dailyProfit) / maxLoss) * 100));
-  const bar = document.getElementById("protectionBar");
-  bar.style.width = pct + "%";
-  bar.style.background = pct > 60 ? "linear-gradient(90deg,#00ff88,#00cfff)"
-                       : pct > 30 ? "linear-gradient(90deg,#ffd700,#ff9800)"
-                       : "linear-gradient(90deg,#ff3355,#c62828)";
-
-  // Pills de mercado
-  CONFIG.MARKETS.forEach(m => {
-    const pill = document.getElementById("pill-" + m);
-    pill.className = "market-pill" + (m === activeMarket ? " active" : "");
-  });
-}
-
-function updateIndicators(market) {
-  const prices = histories[market];
-  if (prices.length < 20) return;
-
-  const ema3 = calculateEMA(prices, CONFIG.EMA_FAST);
-  const ema9 = calculateEMA(prices, CONFIG.EMA_SLOW);
-  const rsi = calculateRSI(prices, CONFIG.RSI_PERIOD);
-  const adx = calculateADX(prices, CONFIG.ADX_PERIOD);
-  const bb = calculateBollingerBands(prices, CONFIG.BB_PERIOD, CONFIG.BB_STDDEV);
-
-  // Actualizar UI
-  const emaEl = document.getElementById('ind-ema');
-  if (ema3 > ema9) {
-    emaEl.innerText = 'BULL';
-    emaEl.className = 'ind-val buy';
-  } else {
-    emaEl.innerText = 'BEAR';
-    emaEl.className = 'ind-val sell';
+  // Checks
+  const net = totalProfits - totalLosses;
+  if (net >= CONFIG.DAILY_TARGET) {
+    log(`🎯 META ALCANZADA: $${net.toFixed(2)}`, "win");
+    stopBot();
   }
-
-  const rsiEl = document.getElementById('ind-rsi');
-  rsiEl.innerText = rsi?.toFixed(1) || '--';
-  rsiEl.className = 'ind-val ' + (rsi > 60 ? 'buy' : rsi < 40 ? 'sell' : 'neutral');
-
-  const adxEl = document.getElementById('ind-adx');
-  adxEl.innerText = adx?.toFixed(1) || '--';
-  adxEl.className = 'ind-val ' + (adx < CONFIG.ADX_THRESHOLD ? 'neutral' : 'sell');
-
-  const bbEl = document.getElementById('ind-bb');
-  if (bb) {
-    const pos = (prices[prices.length-1] - bb.lower) / (bb.upper - bb.lower);
-    bbEl.innerText = pos > 0.7 ? 'HIGH' : pos < 0.3 ? 'LOW' : 'MID';
-    bbEl.className = 'ind-val ' + (pos > 0.7 ? 'sell' : pos < 0.3 ? 'buy' : 'neutral');
+  if (net <= -3) {
+    log("🛑 STOP LOSS", "loss");
+    stopBot();
+  }
+  if (dailyTrades >= CONFIG.MAX_DAILY_TRADES) {
+    log("📊 Límite diario alcanzado", "info");
+    stopBot();
   }
 }
 
 // ═══════════════════════════════════════════════════════════════════
-// WEBSOCKET Y CONEXIÓN
+// WEBSOCKET
 // ═══════════════════════════════════════════════════════════════════
 function startBot() {
-  if (running || backtestMode) return;
-
-  // Reset diario
-  dailyProfit = 0;
+  // Reset de sesión
   dailyTrades = 0;
-  wins = 0;
-  losses = 0;
-  totalTrades = 0;
-  winStreak = 0;
-  lossStreak = 0;
+  consecutiveWins = 0;
+  consecutiveLosses = 0;
+  currentStake = baseStake;
 
-  // Limpiar historiales
+  if (compoundEnabled) applyCompound();
+
   CONFIG.MARKETS.forEach(m => histories[m] = []);
 
   ws = new WebSocket("wss://ws.binaryws.com/websockets/v3?app_id=1089");
@@ -1190,19 +954,13 @@ function startBot() {
 
     if (d.authorize) {
       running = true;
-      document.getElementById('statusPill').className = 'status-pill on';
-      document.getElementById('statusText').innerText = 'ONLINE';
-
+      updateToggleState();
       balance = d.authorize.balance;
       initialBalance = balance;
 
-      log("🔐 Conexión autorizada — Modo Conservador Activo", "info");
-      log(`💰 Balance: $${balance.toFixed(2)} | Target: $${CONFIG.DAILY_TARGET}/día`, "info");
+      log(`🔐 Bot iniciado | Stake: $${currentStake.toFixed(2)} | Compound: ${compoundEnabled ? 'ON' : 'OFF'}`, "info");
 
-      // Suscribir mercados
-      CONFIG.MARKETS.forEach(m => {
-        ws.send(JSON.stringify({ ticks: m, subscribe: 1 }));
-      });
+      CONFIG.MARKETS.forEach(m => ws.send(JSON.stringify({ ticks: m, subscribe: 1 })));
       ws.send(JSON.stringify({ balance: 1 }));
     }
 
@@ -1213,40 +971,28 @@ function startBot() {
 
     if (d.tick) {
       const m = d.tick.symbol;
-      if (histories[m] !== undefined) {
+      if (histories[m]) {
         histories[m].push(d.tick.quote);
-        if (histories[m].length > 100) histories[m].shift();
-
-        if (m === activeMarket || !activeMarket) {
-          updateIndicators(m);
-        }
+        if (histories[m].length > 50) histories[m].shift();
       }
 
-      if (running && canTrade()) {
-        // Seleccionar mejor mercado
-        let bestMarket = null;
-        let bestScore = -1;
-
-        for (const market of CONFIG.MARKETS) {
-          const prices = histories[market];
-          if (prices.length < 25) continue;
-
-          const signal = generateSignal(market);
-          if (signal && signal.confirmations > bestScore) {
-            bestScore = signal.confirmations;
-            bestMarket = market;
-          }
-        }
-
-        if (bestMarket && bestScore >= CONFIG.REQUIRED_CONFIRMATIONS) {
-          activeMarket = bestMarket;
-          const signal = generateSignal(bestMarket);
-          executeTrade(signal, bestMarket);
-        } else {
-          document.getElementById('patternInfo').innerText = 
-            bestMarket ? `Esperando confirmación (${bestScore}/4)...` : 'Analizando mercados...';
-          document.getElementById('patternTag').innerText = 'SCAN';
-          document.getElementById('patternTag').className = 'pattern-tag';
+      if (running && Date.now() - lastTradeTime > CONFIG.COOLDOWN_MS) {
+        const sig = generateSignal(m);
+        if (sig) {
+          ws.send(JSON.stringify({
+            buy: 1,
+            price: currentStake,
+            parameters: {
+              amount: currentStake,
+              basis: "stake",
+              contract_type: sig.signal,
+              currency: "USD",
+              duration: CONFIG.DURATION,
+              duration_unit: "t",
+              symbol: m
+            }
+          }));
+          lastTradeTime = Date.now();
         }
       }
     }
@@ -1260,39 +1006,28 @@ function startBot() {
     }
 
     if (d.proposal_open_contract && d.proposal_open_contract.is_sold) {
-      const pnl = parseFloat(d.proposal_open_contract.profit);
-      onTradeResult(pnl);
+      onTradeResult(parseFloat(d.proposal_open_contract.profit));
     }
 
-    if (d.error) {
-      log(`⚠ Error API: ${d.error.message}`, "warn");
-    }
+    if (d.error) log(`⚠ ${d.error.message}`, "info");
   };
 
-  ws.onerror = () => log("❌ Error de conexión", "stop");
   ws.onclose = () => {
-    if (running) {
-      running = false;
-      document.getElementById('statusPill').className = 'status-pill';
-      document.getElementById('statusText').innerText = 'OFFLINE';
-      log("🔌 Conexión cerrada", "warn");
-    }
+    if (running) stopBot();
   };
 }
 
 function stopBot() {
   if (ws) ws.close();
   running = false;
-  activeMarket = null;
-  document.getElementById('statusPill').className = 'status-pill';
-  document.getElementById('statusText').innerText = 'OFFLINE';
-  document.getElementById('patternInfo').innerText = 'Bot detenido';
-  document.getElementById('patternTag').innerText = 'STOP';
-  log(`⏹ Bot detenido | Profit hoy: $${dailyProfit.toFixed(2)}`, "warn");
-  updateUI();
+  updateToggleState();
+  const net = totalProfits - totalLosses;
+  log(`⏹ Bot detenido | Neto: $${net.toFixed(2)}`, "info");
 }
 
-// Inicializar UI
+// Inicializar
+document.getElementById('compoundLevels').style.opacity = '0.5';
+document.getElementById('compoundLevels').style.pointerEvents = 'none';
 updateUI();
 </script>
 
