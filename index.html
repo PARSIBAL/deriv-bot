@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>BOT APEX PRO v4.1 — Optimizado 9 Ticks</title>
+<title>BOT APEX — Multi Mercado Pro</title>
 <style>
   @import url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Orbitron:wght@400;700;900&display=swap');
 
@@ -12,8 +12,6 @@
     --red: #ff3355;
     --gold: #ffd700;
     --blue: #00cfff;
-    --purple: #b829dd;
-    --orange: #ff9500;
     --bg: #060810;
     --card: #0d1117;
     --border: #1a2535;
@@ -34,15 +32,14 @@
     padding: 20px;
     background-image:
       radial-gradient(ellipse at 20% 50%, rgba(0,207,255,0.04) 0%, transparent 60%),
-      radial-gradient(ellipse at 80% 20%, rgba(0,255,136,0.04) 0%, transparent 60%),
-      radial-gradient(ellipse at 50% 100%, rgba(184,41,221,0.03) 0%, transparent 50%);
+      radial-gradient(ellipse at 80% 20%, rgba(0,255,136,0.04) 0%, transparent 60%);
   }
 
   .card {
     background: var(--card);
     border: 1px solid var(--border);
     border-radius: 16px;
-    max-width: 520px;
+    max-width: 460px;
     width: 100%;
     overflow: hidden;
     box-shadow: 0 0 40px rgba(0,207,255,0.07), 0 20px 60px rgba(0,0,0,0.5);
@@ -60,20 +57,16 @@
     position: absolute;
     bottom: 0; left: 0; right: 0;
     height: 1px;
-    background: linear-gradient(90deg, transparent, var(--blue), var(--purple), var(--green), transparent);
+    background: linear-gradient(90deg, transparent, var(--blue), var(--green), transparent);
   }
 
   .title {
     font-family: 'Orbitron', monospace;
-    font-size: 20px;
+    font-size: 18px;
     font-weight: 900;
     letter-spacing: 3px;
     color: #fff;
     text-transform: uppercase;
-    background: linear-gradient(90deg, var(--blue), var(--purple), var(--green));
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
   }
 
   .subtitle {
@@ -132,11 +125,13 @@
     border: none;
     border-radius: 8px;
     font-family: 'Orbitron', monospace;
-    font-size: 11px;
+    font-size: 12px;
     font-weight: 700;
     letter-spacing: 1px;
     cursor: pointer;
     transition: all 0.2s;
+    position: relative;
+    overflow: hidden;
   }
 
   .btn-start {
@@ -145,11 +140,15 @@
   }
 
   .btn-start:hover { transform: translateY(-1px); box-shadow: 0 4px 20px rgba(0,255,136,0.3); }
+  .btn-start:active { transform: translateY(0); }
+
   .btn-stop {
     background: linear-gradient(135deg, #c62828, #ff3355);
     color: #fff;
   }
+
   .btn-stop:hover { transform: translateY(-1px); box-shadow: 0 4px 20px rgba(255,51,85,0.3); }
+  .btn-stop:active { transform: translateY(0); }
 
   .stats-grid {
     display: grid;
@@ -177,6 +176,7 @@
     font-size: 20px;
     font-weight: 700;
     color: #fff;
+    transition: color 0.3s;
   }
 
   .stat-value.positive { color: var(--green); }
@@ -184,25 +184,52 @@
   .stat-value.gold { color: var(--gold); }
   .stat-value.blue { color: var(--blue); }
 
-  .config-bar {
-    padding: 12px 24px;
+  .market-bar {
+    padding: 10px 24px;
     border-bottom: 1px solid var(--border);
-    background: rgba(184,41,221,0.05);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
     font-size: 10px;
+  }
+
+  .market-label { color: var(--dim); letter-spacing: 1px; }
+
+  .market-pills { display: flex; gap: 6px; }
+
+  .market-pill {
+    padding: 3px 10px;
+    border-radius: 10px;
+    border: 1px solid var(--border);
+    color: var(--dim);
+    font-size: 10px;
+    transition: all 0.3s;
+  }
+
+  .market-pill.active {
+    border-color: var(--gold);
+    color: var(--gold);
+    box-shadow: 0 0 8px rgba(255,215,0,0.2);
+  }
+
+  .mode-bar {
+    padding: 8px 24px;
+    border-bottom: 1px solid var(--border);
+    font-size: 10px;
+    color: var(--dim);
     display: flex;
     justify-content: space-between;
     align-items: center;
   }
 
-  .config-label {
-    color: var(--dim);
+  .mode-tag {
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-size: 9px;
     letter-spacing: 1px;
-  }
-
-  .config-val {
-    color: var(--purple);
-    font-family: 'Orbitron', monospace;
-    font-weight: 700;
+    background: rgba(0,207,255,0.1);
+    color: var(--blue);
+    border: 1px solid rgba(0,207,255,0.2);
   }
 
   .log-wrap { padding: 14px; }
@@ -216,14 +243,21 @@
     padding: 10px 12px;
     font-size: 10px;
     line-height: 1.7;
+    scrollbar-width: thin;
+    scrollbar-color: var(--border) transparent;
   }
 
+  .log::-webkit-scrollbar { width: 4px; }
+  .log::-webkit-scrollbar-track { background: transparent; }
+  .log::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+
   .log-entry { display: flex; gap: 6px; align-items: baseline; }
-  .log-time { color: var(--dim); font-size: 9px; }
+  .log-time { color: var(--dim); font-size: 9px; flex-shrink: 0; }
   .log-win { color: var(--green); }
   .log-loss { color: var(--red); }
   .log-info { color: var(--blue); }
   .log-warn { color: var(--gold); }
+  .log-stop { color: var(--red); }
 
   .footer {
     padding: 10px 24px 14px;
@@ -233,14 +267,30 @@
     letter-spacing: 1px;
     border-top: 1px solid var(--border);
   }
+
+  .protection-bar {
+    height: 3px;
+    background: var(--border);
+    margin: 0;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .protection-fill {
+    height: 100%;
+    width: 0%;
+    background: linear-gradient(90deg, var(--green), var(--gold));
+    transition: width 0.5s ease, background 0.5s;
+  }
 </style>
 </head>
 <body>
 
 <div class="card">
+
   <div class="header">
-    <div class="title">⚡ BOT APEX PRO</div>
-    <div class="subtitle">v4.1 OPTIMIZADO · 9 TICKS · TARGET $1.20</div>
+    <div class="title">⚡ BOT APEX</div>
+    <div class="subtitle">MULTI MERCADO — SISTEMA UNIFICADO v3.1 · SIN SNIPER</div>
     <div class="status-pill" id="statusPill">
       <div class="status-dot"></div>
       <span id="statusText">OFFLINE</span>
@@ -255,7 +305,7 @@
   <div class="stats-grid">
     <div class="stat-box">
       <div class="stat-label">💰 Balance</div>
-      <div class="stat-value blue" id="balance">100.00</div>
+      <div class="stat-value blue" id="balance">0.00</div>
     </div>
     <div class="stat-box">
       <div class="stat-label">📈 Ganancia</div>
@@ -263,344 +313,354 @@
     </div>
     <div class="stat-box">
       <div class="stat-label">🎯 Stake</div>
-      <div class="stat-value gold" id="stake">1.20</div>
+      <div class="stat-value gold" id="stake">0.35</div>
     </div>
     <div class="stat-box">
-      <div class="stat-label">🏆 Win Rate</div>
+      <div class="stat-label">🏆 Winrate</div>
       <div class="stat-value" id="wr">0%</div>
     </div>
   </div>
 
-  <div class="config-bar">
-    <span class="config-label">⏱️ DURACIÓN: 9 TICKS | EMA3/9 | RSI7 | BB9 | ADX14</span>
-    <span class="config-val">OPTIMIZADO</span>
+  <div class="protection-bar">
+    <div class="protection-fill" id="protectionBar"></div>
+  </div>
+
+  <div class="market-bar">
+    <span class="market-label">MERCADOS</span>
+    <div class="market-pills">
+      <div class="market-pill" id="pill-R_25">R_25</div>
+      <div class="market-pill" id="pill-R_50">R_50</div>
+      <div class="market-pill" id="pill-R_75">R_75</div>
+    </div>
+  </div>
+
+  <div class="mode-bar">
+    <span id="modeInfo">Esperando señal...</span>
+    <span class="mode-tag" id="modeTag">IDLE</span>
   </div>
 
   <div class="log-wrap">
     <div class="log" id="log"></div>
   </div>
 
-  <div class="footer">9 TICKS = RSI(7) 100% | BB(9) 100% | WR ESTIMADO 71%</div>
+  <div class="footer">STOP LOSS 3% · TAKE PROFIT 6% · PAUSA AUTO</div>
 </div>
 
 <script>
-// ═══════════════════════════════════════════════════════════════════
-// CONFIGURACIÓN OPTIMIZADA PARA 9 TICKS
-// ═══════════════════════════════════════════════════════════════════
-const CONFIG = {
-  TOKEN: "e1lRgxNoxWwBkzx",
-  MARKETS: ["R_25", "R_50", "R_75"],
+// ══════════════════════════════════════════
+// CONFIG — Cambia solo tu TOKEN
+// ══════════════════════════════════════════
+const TOKEN   = "e1lRgxNoxWwBkzx";
+const MARKETS = ["R_25", "R_50", "R_75"];
 
-  // ⭐ DURACIÓN ÓPTIMA: 9 ticks
-  // Permite RSI(7) y BB(9) calcularse completamente
-  // EMA(3/9) tiene tiempo de confirmar cruce
-  // ADX(14) da lectura parcial pero útil (64%)
-  DURATION: 9,
-
-  // Gestión de Capital
-  INITIAL_BALANCE: 100,
-  DAILY_TARGET: 1.20,
-  MAX_DAILY_TRADES: 8,        // Reducido para mayor calidad
-  RISK_PER_TRADE: 0.012,      // $1.20 en cuenta de $100
-  MAX_STAKE: 2.00,
-  MIN_STAKE: 0.80,
-
-  // Timing ajustado para 9 ticks (más largo = más cooldown)
-  COOLDOWN_MS: 45000,         // 45 segundos entre trades
-  PAUSE_AFTER_LOSS_STREAK: 2, // Más estricto
-  PAUSE_DURATION_MS: 180000,  // 3 minutos
-
-  // Indicadores (optimizados)
-  EMA_FAST: 3,
-  EMA_SLOW: 9,
-  RSI_PERIOD: 7,
-  RSI_OVERBOUGHT: 75,
-  RSI_OVERSOLD: 25,
-  BB_PERIOD: 9,
-  BB_STDDEV: 2,
-  ADX_PERIOD: 14,
-  ADX_THRESHOLD: 32,
-
-  // Confirmaciones: 4 de 5 (ADX puede ser opcional con 9 ticks)
-  REQUIRED_CONFIRMATIONS: 4,
-  MIN_PATTERN_CONFIDENCE: 0.75
-};
-
-// Estado global
-let ws, running = false;
-let balance = 100, dailyProfit = 0, dailyTrades = 0;
-let wins = 0, totalTrades = 0, stake = 1.20;
+// ══════════════════════════════════════════
+// ESTADO GLOBAL
+// ══════════════════════════════════════════
+let ws;
+let balance = 0, initialBalance = 0;
+let stake = 0.35;
+let running = false;
+let wins = 0, total = 0, profit = 0;
+let winStreak = 0, lossStreak = 0;
 let lastTrade = 0, pauseUntil = 0;
-let lossStreak = 0, winStreak = 0;
-const histories = { R_25: [], R_50: [], R_75: [] };
+let activeMarket = null;
+let histories = { R_25: [], R_50: [], R_75: [] };
 
-// Funciones matemáticas
-function calculateEMA(prices, period) {
-  if (prices.length < period) return null;
-  const k = 2 / (period + 1);
-  let ema = prices.slice(0, period).reduce((a, b) => a + b, 0) / period;
-  for (let i = period; i < prices.length; i++) {
-    ema = prices[i] * k + ema * (1 - k);
-  }
-  return ema;
-}
-
-function calculateRSI(prices, period) {
-  if (prices.length < period + 1) return null;
-  let gains = 0, losses = 0;
-  for (let i = 1; i <= period; i++) {
-    const change = prices[prices.length - i] - prices[prices.length - i - 1];
-    if (change > 0) gains += change;
-    else losses -= change;
-  }
-  const avgGain = gains / period;
-  const avgLoss = losses / period;
-  if (avgLoss === 0) return 100;
-  return 100 - (100 / (1 + avgGain / avgLoss));
-}
-
-function calculateBB(prices, period, stdDev) {
-  if (prices.length < period) return null;
-  const slice = prices.slice(-period);
-  const sma = slice.reduce((a, b) => a + b, 0) / period;
-  const variance = slice.reduce((sum, p) => sum + Math.pow(p - sma, 2), 0) / period;
-  const std = Math.sqrt(variance);
-  return {
-    upper: sma + (std * stdDev),
-    middle: sma,
-    lower: sma - (std * stdDev)
-  };
-}
-
-function calculateADX(prices, period) {
-  if (prices.length < period * 2) return null;
-  // Simplificado - retorna valor aproximado
-  let trSum = 0, plusDM = 0, minusDM = 0;
-  for (let i = prices.length - period; i < prices.length; i++) {
-    const tr = Math.abs(prices[i] - prices[i-1]);
-    trSum += tr;
-    if (prices[i] > prices[i-1]) plusDM += prices[i] - prices[i-1];
-    if (prices[i] < prices[i-1]) minusDM += prices[i-1] - prices[i];
-  }
-  return Math.abs(plusDM - minusDM) / (plusDM + minusDM + 0.001) * 100;
-}
-
-function detectPattern(prices) {
-  if (prices.length < 5) return { pattern: 'NONE', confidence: 0, signal: null };
-  const o = prices[prices.length - 2];
-  const c = prices[prices.length - 1];
-  const body = Math.abs(c - o);
-  const range = Math.max(o, c) - Math.min(o, c);
-  const trend = c > prices[prices.length - 4] ? 'UP' : 'DOWN';
-
-  if (trend === 'DOWN' && c > o && body > range * 0.6) {
-    return { pattern: 'BULLISH engulfing', confidence: 0.8, signal: 'CALL' };
-  }
-  if (trend === 'UP' && c < o && body > range * 0.6) {
-    return { pattern: 'BEARISH engulfing', confidence: 0.8, signal: 'PUT' };
-  }
-  return { pattern: 'NONE', confidence: 0, signal: null };
-}
-
-function generateSignal(market) {
-  const prices = histories[market];
-  if (prices.length < 20) return null;
-
-  const current = prices[prices.length - 1];
-  const confirmations = [];
-
-  // 1. EMA 3/9
-  const ema3 = calculateEMA(prices, CONFIG.EMA_FAST);
-  const ema9 = calculateEMA(prices, CONFIG.EMA_SLOW);
-  const emaSignal = ema3 > ema9 ? 'CALL' : 'PUT';
-  confirmations.push('EMA');
-
-  // 2. RSI(7) - Ahora completo con 9 ticks
-  const rsi = calculateRSI(prices, CONFIG.RSI_PERIOD);
-  let rsiSignal = null;
-  if (rsi < CONFIG.RSI_OVERSOLD) { rsiSignal = 'CALL'; confirmations.push('RSI_OVERSOLD'); }
-  else if (rsi > CONFIG.RSI_OVERBOUGHT) { rsiSignal = 'PUT'; confirmations.push('RSI_OVERBOUGHT'); }
-  else if (rsi > 45 && rsi < 55) return null; // Zona neutral
-  else { rsiSignal = rsi > 50 ? 'CALL' : 'PUT'; confirmations.push('RSI'); }
-
-  // 3. Bollinger Bands(9,2) - Ahora completo con 9 ticks
-  const bb = calculateBB(prices, CONFIG.BB_PERIOD, CONFIG.BB_STDDEV);
-  let bbSignal = null;
-  if (current <= bb.lower * 1.001) { bbSignal = 'CALL'; confirmations.push('BB_LOWER'); }
-  else if (current >= bb.upper * 0.999) { bbSignal = 'PUT'; confirmations.push('BB_UPPER'); }
-  else return null;
-
-  // 4. ADX(14) - Lectura parcial pero válida
-  const adx = calculateADX(prices, CONFIG.ADX_PERIOD);
-  if (adx && adx < CONFIG.ADX_THRESHOLD) confirmations.push('ADX');
-
-  // 5. Patrón de velas
-  const pattern = detectPattern(prices);
-  if (pattern.confidence >= CONFIG.MIN_PATTERN_CONFIDENCE) {
-    confirmations.push('PATTERN');
-  }
-
-  // Verificar alineación
-  const signals = [emaSignal, rsiSignal, bbSignal, pattern.signal].filter(s => s);
-  const allCall = signals.every(s => s === 'CALL');
-  const allPut = signals.every(s => s === 'PUT');
-
-  if (confirmations.length >= CONFIG.REQUIRED_CONFIRMATIONS && (allCall || allPut)) {
-    return {
-      signal: allCall ? 'CALL' : 'PUT',
-      confirmations: confirmations.length,
-      confidence: (confirmations.length / 5 * 100).toFixed(0)
-    };
-  }
-  return null;
-}
-
+// ══════════════════════════════════════════
+// LOG
+// ══════════════════════════════════════════
 function log(msg, type = "info") {
   const el = document.getElementById("log");
-  const time = new Date().toTimeString().slice(0, 8);
-  const colors = { win: 'log-win', loss: 'log-loss', info: 'log-info', warn: 'log-warn' };
-  el.innerHTML += `<div class="log-entry"><span class="log-time">${time}</span><span class="${colors[type] || 'log-info'}">${msg}</span></div>`;
+  const now = new Date();
+  const time = now.toTimeString().slice(0, 8);
+  const cls = { win: "log-win", loss: "log-loss", info: "log-info", warn: "log-warn", stop: "log-stop" }[type] || "log-info";
+  el.innerHTML += `<div class="log-entry"><span class="log-time">${time}</span><span class="${cls}">${msg}</span></div>`;
   el.scrollTop = el.scrollHeight;
 }
 
+// ══════════════════════════════════════════
+// UI
+// ══════════════════════════════════════════
 function updateUI() {
-  const wr = totalTrades ? (wins / totalTrades * 100).toFixed(1) : 0;
+  const wr = total ? (wins / total * 100).toFixed(1) : 0;
+
   document.getElementById("balance").innerText = balance.toFixed(2);
-  document.getElementById("profit").innerText = (dailyProfit >= 0 ? "+" : "") + dailyProfit.toFixed(2);
-  document.getElementById("profit").className = "stat-value " + (dailyProfit > 0 ? "positive" : dailyProfit < 0 ? "negative" : "");
+
+  const profitEl = document.getElementById("profit");
+  profitEl.innerText = (profit >= 0 ? "+" : "") + profit.toFixed(2);
+  profitEl.className = "stat-value " + (profit > 0 ? "positive" : profit < 0 ? "negative" : "");
+
   document.getElementById("stake").innerText = stake.toFixed(2);
-  document.getElementById("wr").innerText = wr + "%";
-  document.getElementById("wr").className = "stat-value " + (wr >= 65 ? "positive" : wr > 0 ? "gold" : "");
+
+  const wrEl = document.getElementById("wr");
+  wrEl.innerText = wr + "%";
+  wrEl.className = "stat-value " + (wr >= 52.6 ? "positive" : wr > 0 ? "gold" : "");
+
+  // Barra de protección (muestra qué tan cerca está del stop loss)
+  if (initialBalance > 0) {
+    const maxLoss = initialBalance * 0.03;
+    const pct = Math.max(0, Math.min(100, ((maxLoss + profit) / maxLoss) * 100));
+    const bar = document.getElementById("protectionBar");
+    bar.style.width = pct + "%";
+    bar.style.background = pct > 60 ? "linear-gradient(90deg,#00ff88,#00cfff)"
+                         : pct > 30 ? "linear-gradient(90deg,#ffd700,#ff9800)"
+                         : "linear-gradient(90deg,#ff3355,#c62828)";
+  }
+
+  // Pills de mercado
+  MARKETS.forEach(m => {
+    const pill = document.getElementById("pill-" + m);
+    pill.className = "market-pill" + (m === activeMarket ? " active" : "");
+  });
 }
 
-function canTrade() {
+function setStatus(on) {
+  const pill = document.getElementById("statusPill");
+  const text = document.getElementById("statusText");
+  pill.className = "status-pill" + (on ? " on" : "");
+  text.innerText = on ? "ONLINE" : "OFFLINE";
+}
+
+// ══════════════════════════════════════════
+// AJUSTE DE STAKE — Conservador progresivo
+// ══════════════════════════════════════════
+function adjustStake() {
+  let risk = 0.003;
+  if (lossStreak >= 2) risk = 0.002;   // reducir en rachas negativas
+  if (winStreak  >= 3) risk = 0.005;   // crecer moderado en rachas positivas
+
+  let calc = balance * risk;
+  if (calc > 1)    calc = 1;
+  if (calc < 0.35) calc = 0.35;
+  stake = Math.floor(calc * 100) / 100;
+}
+
+// ══════════════════════════════════════════
+// SELECCIÓN DE MEJOR MERCADO (Bot 2)
+// ══════════════════════════════════════════
+function getBestMarket() {
+  let best = null, bestScore = 0;
+
+  for (const m of MARKETS) {
+    const p = histories[m];
+    if (p.length < 25) continue;
+
+    const returns = [];
+    for (let i = 1; i < p.length; i++) returns.push(p[i] - p[i-1]);
+
+    const mean = returns.reduce((a,b) => a+b, 0) / returns.length;
+    const std  = Math.sqrt(returns.map(x => (x-mean)**2).reduce((a,b) => a+b, 0) / returns.length);
+
+    // Preferimos mercados con volatilidad en rango óptimo
+    if (std >= 0.003 && std <= 0.018) {
+      // Score = cuánto se acerca al centro del rango óptimo
+      const center = (0.003 + 0.018) / 2;
+      const score = 1 / (1 + Math.abs(std - center));
+      if (score > bestScore) {
+        bestScore = score;
+        best = m;
+      }
+    }
+  }
+  return best;
+}
+
+// ══════════════════════════════════════════
+// SEÑAL HÍBRIDA (Bot 3 mejorado)
+// ══════════════════════════════════════════
+function getSignal(prices) {
+  const returns = [];
+  for (let i = 1; i < prices.length; i++) returns.push(prices[i] - prices[i-1]);
+
+  const mean = returns.reduce((a,b) => a+b, 0) / returns.length;
+  const variance = returns.map(x => (x-mean)**2).reduce((a,b) => a+b, 0) / returns.length;
+  const std = Math.sqrt(variance);
+  const last = returns[returns.length-1];
+  const z = std > 0 ? (last - mean) / std : 0;
+
+  // Tendencia corta (8 velas) y larga (15 velas)
+  const trendShort = prices[prices.length-1] - prices[prices.length-8];
+  const trendLong  = prices[prices.length-1] - prices[prices.length-15];
+
+  // FILTRO DE VOLATILIDAD
+  if (std < 0.003 || std > 0.018) return null;
+
+  // FILTRO Z-SCORE — umbral alto del Bot 3
+  if (Math.abs(z) < 1.6) return null;
+
+  // FILTRO DE COHERENCIA — Z y tendencia corta deben coincidir
+  if (z > 0 && trendShort < 0) return null;
+  if (z < 0 && trendShort > 0) return null;
+
+  // CONFIRMACIÓN ADICIONAL — tendencia larga no debe contradecir
+  if (z > 0 && trendLong < -0.01) return null;
+  if (z < 0 && trendLong > 0.01)  return null;
+
+  // Decisión final por Z-score
+  const zDecision = z > 0 ? "CALL" : "PUT";
+
+  return { signal: zDecision, z: z.toFixed(2), std: std.toFixed(5) };
+}
+
+// ══════════════════════════════════════════
+// MOTOR PRINCIPAL — Se ejecuta en cada tick
+// ══════════════════════════════════════════
+function onTick() {
   const now = Date.now();
-  if (now < pauseUntil) return false;
-  if (now - lastTrade < CONFIG.COOLDOWN_MS) return false;
-  if (dailyTrades >= CONFIG.MAX_DAILY_TRADES) return false;
-  if (dailyProfit >= CONFIG.DAILY_TARGET) return false;
-  return true;
-}
 
-function executeTrade(signal, market) {
-  if (!canTrade()) return;
+  // ¿Estamos en pausa?
+  if (now < pauseUntil) {
+    const secs = Math.ceil((pauseUntil - now) / 1000);
+    document.getElementById("modeInfo").innerText = `⏸ Pausa activa — ${secs}s restantes`;
+    document.getElementById("modeTag").innerText = "PAUSA";
+    return;
+  }
 
-  // Ajustar stake
-  const kelly = (wins / totalTrades || 0.5) - ((1 - (wins / totalTrades || 0.5)) / 0.8);
-  let newStake = balance * CONFIG.RISK_PER_TRADE;
-  if (lossStreak >= 2) newStake *= 0.7;
-  if (winStreak >= 3) newStake *= 1.1;
-  stake = Math.max(CONFIG.MIN_STAKE, Math.min(CONFIG.MAX_STAKE, newStake));
+  // Cooldown entre operaciones (20 seg)
+  if (now - lastTrade < 20000) return;
 
+  // Seleccionar mejor mercado
+  const market = getBestMarket();
+  if (!market) {
+    document.getElementById("modeInfo").innerText = "Esperando datos suficientes...";
+    document.getElementById("modeTag").innerText = "WAIT";
+    return;
+  }
+
+  activeMarket = market;
+  const prices = histories[market];
+  if (prices.length < 25) return;
+
+  // Obtener señal
+  const result = getSignal(prices);
+  if (!result) {
+    document.getElementById("modeInfo").innerText = `${market} — sin señal válida`;
+    document.getElementById("modeTag").innerText = "SCAN";
+    updateUI();
+    return;
+  }
+
+  const { signal, z, std } = result;
+
+  adjustStake();
+
+  // Enviar orden
   ws.send(JSON.stringify({
     buy: 1,
     price: stake,
     parameters: {
       amount: stake,
       basis: "stake",
-      contract_type: signal.signal,
+      contract_type: signal,
       currency: "USD",
-      duration: CONFIG.DURATION,  // ⭐ 9 TICKS
+      duration: 5,
       duration_unit: "t",
       symbol: market
     }
   }));
 
-  log(`${signal.signal} ${market} $${stake.toFixed(2)} | Conf: ${signal.confirmations}/5 (${signal.confidence}%)`, "info");
-  lastTrade = Date.now();
-  dailyTrades++;
+  log(`${signal} ${market} $${stake} | z:${z} std:${std}`, "info");
+  document.getElementById("modeInfo").innerText = `${signal} en ${market} — z:${z}`;
+  document.getElementById("modeTag").innerText = "TREND";
+  lastTrade = now;
+  updateUI();
 }
 
+// ══════════════════════════════════════════
+// RESULTADO DE OPERACIÓN
+// ══════════════════════════════════════════
 function onResult(pnl) {
-  dailyProfit += pnl;
-  totalTrades++;
+  profit += pnl;
+  total++;
 
   if (pnl > 0) {
     wins++;
     winStreak++;
     lossStreak = 0;
-    log(`✅ WIN +$${pnl.toFixed(2)} | Total: $${dailyProfit.toFixed(2)}`, "win");
+    log(`✅ WIN +${pnl.toFixed(2)} USD`, "win");
   } else {
     lossStreak++;
     winStreak = 0;
-    log(`❌ LOSS -$${Math.abs(pnl).toFixed(2)} | Racha: ${lossStreak}`, "loss");
-  }
-
-  if (lossStreak >= CONFIG.PAUSE_AFTER_LOSS_STREAK) {
-    pauseUntil = Date.now() + CONFIG.PAUSE_DURATION_MS;
-    log(`⏸ Pausa 3min por ${lossStreak} pérdidas`, "warn");
-  }
-
-  if (dailyProfit <= -3) {  // Stop loss 3%
-    log("🛑 STOP LOSS", "warn");
-    stopBot();
-  }
-  if (dailyProfit >= CONFIG.DAILY_TARGET) {
-    log(`🎯 TARGET $${CONFIG.DAILY_TARGET} alcanzado`, "win");
-    stopBot();
+    log(`❌ LOSS ${pnl.toFixed(2)} USD`, "loss");
   }
 
   updateUI();
+
+  // PROTECCIÓN: pausa tras 3 pérdidas consecutivas
+  if (lossStreak >= 3) {
+    pauseUntil = Date.now() + 90000;
+    log("⏸ Pausa 90s por racha negativa", "warn");
+  }
+
+  // STOP LOSS: -3% del balance inicial
+  if (profit <= -(initialBalance * 0.03)) {
+    log("🛑 STOP LOSS alcanzado — sesión cerrada", "stop");
+    stopBot();
+    return;
+  }
+
+  // TAKE PROFIT: +6% del balance inicial
+  if (profit >= (initialBalance * 0.06)) {
+    log("🎯 TAKE PROFIT alcanzado — sesión cerrada", "win");
+    stopBot();
+    return;
+  }
 }
 
+// ══════════════════════════════════════════
+// WEBSOCKET
+// ══════════════════════════════════════════
 function startBot() {
   if (running) return;
 
-  // Reset
-  dailyProfit = 0; dailyTrades = 0; wins = 0; totalTrades = 0;
-  lossStreak = 0; winStreak = 0;
-  CONFIG.MARKETS.forEach(m => histories[m] = []);
+  // Reset de estado por sesión
+  wins = 0; total = 0; profit = 0;
+  winStreak = 0; lossStreak = 0;
+  lastTrade = 0; pauseUntil = 0;
+  activeMarket = null;
+  histories = { R_25: [], R_50: [], R_75: [] };
 
   ws = new WebSocket("wss://ws.binaryws.com/websockets/v3?app_id=1089");
 
   ws.onopen = () => {
-    ws.send(JSON.stringify({ authorize: CONFIG.TOKEN }));
+    ws.send(JSON.stringify({ authorize: TOKEN }));
   };
 
   ws.onmessage = (e) => {
     const d = JSON.parse(e.data);
 
+    // — Autorización
     if (d.authorize) {
       running = true;
-      document.getElementById('statusPill').className = 'status-pill on';
-      document.getElementById('statusText').innerText = 'ONLINE';
-      balance = d.authorize.balance;
-      log(`🔐 Conectado | Balance: $${balance} | Duración: ${CONFIG.DURATION} ticks`, "info");
-      log(`📊 RSI(7) y BB(9) ahora calculan 100% con ${CONFIG.DURATION} ticks`, "info");
+      setStatus(true);
+      initialBalance = d.authorize.balance;
+      balance = initialBalance;
+      log("🔐 Conexión autorizada", "info");
+      log(`💰 Balance inicial: $${balance.toFixed(2)}`, "info");
+      updateUI();
 
-      CONFIG.MARKETS.forEach(m => ws.send(JSON.stringify({ ticks: m, subscribe: 1 })));
+      // Suscribir todos los mercados
+      MARKETS.forEach(m => ws.send(JSON.stringify({ ticks: m, subscribe: 1 })));
       ws.send(JSON.stringify({ balance: 1 }));
     }
 
+    // — Balance en tiempo real
     if (d.balance) {
       balance = d.balance.balance;
       updateUI();
     }
 
+    // — Tick de precio
     if (d.tick) {
       const m = d.tick.symbol;
-      if (histories[m]) {
+      if (histories[m] !== undefined) {
         histories[m].push(d.tick.quote);
-        if (histories[m].length > 100) histories[m].shift();
+        if (histories[m].length > 50) histories[m].shift();
       }
-
-      if (running && canTrade()) {
-        // Buscar mejor mercado
-        let bestMarket = null, bestScore = 0;
-        for (const market of CONFIG.MARKETS) {
-          const sig = generateSignal(market);
-          if (sig && sig.confirmations > bestScore) {
-            bestScore = sig.confirmations;
-            bestMarket = market;
-          }
-        }
-
-        if (bestMarket && bestScore >= CONFIG.REQUIRED_CONFIRMATIONS) {
-          executeTrade(generateSignal(bestMarket), bestMarket);
-        }
-      }
+      if (running) onTick();
     }
 
+    // — Compra ejecutada → suscribir al contrato
     if (d.buy) {
       ws.send(JSON.stringify({
         proposal_open_contract: 1,
@@ -609,28 +669,38 @@ function startBot() {
       }));
     }
 
+    // — Resultado del contrato
     if (d.proposal_open_contract && d.proposal_open_contract.is_sold) {
-      onResult(parseFloat(d.proposal_open_contract.profit));
+      const pnl = parseFloat(d.proposal_open_contract.profit);
+      onResult(pnl);
     }
 
-    if (d.error) log(`⚠ Error: ${d.error.message}`, "warn");
+    // — Errores de API
+    if (d.error) {
+      log(`⚠ API Error: ${d.error.message}`, "warn");
+    }
   };
 
+  ws.onerror = () => log("❌ Error de conexión WebSocket", "stop");
   ws.onclose = () => {
-    running = false;
-    document.getElementById('statusPill').className = 'status-pill';
-    document.getElementById('statusText').innerText = 'OFFLINE';
+    if (running) {
+      running = false;
+      setStatus(false);
+      log("🔌 Conexión cerrada", "warn");
+    }
   };
 }
 
 function stopBot() {
   if (ws) ws.close();
   running = false;
-  log(`⏹ Detenido | Profit: $${dailyProfit.toFixed(2)}`, "warn");
+  setStatus(false);
+  activeMarket = null;
   updateUI();
+  log("⏹ Bot detenido", "warn");
+  document.getElementById("modeInfo").innerText = "Esperando señal...";
+  document.getElementById("modeTag").innerText = "IDLE";
 }
-
-updateUI();
 </script>
 
 </body>
