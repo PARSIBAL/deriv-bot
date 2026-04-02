@@ -1,4 +1,5 @@
 <script>
+/* ═════════ API DERIV SEGURA ═════════ */
 const APP_ID = 1089;
 const TOKEN_DEMO = "e1lRgxNoxWwBkzx";
 const TOKEN_REAL = "AQUI_TU_TOKEN_REAL";
@@ -10,14 +11,10 @@ let conectado = false;
 let ticks = [];
 let ema3 = null;
 let ema9 = null;
-
-let wins = 0;
-let losses = 0;
-
 let operando = false;
 
 /* ═════════ CONEXIÓN ═════════ */
-function conectarDeriv() {
+function derivConectar() {
   const token = cuentaTipo === "demo" ? TOKEN_DEMO : TOKEN_REAL;
 
   ws = new WebSocket(`wss://ws.derivws.com/websockets/v3?app_id=${APP_ID}`);
@@ -31,66 +28,47 @@ function conectarDeriv() {
 
     if (data.msg_type === "authorize") {
       conectado = true;
-      suscribirseTicks();
-      log("✅ Conectado", "info");
+      derivSuscribir();
+      console.log("✅ Conectado a Deriv");
     }
 
     if (data.msg_type === "tick") {
-      manejarTick(data.tick.quote);
-    }
-
-    if (data.msg_type === "buy") {
-      log("🟢 Entrada ejecutada", "win");
-
-      // Simulación resultado (hasta conectar contract update)
-      setTimeout(() => {
-        const resultado = Math.random() > 0.45; // 55% win aprox
-
-        if (resultado) {
-          wins++;
-          log("✅ WIN", "win");
-        } else {
-          losses++;
-          log("❌ LOSS", "loss");
-        }
-
-        actualizarStats();
-        operando = false;
-      }, 4000);
+      derivTick(data.tick.quote);
     }
   };
+
+  ws.onerror = (e) => console.error("❌ WS Error", e);
 }
 
 /* ═════════ TICKS ═════════ */
-function suscribirseTicks() {
-  ws.send(JSON.stringify({ ticks: "R_50", subscribe: 1 }));
+function derivSuscribir() {
+  ws.send(JSON.stringify({
+    ticks: "R_50",
+    subscribe: 1
+  }));
 }
 
-function manejarTick(precio) {
+function derivTick(precio) {
   ticks.push(precio);
   if (ticks.length > 20) ticks.shift();
 
-  calcularEMAs();
+  derivEMA(precio);
 
-  if (!operando) evaluarEntrada();
+  if (!operando) derivEvaluar();
 }
 
 /* ═════════ EMA ═════════ */
-function calcularEMA(periodo, prevEMA, precio) {
-  const k = 2 / (periodo + 1);
-  return prevEMA ? (precio * k + prevEMA * (1 - k)) : precio;
+function derivEMA(precio) {
+  const k3 = 2 / (3 + 1);
+  const k9 = 2 / (9 + 1);
+
+  ema3 = ema3 ? (precio * k3 + ema3 * (1 - k3)) : precio;
+  ema9 = ema9 ? (precio * k9 + ema9 * (1 - k9)) : precio;
 }
 
-function calcularEMAs() {
-  const precio = ticks[ticks.length - 1];
-
-  ema3 = calcularEMA(3, ema3, precio);
-  ema9 = calcularEMA(9, ema9, precio);
-}
-
-/* ═════════ LÓGICA PRO ═════════ */
-function evaluarEntrada() {
-  if (ticks.length < 10) return;
+/* ═════════ LÓGICA ═════════ */
+function derivEvaluar() {
+  if (ticks.length < 5) return;
 
   const t1 = ticks[ticks.length - 1];
   const t2 = ticks[ticks.length - 2];
@@ -101,21 +79,19 @@ function evaluarEntrada() {
 
   const stake = parseFloat(document.getElementById("inputStake").value);
 
-  // 🟢 CALL
   if (ema3 > ema9 && subida) {
     operando = true;
-    comprarCALL(stake);
-  }
-
-  // 🔴 PUT
-  else if (ema3 < ema9 && bajada) {
+    derivCALL(stake);
+  } else if (ema3 < ema9 && bajada) {
     operando = true;
-    comprarPUT(stake);
+    derivPUT(stake);
   }
 }
 
 /* ═════════ OPERAR ═════════ */
-function comprarCALL(stake) {
+function derivCALL(stake) {
+  if (!conectado) return;
+
   ws.send(JSON.stringify({
     buy: 1,
     price: stake,
@@ -129,9 +105,14 @@ function comprarCALL(stake) {
       symbol: "R_50"
     }
   }));
+
+  console.log("CALL");
+  setTimeout(()=> operando=false, 4000);
 }
 
-function comprarPUT(stake) {
+function derivPUT(stake) {
+  if (!conectado) return;
+
   ws.send(JSON.stringify({
     buy: 1,
     price: stake,
@@ -145,35 +126,22 @@ function comprarPUT(stake) {
       symbol: "R_50"
     }
   }));
+
+  console.log("PUT");
+  setTimeout(()=> operando=false, 4000);
 }
 
-/* ═════════ UI STATS ═════════ */
-function actualizarStats() {
-  document.getElementById("rWins").innerText = wins;
-  document.getElementById("rLosses").innerText = losses;
-}
+/* ═════════ ENGANCHE CON TU BOT ═════════ */
+/* SOLO CONECTAMOS SIN TOCAR TU launchBot ORIGINAL */
+document.addEventListener("DOMContentLoaded", () => {
+  const btn = document.querySelector(".modal-start");
 
-/* ═════════ LOG ═════════ */
-function log(msg, tipo="info") {
-  const logBox = document.querySelector(".log");
-  if (!logBox) return;
-
-  const div = document.createElement("div");
-  div.className = "le";
-
-  const time = new Date().toLocaleTimeString();
-
-  div.innerHTML = `
-    <div class="lt">${time}</div>
-    <div class="l${tipo}">${msg}</div>
-  `;
-
-  logBox.appendChild(div);
-  logBox.scrollTop = logBox.scrollHeight;
-}
-
-/* ═════════ START ═════════ */
-function launchBot() {
-  conectarDeriv();
-}
+  if (btn) {
+    btn.addEventListener("click", () => {
+      setTimeout(() => {
+        derivConectar();
+      }, 500); // espera que tu UI cargue primero
+    });
+  }
+});
 </script>
