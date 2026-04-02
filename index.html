@@ -1,11 +1,12 @@
 <script>
-/* ═════════ API DERIV SEGURA ═════════ */
+(function(){
+
 const APP_ID = 1089;
 const TOKEN_DEMO = "e1lRgxNoxWwBkzx";
 const TOKEN_REAL = "AQUI_TU_TOKEN_REAL";
 
 let cuentaTipo = "demo";
-let ws;
+let ws = null;
 let conectado = false;
 
 let ticks = [];
@@ -13,135 +14,126 @@ let ema3 = null;
 let ema9 = null;
 let operando = false;
 
-/* ═════════ CONEXIÓN ═════════ */
-function derivConectar() {
-  const token = cuentaTipo === "demo" ? TOKEN_DEMO : TOKEN_REAL;
+/* ===== CONEXIÓN ===== */
+function conectar(){
+  try{
+    const token = cuentaTipo === "demo" ? TOKEN_DEMO : TOKEN_REAL;
 
-  ws = new WebSocket(`wss://ws.derivws.com/websockets/v3?app_id=${APP_ID}`);
+    ws = new WebSocket(`wss://ws.derivws.com/websockets/v3?app_id=${APP_ID}`);
 
-  ws.onopen = () => {
-    ws.send(JSON.stringify({ authorize: token }));
-  };
+    ws.onopen = () => {
+      ws.send(JSON.stringify({ authorize: token }));
+    };
 
-  ws.onmessage = (msg) => {
-    const data = JSON.parse(msg.data);
+    ws.onmessage = (msg)=>{
+      const data = JSON.parse(msg.data);
 
-    if (data.msg_type === "authorize") {
-      conectado = true;
-      derivSuscribir();
-      console.log("✅ Conectado a Deriv");
-    }
+      if(data.msg_type === "authorize"){
+        conectado = true;
+        suscribir();
+        console.log("✅ Conectado");
+      }
 
-    if (data.msg_type === "tick") {
-      derivTick(data.tick.quote);
-    }
-  };
+      if(data.msg_type === "tick"){
+        tick(data.tick.quote);
+      }
+    };
 
-  ws.onerror = (e) => console.error("❌ WS Error", e);
-}
-
-/* ═════════ TICKS ═════════ */
-function derivSuscribir() {
-  ws.send(JSON.stringify({
-    ticks: "R_50",
-    subscribe: 1
-  }));
-}
-
-function derivTick(precio) {
-  ticks.push(precio);
-  if (ticks.length > 20) ticks.shift();
-
-  derivEMA(precio);
-
-  if (!operando) derivEvaluar();
-}
-
-/* ═════════ EMA ═════════ */
-function derivEMA(precio) {
-  const k3 = 2 / (3 + 1);
-  const k9 = 2 / (9 + 1);
-
-  ema3 = ema3 ? (precio * k3 + ema3 * (1 - k3)) : precio;
-  ema9 = ema9 ? (precio * k9 + ema9 * (1 - k9)) : precio;
-}
-
-/* ═════════ LÓGICA ═════════ */
-function derivEvaluar() {
-  if (ticks.length < 5) return;
-
-  const t1 = ticks[ticks.length - 1];
-  const t2 = ticks[ticks.length - 2];
-  const t3 = ticks[ticks.length - 3];
-
-  const subida = t1 > t2 && t2 > t3;
-  const bajada = t1 < t2 && t2 < t3;
-
-  const stake = parseFloat(document.getElementById("inputStake").value);
-
-  if (ema3 > ema9 && subida) {
-    operando = true;
-    derivCALL(stake);
-  } else if (ema3 < ema9 && bajada) {
-    operando = true;
-    derivPUT(stake);
+    ws.onerror = ()=> console.log("❌ error conexión");
+  }catch(e){
+    console.error(e);
   }
 }
 
-/* ═════════ OPERAR ═════════ */
-function derivCALL(stake) {
-  if (!conectado) return;
+/* ===== TICKS ===== */
+function suscribir(){
+  ws.send(JSON.stringify({ticks:"R_50",subscribe:1}));
+}
+
+function tick(precio){
+  ticks.push(precio);
+  if(ticks.length > 20) ticks.shift();
+
+  calcularEMA(precio);
+
+  if(!operando){
+    evaluar();
+  }
+}
+
+/* ===== EMA ===== */
+function calcularEMA(precio){
+  const k3 = 2/(3+1);
+  const k9 = 2/(9+1);
+
+  ema3 = ema3 ? precio*k3 + ema3*(1-k3) : precio;
+  ema9 = ema9 ? precio*k9 + ema9*(1-k9) : precio;
+}
+
+/* ===== LÓGICA ===== */
+function evaluar(){
+  if(ticks.length < 6) return;
+
+  const t1 = ticks.at(-1);
+  const t2 = ticks.at(-2);
+  const t3 = ticks.at(-3);
+
+  const subida = t1>t2 && t2>t3;
+  const bajada = t1<t2 && t2<t3;
+
+  const stakeInput = document.getElementById("inputStake");
+  if(!stakeInput) return;
+
+  const stake = parseFloat(stakeInput.value || 0.35);
+
+  if(ema3 > ema9 && subida){
+    operando = true;
+    comprar("CALL", stake);
+  }
+
+  else if(ema3 < ema9 && bajada){
+    operando = true;
+    comprar("PUT", stake);
+  }
+}
+
+/* ===== COMPRA ===== */
+function comprar(tipo, stake){
+  if(!conectado) return;
 
   ws.send(JSON.stringify({
-    buy: 1,
-    price: stake,
-    parameters: {
-      amount: stake,
-      basis: "stake",
-      contract_type: "CALL",
-      currency: "USD",
-      duration: 3,
-      duration_unit: "t",
-      symbol: "R_50"
+    buy:1,
+    price:stake,
+    parameters:{
+      amount:stake,
+      basis:"stake",
+      contract_type:tipo,
+      currency:"USD",
+      duration:3,
+      duration_unit:"t",
+      symbol:"R_50"
     }
   }));
 
-  console.log("CALL");
-  setTimeout(()=> operando=false, 4000);
+  console.log("📊 Operando:", tipo);
+
+  setTimeout(()=>{
+    operando = false;
+  },4000);
 }
 
-function derivPUT(stake) {
-  if (!conectado) return;
+/* ===== INTEGRACIÓN CON TU BOT ===== */
+document.addEventListener("DOMContentLoaded", ()=>{
 
-  ws.send(JSON.stringify({
-    buy: 1,
-    price: stake,
-    parameters: {
-      amount: stake,
-      basis: "stake",
-      contract_type: "PUT",
-      currency: "USD",
-      duration: 3,
-      duration_unit: "t",
-      symbol: "R_50"
-    }
-  }));
-
-  console.log("PUT");
-  setTimeout(()=> operando=false, 4000);
-}
-
-/* ═════════ ENGANCHE CON TU BOT ═════════ */
-/* SOLO CONECTAMOS SIN TOCAR TU launchBot ORIGINAL */
-document.addEventListener("DOMContentLoaded", () => {
   const btn = document.querySelector(".modal-start");
 
-  if (btn) {
-    btn.addEventListener("click", () => {
-      setTimeout(() => {
-        derivConectar();
-      }, 500); // espera que tu UI cargue primero
+  if(btn){
+    btn.addEventListener("click", ()=>{
+      setTimeout(conectar, 800);
     });
   }
+
 });
+
+})();
 </script>
