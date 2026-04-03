@@ -2,325 +2,278 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>BOT APEX FX — DERIV BINARIAS</title>
+<title>SNIPER PRO FX</title>
+
 <style>
-@import url('https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;600;700&family=Oxanium:wght@300;400;600;800&display=swap');
-
-:root {
-  --g1: #00ffe0;
-  --g2: #00b4d8;
-  --red: #ff4757;
-  --gold: #feca57;
-  --win: #2ed573;
-  --orange: #ff9f43;
-  --purple: #a29bfe;
-  --pink: #fd79a8;
-  --blue: #74b9ff;
-  --bg0: #04080f;
-  --bg1: #080f1a;
-  --bg2: #0d1626;
-  --border: rgba(0,255,224,0.1);
-  --dim: #3d5a72;
-}
-
-*{box-sizing:border-box;margin:0;padding:0;}
 body{
-  background:var(--bg0);font-family:'Rajdhani',sans-serif;
-  min-height:100vh;display:flex;align-items:center;justify-content:center;
-  padding:16px;
-  background-image:
-    radial-gradient(ellipse 80% 40% at 50% 0%,rgba(0,180,216,.06) 0%,transparent 70%),
-    repeating-linear-gradient(0deg,transparent,transparent 39px,rgba(0,255,224,.015) 40px),
-    repeating-linear-gradient(90deg,transparent,transparent 39px,rgba(0,255,224,.015) 40px);
+  background:#060b14;
+  color:#fff;
+  font-family:Arial;
+  text-align:center;
 }
-.wrap{width:100%;max-width:460px;}
 
-/* ── MODAL ── */
-.modal-overlay{position:fixed;inset:0;background:rgba(4,8,15,.95);display:flex;align-items:center;justify-content:center;z-index:999;backdrop-filter:blur(8px);transition:opacity .4s;}
-.modal-overlay.hidden{opacity:0;pointer-events:none;}
-.modal{background:var(--bg1);border:1px solid var(--border);border-radius:20px;padding:22px 20px;max-width:370px;width:92%;position:relative;overflow:hidden;max-height:90vh;overflow-y:auto;}
-.modal::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,transparent,var(--blue) 20%,var(--g1) 60%,transparent);}
-.modal-title{font-family:'Oxanium',monospace;font-size:16px;font-weight:800;color:#fff;letter-spacing:3px;text-align:center;margin-bottom:2px;}
-.modal-sub{font-size:9px;color:var(--dim);letter-spacing:2px;text-align:center;margin-bottom:16px;}
-.modal-q{font-size:11px;color:var(--g1);letter-spacing:1px;margin-bottom:8px;font-weight:600;}
-.modal-section{margin-bottom:14px;}
-.modal-divider{height:1px;background:var(--border);margin:12px 0;}
-
-/* Par selector */
-.pair-grid{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:4px;}
-.pair-btn{
-  font-family:'Oxanium',monospace;font-size:10px;font-weight:700;
-  padding:9px 6px;border:1px solid var(--dim);border-radius:8px;
-  background:var(--bg2);color:var(--dim);cursor:pointer;transition:all .2s;text-align:center;
+.container{
+  max-width:420px;
+  margin:auto;
+  padding:20px;
 }
-.pair-btn:hover{border-color:var(--blue);color:var(--blue);}
-.pair-btn.sel{border-color:var(--g1);color:#000;background:var(--g1);}
-.pair-hint{font-size:8px;color:var(--dim);margin-top:4px;letter-spacing:.5px;}
 
-/* Inputs */
-.two-col{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px;}
-.num-input{width:100%;background:var(--bg2);border:1px solid var(--dim);border-radius:10px;color:#fff;font-family:'Oxanium',monospace;font-size:15px;font-weight:700;padding:9px 12px;outline:none;transition:border .3s;text-align:center;}
-.num-input:focus{border-color:var(--g1);}
-.presets{display:flex;gap:5px;flex-wrap:wrap;margin-top:5px;}
-.preset{font-family:'Oxanium',monospace;font-size:9px;padding:4px 9px;border:1px solid var(--dim);border-radius:7px;color:var(--dim);background:var(--bg2);cursor:pointer;transition:all .2s;}
-.preset:hover{border-color:var(--g1);color:var(--g1);}
-.preset.active{border-color:var(--g1);color:#000;background:var(--g1);}
-
-/* Paroli box */
-.paroli-box{background:rgba(162,155,254,.07);border:1px solid rgba(162,155,254,.2);border-radius:10px;padding:10px 12px;margin-bottom:12px;}
-.paroli-title{font-size:10px;color:var(--purple);letter-spacing:1px;margin-bottom:6px;font-weight:600;}
-.paroli-levels{display:flex;gap:4px;align-items:center;}
-.plvl{flex:1;text-align:center;padding:7px 3px;border-radius:7px;border:1px solid rgba(162,155,254,.2);background:rgba(162,155,254,.05);}
-.plvl-num{font-family:'Oxanium',monospace;font-size:12px;font-weight:800;color:var(--purple);}
-.plvl-lbl{font-size:7px;color:var(--dim);margin-top:2px;}
-.plvl-arrow{font-size:9px;color:var(--dim);}
-.paroli-rule{font-size:9px;color:var(--dim);margin-top:7px;line-height:1.6;}
-
-/* Config summary */
-.config-summary{background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:8px 12px;margin-bottom:12px;font-size:10px;color:var(--g1);line-height:1.9;}
-.modal-start{width:100%;font-family:'Oxanium',monospace;font-size:13px;font-weight:800;letter-spacing:3px;padding:13px;border:none;border-radius:12px;background:linear-gradient(135deg,#00b09b,#00ffe0);color:#000;cursor:pointer;transition:all .2s;}
-.modal-start:hover{box-shadow:0 4px 24px rgba(0,255,224,.4);transform:translateY(-1px);}
-
-/* ── HEADER ── */
-.hdr{background:var(--bg1);border:1px solid var(--border);border-radius:18px 18px 0 0;padding:14px 18px 12px;position:relative;overflow:hidden;}
-.hdr::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,transparent,var(--blue) 20%,var(--g2) 50%,var(--g1) 80%,transparent);}
-.hdr-top{display:flex;justify-content:space-between;align-items:flex-start;}
-.brand{font-family:'Oxanium',monospace;}
-.brand-name{font-size:19px;font-weight:800;color:#fff;letter-spacing:4px;}
-.brand-sub{font-size:8px;color:var(--dim);letter-spacing:2px;margin-top:1px;}
-.badge{font-family:'Oxanium',monospace;font-size:9px;letter-spacing:2px;padding:4px 10px;border-radius:20px;border:1px solid var(--dim);color:var(--dim);transition:all .4s;}
-.badge.live{border-color:var(--win);color:var(--win);box-shadow:0 0 12px rgba(46,213,115,.25);animation:glow 2s ease-in-out infinite;}
-@keyframes glow{0%,100%{box-shadow:0 0 8px rgba(46,213,115,.2);}50%{box-shadow:0 0 18px rgba(46,213,115,.5);}}
-.dot{display:inline-block;width:5px;height:5px;border-radius:50%;background:currentColor;margin-right:5px;vertical-align:middle;}
-.badge.live .dot{animation:blink 1s infinite;}
-@keyframes blink{0%,100%{opacity:1;}50%{opacity:.2;}}
-
-/* Par activo */
-.active-pair{
-  margin-top:8px;display:flex;align-items:center;gap:8px;
-  background:rgba(116,185,255,.06);border:1px solid rgba(116,185,255,.2);
-  border-radius:8px;padding:7px 12px;
+h2{
+  color:#00ffc3;
 }
-.ap-name{font-family:'Oxanium',monospace;font-size:16px;font-weight:800;color:var(--blue);}
-.ap-info{font-size:9px;color:var(--dim);letter-spacing:1px;}
-.ap-session{font-size:9px;margin-left:auto;}
 
-/* Sesión + calendario */
-.session-row{
-  margin-top:8px;display:flex;gap:6px;
+input,select,button{
+  width:100%;
+  padding:12px;
+  margin:6px 0;
+  border:none;
+  border-radius:10px;
 }
-.sess-box{
-  flex:1;background:var(--bg2);border:1px solid var(--border);
-  border-radius:8px;padding:7px 10px;
+
+button{
+  background:#00ffc3;
+  color:#000;
+  font-weight:bold;
+  cursor:pointer;
 }
-.sess-lbl-sm{font-size:8px;color:var(--dim);letter-spacing:1px;}
-.sess-val{font-family:'Oxanium',monospace;font-size:11px;color:var(--gold);margin-top:1px;}
-.news-box{
-  flex:1;border-radius:8px;padding:7px 10px;
-  border:1px solid rgba(255,71,87,.2);background:rgba(255,71,87,.05);
-  transition:all .3s;
+
+.stats{
+  display:flex;
+  justify-content:space-between;
+  margin-top:15px;
 }
-.news-box.safe{border-color:rgba(46,213,115,.2);background:rgba(46,213,115,.05);}
-.news-val{font-family:'Oxanium',monospace;font-size:11px;margin-top:1px;}
-.news-val.danger{color:var(--red);}
-.news-val.safe{color:var(--win);}
 
-/* Paroli visual */
-.paroli-bar{margin-top:8px;background:var(--bg2);border:1px solid rgba(162,155,254,.2);border-radius:8px;padding:7px 12px;display:flex;align-items:center;gap:8px;}
-.pb-lbl{font-size:9px;color:var(--dim);letter-spacing:1px;flex-shrink:0;}
-.pb-steps{display:flex;gap:5px;flex:1;}
-.pstep{flex:1;padding:5px 2px;text-align:center;border-radius:6px;border:1px solid var(--dim);transition:all .4s;}
-.pstep.done{border-color:var(--win);background:rgba(46,213,115,.15);}
-.pstep.current{border-color:var(--purple);background:rgba(162,155,254,.15);box-shadow:0 0 8px rgba(162,155,254,.2);animation:pp 1.2s infinite;}
-@keyframes pp{0%,100%{box-shadow:0 0 4px rgba(162,155,254,.2);}50%{box-shadow:0 0 12px rgba(162,155,254,.5);}}
-.pstep-v{font-family:'Oxanium',monospace;font-size:9px;font-weight:700;color:var(--dim);}
-.pstep.done .pstep-v{color:var(--win);}
-.pstep.current .pstep-v{color:var(--purple);}
-.pstep-l{font-size:7px;color:var(--dim);margin-top:1px;}
+.box{
+  background:#0d1626;
+  padding:10px;
+  border-radius:10px;
+  width:30%;
+}
 
-/* Meta */
-.meta-bar{margin-top:8px;display:flex;background:var(--bg2);border:1px solid var(--border);border-radius:8px;overflow:hidden;}
-.meta-item{flex:1;padding:7px 8px;text-align:center;border-right:1px solid var(--border);}
-.meta-item:last-child{border-right:none;}
-.meta-lbl{font-size:8px;color:var(--dim);letter-spacing:.5px;}
-.meta-val{font-family:'Oxanium',monospace;font-size:12px;font-weight:700;color:#fff;margin-top:1px;}
-.meta-val.green{color:var(--win);}.meta-val.red{color:var(--red);}
-.meta-val.gold{color:var(--gold);}
-.goal-track{height:3px;background:var(--border);overflow:hidden;}
-.goal-fill{height:100%;width:0%;background:linear-gradient(90deg,var(--g2),var(--win));transition:width .5s;}
+.mode{
+  margin-top:10px;
+  padding:10px;
+  border-radius:10px;
+  background:#111;
+}
 
-.conf-row{margin-top:8px;display:flex;align-items:center;gap:10px;}
-.conf-label{font-size:9px;color:var(--dim);letter-spacing:1px;width:75px;}
-.conf-track{flex:1;height:3px;background:rgba(255,255,255,.06);border-radius:2px;overflow:hidden;}
-.conf-fill{height:100%;width:0%;border-radius:2px;transition:width .6s ease,background .4s;}
-.conf-pct{font-family:'Oxanium',monospace;font-size:10px;color:var(--g1);width:30px;text-align:right;}
-
-/* Controls */
-.controls{display:grid;grid-template-columns:1fr 1fr;gap:8px;background:var(--bg1);border-left:1px solid var(--border);border-right:1px solid var(--border);padding:10px 14px;}
-.btn{font-family:'Oxanium',monospace;font-size:12px;font-weight:700;letter-spacing:2px;padding:11px;border:none;border-radius:10px;cursor:pointer;transition:all .2s;position:relative;overflow:hidden;}
-.btn::after{content:'';position:absolute;inset:0;background:rgba(255,255,255,.08);opacity:0;transition:opacity .2s;}
-.btn:hover::after{opacity:1;}.btn:active{transform:scale(.97);}
-.btn-go{background:linear-gradient(135deg,#00b09b,#00ffe0);color:#000;}
-.btn-go:hover{box-shadow:0 4px 24px rgba(0,255,224,.35);}
-.btn-no{background:linear-gradient(135deg,#b91c1c,#ff4757);color:#fff;}
-.btn-no:hover{box-shadow:0 4px 24px rgba(255,71,87,.35);}
-
-/* Stats */
-.stats{display:grid;grid-template-columns:1fr 1fr;gap:1px;background:var(--border);border-left:1px solid var(--border);border-right:1px solid var(--border);}
-.stat{background:var(--bg1);padding:11px 15px;}
-.stat-lbl{font-size:9px;color:var(--dim);letter-spacing:2px;text-transform:uppercase;margin-bottom:3px;}
-.stat-val{font-family:'Oxanium',monospace;font-size:19px;font-weight:800;color:#fff;transition:color .3s;}
-.stat-val.up{color:var(--win);}.stat-val.down{color:var(--red);}
-.stat-val.cyan{color:var(--g1);}.stat-val.gold{color:var(--gold);}
-
-/* Sesión dots */
-.sessions{background:var(--bg1);border-left:1px solid var(--border);border-right:1px solid var(--border);padding:7px 15px;display:flex;gap:4px;align-items:center;}
-.sess-lbl{font-size:9px;color:var(--dim);letter-spacing:1px;margin-right:6px;}
-.sess-dot{width:8px;height:8px;border-radius:2px;background:var(--bg2);border:1px solid var(--dim);transition:all .3s;}
-.sess-dot.w{background:var(--win);border-color:var(--win);box-shadow:0 0 4px var(--win);}
-.sess-dot.l{background:var(--red);border-color:var(--red);}
-
-/* Modo */
-.mode-row{background:var(--bg1);border-left:1px solid var(--border);border-right:1px solid var(--border);padding:6px 15px;display:flex;justify-content:space-between;align-items:center;font-size:10px;color:var(--dim);}
-.mode-chip{font-family:'Oxanium',monospace;font-size:9px;letter-spacing:1px;padding:3px 8px;border-radius:5px;background:rgba(0,180,216,.1);color:var(--g2);border:1px solid rgba(0,180,216,.2);transition:all .3s;}
-.mode-chip.act{background:rgba(0,255,224,.1);color:var(--g1);border-color:rgba(0,255,224,.3);box-shadow:0 0 8px rgba(0,255,224,.15);}
-.mode-chip.inv{background:rgba(255,71,87,.08);color:var(--red);border-color:rgba(255,71,87,.2);}
-.mode-chip.wait{background:rgba(254,202,87,.08);color:var(--gold);border-color:rgba(254,202,87,.2);}
-.mode-chip.news{background:rgba(255,71,87,.15);color:var(--red);border-color:var(--red);animation:newsAnim 1s infinite;}
-@keyframes newsAnim{0%,100%{opacity:1;}50%{opacity:.5;}}
-
-/* Indicadores */
-.ind-section-lbl{background:var(--bg2);border-left:1px solid var(--border);border-right:1px solid var(--border);padding:5px 14px;font-size:8px;color:var(--dim);letter-spacing:2px;display:flex;justify-content:space-between;}
-.ind-grid{background:var(--bg2);border-left:1px solid var(--border);border-right:1px solid var(--border);padding:6px 14px 8px;display:grid;grid-template-columns:repeat(4,1fr);gap:5px;}
-.ind{text-align:center;padding:5px 2px;border-radius:8px;border:1px solid var(--dim);transition:all .3s;}
-.ind.ok{border-color:var(--win);background:rgba(46,213,115,.07);}
-.ind.fail{border-color:var(--red);background:rgba(255,71,87,.07);}
-.ind.special{border-color:var(--purple);background:rgba(162,155,254,.08);}
-.ind-icon{font-size:12px;}.ind-name{font-size:7px;color:var(--dim);letter-spacing:.5px;margin-top:1px;}
-.ind.ok .ind-name{color:var(--win);}.ind.fail .ind-name{color:var(--red);}
-.ind.special .ind-name{color:var(--purple);}
-
-/* Score */
-.score-bar{background:var(--bg2);border-left:1px solid var(--border);border-right:1px solid var(--border);padding:7px 15px;display:flex;align-items:center;gap:10px;}
-.score-lbl{font-size:9px;color:var(--dim);letter-spacing:1px;flex-shrink:0;}
-.score-track{flex:1;height:5px;background:rgba(255,255,255,.06);border-radius:3px;overflow:hidden;}
-.score-fill{height:100%;border-radius:3px;transition:width .4s ease,background .3s;}
-.score-val{font-family:'Oxanium',monospace;font-size:11px;color:#fff;width:35px;text-align:right;}
-
-.inv-bar{background:var(--bg2);border-left:1px solid var(--border);border-right:1px solid var(--border);padding:6px 15px;display:flex;justify-content:space-between;align-items:center;font-size:9px;color:var(--dim);letter-spacing:1px;}
-.inv-count{font-family:'Oxanium',monospace;font-size:12px;color:var(--gold);}
-
-/* Log */
-.log-wrap{background:var(--bg1);border-left:1px solid var(--border);border-right:1px solid var(--border);padding:10px 12px;}
-.log{background:#020609;border:1px solid rgba(0,255,224,.07);border-radius:10px;height:155px;overflow-y:auto;padding:8px 10px;font-size:10px;line-height:1.8;scrollbar-width:thin;scrollbar-color:var(--border) transparent;}
-.log::-webkit-scrollbar{width:3px;}
-.log::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px;}
-.le{display:flex;gap:6px;}
-.lt{color:var(--dim);font-size:9px;flex-shrink:0;}
-.lw{color:var(--win);}.ll{color:var(--red);}
-.li{color:var(--g2);}.lx{color:var(--gold);}
-.ls{color:var(--red);font-weight:700;}.linv{color:#4a5568;font-style:italic;}
-.lnews{color:var(--red);font-weight:700;}.lpar{color:var(--purple);}
-.lgoal{color:var(--win);font-weight:700;}
-
-/* Footer */
-.ftr{background:var(--bg1);border:1px solid var(--border);border-top:none;border-radius:0 0 18px 18px;padding:8px 15px 11px;display:flex;justify-content:space-between;font-size:9px;color:var(--dim);letter-spacing:1px;}
-.spin{display:inline-block;width:8px;height:8px;border:1.5px solid transparent;border-top-color:var(--g1);border-radius:50%;animation:sp 1s linear infinite;margin-right:4px;vertical-align:middle;}
-@keyframes sp{to{transform:rotate(360deg);}}
+.log{
+  margin-top:10px;
+  background:#000;
+  height:120px;
+  overflow:auto;
+  font-size:11px;
+  padding:8px;
+  border-radius:10px;
+}
 </style>
 </head>
+
 <body>
 
-<!-- ══════════ MODAL CONFIGURACIÓN ══════════ -->
-<div class="modal-overlay" id="modalOverlay">
-  <div class="modal">
-    <div class="modal-title">⚡ BOT APEX FX</div>
-    <div class="modal-sub">BINARIAS DERIV · CONFIGURACIÓN</div>
+<div class="container">
 
-    <!-- SELECCIÓN DE PAR -->
-    <div class="modal-section">
-      <div class="modal-q">🌍 ¿Qué par quieres operar?</div>
-      <div class="pair-grid">
-        <div class="pair-btn sel" id="pb-frxEURUSD" onclick="selectPair('frxEURUSD','EUR/USD','🇪🇺🇺🇸')">
-          EUR/USD<br><span style="font-size:8px;font-weight:400">Mayor · Alta liquidez</span>
-        </div>
-        <div class="pair-btn" id="pb-frxGBPUSD" onclick="selectPair('frxGBPUSD','GBP/USD','🇬🇧🇺🇸')">
-          GBP/USD<br><span style="font-size:8px;font-weight:400">Mayor · Alta volatilidad</span>
-        </div>
-        <div class="pair-btn" id="pb-frxUSDJPY" onclick="selectPair('frxUSDJPY','USD/JPY','🇺🇸🇯🇵')">
-          USD/JPY<br><span style="font-size:8px;font-weight:400">Mayor · Tendencias claras</span>
-        </div>
-        <div class="pair-btn" id="pb-frxUSDCHF" onclick="selectPair('frxUSDCHF','USD/CHF','🇺🇸🇨🇭')">
-          USD/CHF<br><span style="font-size:8px;font-weight:400">Mayor · Estable</span>
-        </div>
-        <div class="pair-btn" id="pb-frxAUDUSD" onclick="selectPair('frxAUDUSD','AUD/USD','🇦🇺🇺🇸')">
-          AUD/USD<br><span style="font-size:8px;font-weight:400">Mayor · Sesión Asia</span>
-        </div>
-        <div class="pair-btn" id="pb-frxEURGBP" onclick="selectPair('frxEURGBP','EUR/GBP','🇪🇺🇬🇧')">
-          EUR/GBP<br><span style="font-size:8px;font-weight:400">Menor · Sesión Londres</span>
-        </div>
-      </div>
-      <div class="pair-hint" id="pairHint">✅ EUR/USD: Mayor liquidez, spreads más bajos, mejor para binarias</div>
-    </div>
+<h2>🎯 SNIPER PRO FX</h2>
 
-    <div class="modal-divider"></div>
+<input type="text" id="token" placeholder="e1lRgxNoxWwBkzx">
 
-    <!-- STAKE -->
-    <div class="modal-section">
-      <div class="modal-q">💰 Stake inicial</div>
-      <div style="display:flex;align-items:center;gap:8px;">
-        <input class="num-input" type="number" id="inputStake" value="0.35" min="0.35" max="50" step="0.05" oninput="updateSummary()">
-        <span style="color:var(--gold);font-family:'Oxanium',monospace;font-size:13px;">USD</span>
-      </div>
-      <div class="presets" id="stakePresets">
-        <div class="preset active" onclick="setPreset('stake',0.35)">$0.35</div>
-        <div class="preset" onclick="setPreset('stake',0.50)">$0.50</div>
-        <div class="preset" onclick="setPreset('stake',1.00)">$1.00</div>
-        <div class="preset" onclick="setPreset('stake',2.00)">$2.00</div>
-      </div>
-    </div>
+<input type="number" id="stake" value="0.5">
 
-    <div class="modal-divider"></div>
+<select id="symbol">
+<option value="frxEURUSD">EUR/USD</option>
+<option value="frxGBPUSD">GBP/USD</option>
+<option value="frxUSDJPY">USD/JPY</option>
+</select>
 
-    <!-- PAROLI -->
-    <div class="paroli-box">
-      <div class="paroli-title">⚡ SISTEMA PAROLI</div>
-      <div class="paroli-levels">
-        <div class="plvl"><div class="plvl-num" id="pl1">$0.35</div><div class="plvl-lbl">BASE</div></div>
-        <div class="plvl-arrow">→</div>
-        <div class="plvl"><div class="plvl-num" id="pl2">$0.70</div><div class="plvl-lbl">WIN 1</div></div>
-        <div class="plvl-arrow">→</div>
-        <div class="plvl"><div class="plvl-num" id="pl3">$1.40</div><div class="plvl-lbl">WIN 2</div></div>
-        <div class="plvl-arrow">→</div>
-        <div class="plvl" style="border-color:rgba(46,213,115,.3)"><div class="plvl-num" style="color:var(--win)">✓</div><div class="plvl-lbl">WIN 3</div></div>
-      </div>
-      <div class="paroli-rule">✅ Win → dobla · ❌ Loss → reset · 🏆 3 wins = ciclo completo</div>
-    </div>
+<button id="toggle">START</button>
 
-    <div class="modal-divider"></div>
+<div class="mode" id="mode">IDLE</div>
 
-    <!-- TP / SL -->
-    <div class="two-col">
-      <div>
-        <div class="modal-q">🎯 Take Profit ($)</div>
-        <input class="num-input" type="number" id="inputTP" value="5" min="1" max="500" step="0.5" oninput="updateSummary()">
-        <div class="presets" style="margin-top:5px;">
-          <div class="preset active" onclick="setPreset('tp',5)">$5</div>
-          <div class="preset" onclick="setPreset('tp',10)">$10</div>
-          <div class="preset" onclick="setPreset('tp',20)">$20</div>
-        </div>
-      </div>
-      <div>
-        <div class="modal-q">🛡 Stop Loss ($)</div>
-        <input class="num-input" type="number" id="inputSL" value="3" min="1" max="500" step="0.5" oninput="updateSummary()">
-        <div class="presets" style="margin-top:5px;">
-          <div class="preset active" onclick="setPreset('sl',3)">$3</div>
-          <div class="preset" onclick="setPreset('sl',5)">$5</div>
-          <div class="preset" onclick="setPreset('sl',10)">$10</div>
-        </div>
-      </div>
-    </div>
+<div class="stats">
+<div class="box">Wins<br><span id="wins">0</span></div>
+<div class="box">Loss<br><span id="losses">0</span></div>
+<div class="box">Bal<br><span id="balance">0</span></div>
+</div>
 
-    <div class="config-summary" id="configSummary"></div>
-    <button class="modal-start" on
+<div class="log" id="log"></div>
+
+</div>
+
+<script>
+let ws;
+let running=false;
+
+let wins=0;
+let losses=0;
+let balance=0;
+
+let candles=[];
+let lastTradeTime=0;
+let lossStreak=0;
+
+document.getElementById("toggle").onclick=()=>{
+ running=!running;
+
+ if(running){
+  start();
+  toggle.innerText="STOP";
+ }else{
+  ws.close();
+  toggle.innerText="START";
+ }
+};
+
+function log(msg){
+ let el=document.getElementById("log");
+ el.innerHTML+="<div>"+msg+"</div>";
+ el.scrollTop=el.scrollHeight;
+}
+
+function setMode(m){
+ document.getElementById("mode").innerText=m;
+}
+
+function start(){
+ let token=document.getElementById("token").value;
+
+ ws=new WebSocket("wss://ws.derivws.com/websockets/v3?app_id=1089");
+
+ ws.onopen=()=>{
+  ws.send(JSON.stringify({authorize:token}));
+ };
+
+ ws.onmessage=(msg)=>{
+  let data=JSON.parse(msg.data);
+
+  if(data.msg_type==="authorize"){
+   log("Conectado");
+   getCandles();
+  }
+
+  if(data.msg_type==="candles"){
+   candles=data.candles.map(c=>c.close);
+   sniper();
+  }
+
+  if(data.msg_type==="proposal_open_contract"){
+   if(data.proposal_open_contract.is_sold){
+
+    let p=data.proposal_open_contract.profit;
+
+    if(p>0){
+     wins++;
+     balance+=p;
+     lossStreak=0;
+     log("WIN +" + p);
+    }else{
+     losses++;
+     balance+=p;
+     lossStreak++;
+     log("LOSS " + p);
+    }
+
+    update();
+
+    // STOP AUTOMÁTICO
+    if(lossStreak>=2){
+     setMode("STOP LOSS");
+     running=false;
+     ws.close();
+     toggle.innerText="START";
+    }
+   }
+  }
+ };
+}
+
+function getCandles(){
+ let symbol=document.getElementById("symbol").value;
+
+ ws.send(JSON.stringify({
+  ticks_history:symbol,
+  granularity:60,
+  count:30,
+  style:"candles"
+ }));
+}
+
+function ema(p,d){
+ let k=2/(p+1);
+ let arr=[d[0]];
+
+ for(let i=1;i<d.length;i++){
+  arr.push(d[i]*k + arr[i-1]*(1-k));
+ }
+
+ return arr;
+}
+
+function sniper(){
+ if(candles.length<15)return;
+
+ let ema3=ema(3,candles).pop();
+ let ema9=ema(9,candles).pop();
+
+ let last=candles[candles.length-1];
+ let prev=candles[candles.length-2];
+
+ let diff=Math.abs(ema3-ema9);
+ let now=Date.now();
+
+ if(now-lastTradeTime<60000)return;
+
+ // FILTRO SNIPER
+ if(diff<0.00006){
+  setMode("LATERAL");
+  return;
+ }
+
+ // CALL
+ if(ema3>ema9 && last>prev){
+  setMode("SNIPER CALL");
+  trade("CALL");
+  lastTradeTime=now;
+ }
+
+ // PUT
+ else if(ema3<ema9 && last<prev){
+  setMode("SNIPER PUT");
+  trade("PUT");
+  lastTradeTime=now;
+ }
+
+ else{
+  setMode("WAIT");
+ }
+}
+
+function trade(type){
+ let stake=parseFloat(document.getElementById("stake").value);
+ let symbol=document.getElementById("symbol").value;
+
+ log("TRADE " + type);
+
+ ws.send(JSON.stringify({
+  buy:1,
+  price:stake,
+  parameters:{
+   amount:stake,
+   basis:"stake",
+   contract_type:type,
+   currency:"USD",
+   duration:1,
+   duration_unit:"m",
+   symbol:symbol
+  }
+ }));
+}
+
+function update(){
+ document.getElementById("wins").innerText=wins;
+ document.getElementById("losses").innerText=losses;
+ document.getElementById("balance").innerText=balance.toFixed(2);
+}
+</script>
+
+</body>
+</html>
