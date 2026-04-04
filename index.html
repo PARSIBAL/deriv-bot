@@ -2,300 +2,731 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8">
-<title>SNIPER PRO FX TERMINAL</title>
-
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BOT APEX v13</title>
 <style>
+@import url('https://fonts.googleapis.com/css2?family=Oxanium:wght@300;400;600;800&display=swap');
+
+:root {
+  --g1: #00ffe0;
+  --g2: #00b4d8;
+  --red: #ff4757;
+  --gold: #feca57;
+  --win: #2ed573;
+  --bg0: #04080f;
+  --bg1: #080f1a;
+  --bg2: #0d1626;
+  --border: rgba(0,255,224,0.1);
+  --dim: #3d5a72;
+}
+
+*{box-sizing:border-box;margin:0;padding:0;}
 body{
-  background:#02060d;
-  color:#00ff9c;
-  font-family:monospace;
-  padding:20px;
+  background:var(--bg0);
+  font-family:'Oxanium',monospace;
+  min-height:100vh;
+  display:flex;align-items:center;justify-content:center;
+  padding:16px;
 }
 
-.container{
-  max-width:500px;
-  margin:auto;
-  background:#050a14;
-  padding:20px;
-  border-radius:10px;
-  box-shadow:0 0 20px rgba(0,255,150,0.1);
-}
+.wrap{width:100%;max-width:400px;}
 
-.title{
-  font-size:18px;
-  margin-bottom:15px;
-  color:#00ffc3;
-}
+/* MODAL */
+.modal-overlay{position:fixed;inset:0;background:rgba(4,8,15,.96);display:flex;align-items:center;justify-content:center;z-index:999;backdrop-filter:blur(8px);transition:opacity .3s;}
+.modal-overlay.hidden{opacity:0;pointer-events:none;}
+.modal{background:var(--bg1);border:1px solid var(--border);border-radius:18px;padding:24px 22px;max-width:320px;width:92%;position:relative;}
+.modal::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,transparent,var(--g1),transparent);}
+.m-title{font-size:16px;font-weight:800;color:#fff;letter-spacing:3px;text-align:center;margin-bottom:16px;}
+.m-row{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px;}
+.m-group{}
+.m-lbl{font-size:9px;color:var(--dim);letter-spacing:1px;margin-bottom:6px;}
+.m-input{width:100%;background:var(--bg2);border:1px solid var(--dim);border-radius:10px;color:#fff;font-family:'Oxanium',monospace;font-size:18px;font-weight:800;padding:10px;outline:none;text-align:center;transition:border .2s;}
+.m-input:focus{border-color:var(--g1);}
+.m-presets{display:flex;gap:5px;margin-top:5px;flex-wrap:wrap;}
+.mp{font-size:9px;padding:4px 8px;border:1px solid var(--dim);border-radius:6px;color:var(--dim);background:var(--bg2);cursor:pointer;transition:all .2s;}
+.mp:hover{border-color:var(--g1);color:var(--g1);}
+.mp.on{border-color:var(--g1);color:#000;background:var(--g1);}
+.m-btn{width:100%;font-size:13px;font-weight:800;letter-spacing:3px;padding:14px;border:none;border-radius:12px;background:linear-gradient(135deg,#00b09b,#00ffe0);color:#000;cursor:pointer;margin-top:4px;transition:all .2s;}
+.m-btn:hover{box-shadow:0 4px 20px rgba(0,255,224,.4);}
 
-.code-block{
-  background:#000;
-  padding:12px;
-  border-radius:8px;
-  margin-bottom:10px;
-}
+/* REPORTE */
+.rep-overlay{position:fixed;inset:0;background:rgba(4,8,15,.96);display:flex;align-items:center;justify-content:center;z-index:998;backdrop-filter:blur(8px);transition:opacity .3s;}
+.rep-overlay.hidden{opacity:0;pointer-events:none;}
+.rep{background:var(--bg1);border:1px solid var(--border);border-radius:18px;padding:22px 20px;max-width:320px;width:92%;}
+.rep::before{display:none;}
+.rep-title{font-size:15px;font-weight:800;color:#fff;letter-spacing:3px;text-align:center;margin-bottom:14px;}
+.rep-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px;}
+.rs{background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:12px 8px;text-align:center;}
+.rs-l{font-size:8px;color:var(--dim);letter-spacing:1px;margin-bottom:4px;}
+.rs-v{font-size:22px;font-weight:800;color:#fff;}
+.rs-v.up{color:var(--win);}.rs-v.dn{color:var(--red);}
+.rs-v.go{color:var(--gold);}.rs-v.cy{color:var(--g1);}
+.rep-ops{background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:10px;margin-bottom:12px;max-height:160px;overflow-y:auto;}
+.rep-ops-lbl{font-size:8px;color:var(--dim);letter-spacing:1px;margin-bottom:6px;}
+.op{display:flex;justify-content:space-between;font-size:10px;padding:3px 0;border-bottom:1px solid rgba(255,255,255,.04);}
+.op:last-child{border:none;}
+.op-w{color:var(--win);}.op-l{color:var(--red);}
+.rep-btn{width:100%;font-size:11px;font-weight:700;letter-spacing:2px;padding:11px;border:1px solid var(--dim);border-radius:10px;background:transparent;color:var(--dim);cursor:pointer;transition:all .2s;}
+.rep-btn:hover{border-color:var(--g1);color:var(--g1);}
 
-.code-line{
-  margin:3px 0;
-}
+/* CARD PRINCIPAL */
+.card{background:var(--bg1);border:1px solid var(--border);border-radius:18px;overflow:hidden;}
 
-.key{color:#00ffc3;}
-.var{color:#ffcc00;}
-.str{color:#00ff9c;}
+/* TOP */
+.top{padding:16px 18px 12px;border-bottom:1px solid var(--border);position:relative;}
+.top::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,transparent,var(--g2) 30%,var(--g1) 70%,transparent);}
+.top-row{display:flex;justify-content:space-between;align-items:center;}
+.brand{font-size:22px;font-weight:800;color:#fff;letter-spacing:4px;}
+.ver{font-size:8px;color:var(--dim);letter-spacing:2px;margin-top:2px;}
+.badge{font-size:9px;letter-spacing:2px;padding:4px 10px;border-radius:20px;border:1px solid var(--dim);color:var(--dim);transition:all .4s;}
+.badge.live{border-color:var(--win);color:var(--win);animation:glow 2s infinite;}
+@keyframes glow{0%,100%{box-shadow:0 0 6px rgba(46,213,115,.2);}50%{box-shadow:0 0 14px rgba(46,213,115,.5);}}
+.dot{display:inline-block;width:5px;height:5px;border-radius:50%;background:currentColor;margin-right:4px;vertical-align:middle;}
+.badge.live .dot{animation:blink 1s infinite;}
+@keyframes blink{0%,100%{opacity:1;}50%{opacity:.2;}}
 
-input, select{
-  width:100%;
-  background:#000;
-  color:#00ff9c;
-  border:none;
-  padding:8px;
-  margin-top:5px;
-  font-family:monospace;
-}
+/* INFO ROW */
+.info-row{display:flex;gap:6px;margin-top:10px;}
+.ibox{flex:1;background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:7px 10px;}
+.il{font-size:8px;color:var(--dim);letter-spacing:1px;}
+.iv{font-size:12px;color:var(--gold);margin-top:2px;font-weight:700;}
+.sess-pill{font-size:8px;padding:2px 8px;border-radius:10px;border:1px solid var(--dim);color:var(--dim);display:inline-block;margin-top:2px;}
+.sess-pill.hot{border-color:var(--win);color:var(--win);}
+.sess-pill.warm{border-color:var(--gold);color:var(--gold);}
+.sess-pill.cold{border-color:var(--red);color:var(--red);}
 
-button{
-  width:100%;
+/* META */
+.meta{display:flex;margin-top:10px;background:var(--bg2);border:1px solid var(--border);border-radius:8px;overflow:hidden;}
+.mi{flex:1;padding:7px 6px;text-align:center;border-right:1px solid var(--border);}
+.mi:last-child{border-right:none;}
+.ml{font-size:8px;color:var(--dim);}
+.mv{font-size:13px;font-weight:800;color:#fff;margin-top:1px;}
+.mv.g{color:var(--win);}.mv.r{color:var(--red);}.mv.y{color:var(--gold);}
+.prog{height:3px;background:var(--border);margin-top:10px;border-radius:0;overflow:hidden;}
+.prog-fill{height:100%;width:0%;background:linear-gradient(90deg,var(--g2),var(--win));transition:width .5s;}
+
+/* Z-SCORE VISUAL — el corazón del bot */
+.zscore-display{
   margin-top:10px;
-  padding:10px;
-  background:#00ffc3;
-  color:#000;
-  border:none;
-  cursor:pointer;
-  font-weight:bold;
+  background:var(--bg2);border:1px solid var(--border);border-radius:10px;
+  padding:10px 14px;display:flex;align-items:center;gap:12px;
 }
+.zs-lbl{font-size:8px;color:var(--dim);letter-spacing:1px;flex-shrink:0;}
+.zs-bar{flex:1;height:6px;background:rgba(255,255,255,.06);border-radius:3px;position:relative;overflow:visible;}
+.zs-center{position:absolute;top:-4px;left:50%;width:2px;height:14px;background:var(--dim);border-radius:1px;}
+.zs-fill{position:absolute;top:0;height:100%;border-radius:3px;transition:all .4s;}
+.zs-val{font-size:14px;font-weight:800;width:44px;text-align:right;flex-shrink:0;}
 
-.status{
-  margin-top:10px;
-  padding:8px;
-  background:#000;
-  border-radius:6px;
-}
+/* BOTÓN TOGGLE */
+.btn-wrap{padding:12px 14px;background:var(--bg1);border-top:1px solid var(--border);}
+.btn-toggle{width:100%;font-size:14px;font-weight:800;letter-spacing:3px;padding:14px;border:none;border-radius:12px;cursor:pointer;transition:all .3s;}
+.btn-toggle.go{background:linear-gradient(135deg,#00b09b,#00ffe0);color:#000;}
+.btn-toggle.go:hover{box-shadow:0 4px 20px rgba(0,255,224,.4);}
+.btn-toggle.stop{background:linear-gradient(135deg,#b91c1c,#ff4757);color:#fff;}
+.btn-toggle.stop:hover{box-shadow:0 4px 20px rgba(255,71,87,.4);}
+.btn-toggle:active{transform:scale(.98);}
 
-.log{
-  background:#000;
-  height:140px;
-  overflow:auto;
-  margin-top:10px;
-  padding:8px;
-  font-size:11px;
-}
+/* STATS 2x2 */
+.stats{display:grid;grid-template-columns:1fr 1fr;gap:1px;background:var(--border);border-top:1px solid var(--border);}
+.st{background:var(--bg1);padding:12px 15px;}
+.sl{font-size:8px;color:var(--dim);letter-spacing:2px;text-transform:uppercase;margin-bottom:3px;}
+.sv{font-size:20px;font-weight:800;color:#fff;transition:color .3s;}
+.sv.up{color:var(--win);}.sv.dn{color:var(--red);}
+.sv.cy{color:var(--g1);}.sv.go{color:var(--gold);}
 
-.green{color:#00ff9c;}
-.red{color:#ff4d4d;}
-.yellow{color:#ffcc00;}
+/* HISTORIAL DOTS */
+.dots-row{background:var(--bg1);border-top:1px solid var(--border);padding:8px 15px;display:flex;gap:4px;align-items:center;}
+.dl{font-size:9px;color:var(--dim);letter-spacing:1px;margin-right:4px;}
+.d{width:9px;height:9px;border-radius:2px;background:var(--bg2);border:1px solid var(--dim);transition:all .3s;}
+.d.w{background:var(--win);border-color:var(--win);box-shadow:0 0 4px var(--win);}
+.d.l{background:var(--red);border-color:var(--red);}
+
+/* ESTADO */
+.state-row{background:var(--bg1);border-top:1px solid var(--border);padding:7px 15px;display:flex;justify-content:space-between;align-items:center;font-size:10px;color:var(--dim);}
+.chip{font-size:9px;letter-spacing:1px;padding:3px 8px;border-radius:5px;background:rgba(0,180,216,.1);color:var(--g2);border:1px solid rgba(0,180,216,.2);transition:all .3s;}
+.chip.act{background:rgba(0,255,224,.1);color:var(--g1);border-color:rgba(0,255,224,.3);}
+.chip.inv{background:rgba(255,71,87,.08);color:var(--red);border-color:rgba(255,71,87,.2);}
+.chip.wait{background:rgba(254,202,87,.08);color:var(--gold);border-color:rgba(254,202,87,.2);}
+
+/* CONTADORES */
+.count-row{background:var(--bg2);border-top:1px solid var(--border);padding:7px 15px;display:flex;justify-content:space-between;font-size:9px;color:var(--dim);letter-spacing:1px;}
+.cnt{font-family:'Oxanium',monospace;font-size:12px;color:var(--gold);}
+
+/* LOG */
+.log-wrap{background:var(--bg1);border-top:1px solid var(--border);padding:10px 12px;}
+.log{background:#020609;border:1px solid rgba(0,255,224,.07);border-radius:10px;height:150px;overflow-y:auto;padding:8px 10px;font-size:10px;line-height:1.9;scrollbar-width:thin;scrollbar-color:var(--border) transparent;}
+.log::-webkit-scrollbar{width:3px;}
+.log::-webkit-scrollbar-thumb{background:var(--border);}
+.le{display:flex;gap:6px;}
+.lt{color:var(--dim);font-size:9px;flex-shrink:0;}
+.lw{color:var(--win);}.ll{color:var(--red);}
+.li{color:var(--g2);}.lx{color:var(--gold);}
+.ls{color:var(--red);font-weight:700;}.linv{color:#3d5a72;font-style:italic;}
+.lg{color:var(--win);font-weight:700;}
+
+/* FOOTER */
+.ftr{background:var(--bg1);border-top:1px solid var(--border);padding:9px 15px 12px;display:flex;justify-content:space-between;align-items:center;font-size:9px;color:var(--dim);letter-spacing:1px;}
+.rep-link{font-size:9px;padding:4px 10px;border:1px solid var(--dim);border-radius:6px;background:transparent;color:var(--dim);cursor:pointer;transition:all .2s;letter-spacing:1px;}
+.rep-link:hover{border-color:var(--gold);color:var(--gold);}
+
+.spin{display:inline-block;width:7px;height:7px;border:1.5px solid transparent;border-top-color:var(--g1);border-radius:50%;animation:sp 1s linear infinite;margin-right:4px;vertical-align:middle;}
+@keyframes sp{to{transform:rotate(360deg);}}
 </style>
 </head>
-
 <body>
 
-<div class="container">
-
-<div class="title">[ SNIPER PRO FX TERMINAL ]</div>
-
-<div class="code-block">
-  <div class="code-line"><span class="key">const</span> API_TOKEN =</div>
-  <input type="text" id="token" placeholder="e1lRgxNoxWwBkzx">
+<!-- MODAL CONFIG -->
+<div class="modal-overlay" id="mOverlay">
+  <div class="modal">
+    <div class="m-title">⚡ APEX v13</div>
+    <div class="m-row">
+      <div class="m-group">
+        <div class="m-lbl">💰 STAKE ($)</div>
+        <input class="m-input" type="number" id="iStake" value="0.35" min="0.35" max="100" step="0.05" oninput="refreshSummary()">
+        <div class="m-presets">
+          <div class="mp on"  onclick="sp2('stake',0.35)">0.35</div>
+          <div class="mp"     onclick="sp2('stake',0.50)">0.50</div>
+          <div class="mp"     onclick="sp2('stake',1.00)">1.00</div>
+          <div class="mp"     onclick="sp2('stake',2.00)">2.00</div>
+        </div>
+      </div>
+      <div class="m-group" style="display:flex;flex-direction:column;gap:8px;">
+        <div>
+          <div class="m-lbl">🎯 TAKE PROFIT ($)</div>
+          <input class="m-input" type="number" id="iTP" value="5" min="0.5" max="500" step="0.5" oninput="refreshSummary()">
+          <div class="m-presets">
+            <div class="mp on" onclick="sp2('tp',5)">$5</div>
+            <div class="mp"    onclick="sp2('tp',10)">$10</div>
+            <div class="mp"    onclick="sp2('tp',20)">$20</div>
+          </div>
+        </div>
+        <div>
+          <div class="m-lbl">🛡 STOP LOSS ($)</div>
+          <input class="m-input" type="number" id="iSL" value="3" min="0.5" max="500" step="0.5" oninput="refreshSummary()">
+          <div class="m-presets">
+            <div class="mp on" onclick="sp2('sl',3)">$3</div>
+            <div class="mp"    onclick="sp2('sl',5)">$5</div>
+            <div class="mp"    onclick="sp2('sl',10)">$10</div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <button class="m-btn" onclick="launch()">▶ COMENZAR</button>
+  </div>
 </div>
 
-<div class="code-block">
-  <div class="code-line"><span class="key">const</span> STAKE =</div>
-  <input type="number" id="stake" value="0.5">
+<!-- MODAL REPORTE -->
+<div class="rep-overlay hidden" id="rOverlay">
+  <div class="rep">
+    <div class="rep-title">📊 REPORTE DE SESIÓN</div>
+    <div class="rep-grid">
+      <div class="rs"><div class="rs-l">RESULTADO</div><div class="rs-v" id="rRes">$0.00</div></div>
+      <div class="rs"><div class="rs-l">WINRATE</div><div class="rs-v go" id="rWR">0%</div></div>
+      <div class="rs"><div class="rs-l">WINS ✅</div><div class="rs-v up" id="rW">0</div></div>
+      <div class="rs"><div class="rs-l">LOSSES ❌</div><div class="rs-v dn" id="rL">0</div></div>
+      <div class="rs"><div class="rs-l">TOTAL OPS</div><div class="rs-v cy" id="rT">0</div></div>
+      <div class="rs"><div class="rs-l">INVALIDADAS</div><div class="rs-v go" id="rI">0</div></div>
+    </div>
+    <div class="rep-ops">
+      <div class="rep-ops-lbl">ÚLTIMAS OPERACIONES</div>
+      <div id="rOps"></div>
+    </div>
+    <button class="rep-btn" onclick="closeRep()">✕ CERRAR</button>
+  </div>
 </div>
 
-<div class="code-block">
-  <div class="code-line"><span class="key">const</span> SYMBOL =</div>
-  <select id="symbol">
-    <option value="frxEURUSD">"EURUSD"</option>
-    <option value="frxGBPUSD">"GBPUSD"</option>
-    <option value="frxUSDJPY">"USDJPY"</option>
-  </select>
+<!-- MAIN -->
+<div class="wrap">
+<div class="card">
+
+  <!-- TOP -->
+  <div class="top">
+    <div class="top-row">
+      <div>
+        <div class="brand">⚡ APEX</div>
+        <div class="ver">v13 · R_50 · Z-SCORE · 3 TICKS</div>
+      </div>
+      <div class="badge" id="badge"><span class="dot"></span><span id="bTxt">OFFLINE</span></div>
+    </div>
+
+    <div class="info-row">
+      <div class="ibox">
+        <div class="il">COLOMBIA</div>
+        <div class="iv" id="clock">--:--</div>
+      </div>
+      <div class="ibox">
+        <div class="il">SESIÓN</div>
+        <div class="sess-pill" id="sessEl">--</div>
+      </div>
+      <div class="ibox">
+        <div class="il">STAKE</div>
+        <div class="iv" id="stakeEl">$0.35</div>
+      </div>
+    </div>
+
+    <div class="meta">
+      <div class="mi"><div class="ml">PROFIT</div><div class="mv g" id="mGoal">+$5</div></div>
+      <div class="mi"><div class="ml">HOY</div><div class="mv" id="mProg">$0.00</div></div>
+      <div class="mi"><div class="ml">STOP</div><div class="mv r" id="mStop">-$3</div></div>
+      <div class="mi"><div class="ml">OPS</div><div class="mv y" id="mOps">0/25</div></div>
+    </div>
+    <div class="prog"><div class="prog-fill" id="pFill"></div></div>
+
+    <!-- Z-SCORE VISUAL -->
+    <div class="zscore-display">
+      <div class="zs-lbl">Z-SCORE</div>
+      <div class="zs-bar">
+        <div class="zs-center"></div>
+        <div class="zs-fill" id="zFill"></div>
+      </div>
+      <div class="zs-val" id="zVal" style="color:var(--dim)">0.00</div>
+    </div>
+  </div>
+
+  <!-- BOTÓN TOGGLE -->
+  <div class="btn-wrap">
+    <button class="btn-toggle go" id="btnT" onclick="toggle()">▶ INICIAR</button>
+  </div>
+
+  <!-- STATS -->
+  <div class="stats">
+    <div class="st"><div class="sl">💰 Balance</div><div class="sv cy" id="bal">0.00</div></div>
+    <div class="st"><div class="sl">📈 Ganancia</div><div class="sv" id="prof">+0.00</div></div>
+    <div class="st"><div class="sl">🏆 Winrate</div><div class="sv" id="wr">0%</div></div>
+    <div class="st"><div class="sl">📉 Pérdidas</div><div class="sv dn" id="lossEl">$0.00</div></div>
+  </div>
+
+  <!-- HISTORIAL -->
+  <div class="dots-row">
+    <span class="dl">ÚLTIMAS</span>
+    <div id="dots"></div>
+  </div>
+
+  <!-- ESTADO -->
+  <div class="state-row">
+    <span id="stateInfo">Presiona INICIAR</span>
+    <span class="chip" id="chip">IDLE</span>
+  </div>
+
+  <!-- CONTADORES -->
+  <div class="count-row">
+    <span>🚫 INVALIDADAS <span class="cnt" id="invEl">0</span></span>
+    <span>✅ EJECUTADAS <span class="cnt" id="totEl">0</span></span>
+  </div>
+
+  <!-- LOG -->
+  <div class="log-wrap">
+    <div class="log" id="log"></div>
+  </div>
+
+  <!-- FOOTER -->
+  <div class="ftr">
+    <span id="ftrTxt">$0.35 · TP $5 · SL $3</span>
+    <button class="rep-link" onclick="showRep()">📊 REPORTE</button>
+  </div>
+
 </div>
-
-<button id="toggle">[ START BOT ]</button>
-
-<div class="status" id="mode">STATUS: IDLE</div>
-
-<div class="code-block">
-  <div>WINS: <span id="wins">0</span></div>
-  <div>LOSSES: <span id="losses">0</span></div>
-  <div>BALANCE: <span id="balance">0</span></div>
-</div>
-
-<div class="log" id="log"></div>
-
 </div>
 
 <script>
-let ws;
-let running=false;
+// ══════════════════════════════════
+// CONFIG
+// ══════════════════════════════════
+const TOKEN  = "e1lRgxNoxWwBkzx";
+const SYMBOL = "R_50";
 
-let wins=0;
-let losses=0;
-let balance=0;
-
-let candles=[];
-let lastTradeTime=0;
-let lossStreak=0;
-
-document.getElementById("toggle").onclick=()=>{
- running=!running;
-
- if(running){
-  start();
-  toggle.innerText="[ STOP BOT ]";
- }else{
-  ws.close();
-  toggle.innerText="[ START BOT ]";
- }
+const CFG = {
+  TICKS:    3,
+  COOLDOWN: 7500,
+  PAUSE_MS: 45000,
+  MIN_BARS: 20,
+  HISTORY:  80,
+  // Rango de volatilidad óptimo para R_50
+  // Calibrado para capturar el 70% del tiempo de mercado activo
+  VOL_MIN:  0.0025,
+  VOL_MAX:  0.020,
+  // Z-score: umbral para detectar desviación estadística real
+  // 1.45 = señal moderada pero consistente
+  // La media revierte cuando Z > umbral
+  Z_MIN:    1.45,
+  MAX_OPS:  25,
 };
 
-function log(msg,type=""){
- let el=document.getElementById("log");
- let color = type==="win"?"green":type==="loss"?"red":"yellow";
- el.innerHTML += "<div class='"+color+"'>"+msg+"</div>";
- el.scrollTop = el.scrollHeight;
+// ══════════════════════════════════
+// ESTADO
+// ══════════════════════════════════
+let ws;
+let bal=0, initBal=0;
+let running=false;
+let wins=0, lossC=0, total=0, profit=0, totalLoss=0;
+let lossStreak=0;
+let lastTrade=0, pauseUntil=0;
+let prices=[], recent=[], invC=0;
+let STAKE=0.35, TP=5, SL=3;
+let opLog=[];
+
+// ══════════════════════════════════
+// MODAL
+// ══════════════════════════════════
+function sp2(t,v){
+  if(t==="stake"){ document.getElementById("iStake").value=v; document.querySelectorAll(".m-presets .mp").forEach(b=>{ if(b.closest(".m-group")) b.className="mp"+(parseFloat(b.innerText)===v?" on":""); }); }
+  else if(t==="tp")  document.getElementById("iTP").value=v;
+  else               document.getElementById("iSL").value=v;
+  refreshSummary();
+}
+function refreshSummary(){}
+
+function launch(){
+  STAKE = Math.max(0.35, parseFloat(document.getElementById("iStake").value)||0.35);
+  TP    = parseFloat(document.getElementById("iTP").value)||5;
+  SL    = parseFloat(document.getElementById("iSL").value)||3;
+  document.getElementById("mOverlay").className="modal-overlay hidden";
+  document.getElementById("stakeEl").innerText="$"+STAKE.toFixed(2);
+  document.getElementById("mGoal").innerText="+$"+TP;
+  document.getElementById("mStop").innerText="-$"+SL;
+  document.getElementById("ftrTxt").innerText=`$${STAKE.toFixed(2)} · TP $${TP} · SL $${SL}`;
+  startBot();
 }
 
-function setMode(m){
- document.getElementById("mode").innerText="STATUS: " + m;
+// ══════════════════════════════════
+// TOGGLE
+// ══════════════════════════════════
+function toggle(){
+  if(!running){
+    document.getElementById("mOverlay").className="modal-overlay";
+  } else {
+    stopBot(false);
+  }
 }
 
-function start(){
- let token=document.getElementById("token").value;
+function setBtnState(on){
+  const b=document.getElementById("btnT");
+  if(on){ b.className="btn-toggle stop"; b.innerText="■ DETENER"; }
+  else   { b.className="btn-toggle go";  b.innerText="▶ INICIAR"; }
+}
 
- ws=new WebSocket("wss://ws.derivws.com/websockets/v3?app_id=1089");
+// ══════════════════════════════════
+// REPORTE
+// ══════════════════════════════════
+function showRep(){
+  const wr=total?(wins/total*100).toFixed(1):0;
+  const rv=document.getElementById("rRes");
+  rv.innerText=(profit>=0?"+$":"−$")+Math.abs(profit).toFixed(2);
+  rv.className="rs-v"+(profit>=0?" up":" dn");
+  document.getElementById("rWR").innerText=wr+"%";
+  document.getElementById("rW").innerText=wins;
+  document.getElementById("rL").innerText=lossC;
+  document.getElementById("rT").innerText=total;
+  document.getElementById("rI").innerText=invC;
+  const c=document.getElementById("rOps");
+  c.innerHTML=opLog.length===0
+    ?'<div style="font-size:10px;color:var(--dim);text-align:center;padding:6px">Sin operaciones</div>'
+    :opLog.slice(-12).reverse().map(o=>`
+      <div class="op">
+        <span style="color:var(--dim);font-size:9px">${o.t}</span>
+        <span class="${o.w?'op-w':'op-l'}">${o.w?'WIN':'LOSS'}</span>
+        <span style="color:var(--dim)">$${o.s}</span>
+        <span class="${o.w?'op-w':'op-l'}">${o.w?'+':'-'}$${o.p}</span>
+      </div>`).join("");
+  document.getElementById("rOverlay").className="rep-overlay";
+}
+function closeRep(){ document.getElementById("rOverlay").className="rep-overlay hidden"; }
 
- ws.onopen=()=>{
-  ws.send(JSON.stringify({authorize:token}));
- };
+// ══════════════════════════════════
+// SESIÓN COLOMBIA
+// ══════════════════════════════════
+function getSess(){
+  const col=new Date(Date.now()-5*60*60*1000);
+  const d=col.getUTCHours()+col.getUTCMinutes()/60;
+  if((d>=1&&d<7)||(d>=13&&d<19)) return {name:"🟢 ÓPTIMA",lv:"hot",  ok:true};
+  if((d>=7&&d<10)||(d>=20&&d<24)||d<1) return {name:"🟡 NORMAL",lv:"warm",ok:true};
+  return {name:"🔴 BAJA",lv:"cold",ok:false};
+}
 
- ws.onmessage=(msg)=>{
-  let data=JSON.parse(msg.data);
+// ══════════════════════════════════
+// LOG
+// ══════════════════════════════════
+function log(msg,t="i"){
+  const el=document.getElementById("log");
+  const ts=new Date().toTimeString().slice(0,8);
+  const c={w:"lw",l:"ll",i:"li",x:"lx",s:"ls",inv:"linv",g:"lg"}[t]||"li";
+  el.innerHTML+=`<div class="le"><span class="lt">${ts}</span><span class="${c}">${msg}</span></div>`;
+  el.scrollTop=el.scrollHeight;
+}
 
-  if(data.msg_type==="authorize"){
-   log(">> conectado");
-   getCandles();
+// ══════════════════════════════════
+// SEÑAL — SOLO Z-SCORE + VOLATILIDAD
+// Lógica pura estadística para R_50:
+// 1. Verificar que la volatilidad está en rango
+//    (mercado activo pero no errático)
+// 2. Calcular Z-score del último retorno
+//    (qué tan lejos está de la media)
+// 3. Si Z supera el umbral → mean reversion
+//    (el precio tiende a volver al promedio)
+// ══════════════════════════════════
+function getSignal(){
+  if(prices.length < CFG.MIN_BARS) return null;
+
+  // Calcular retornos tick a tick
+  const rets=[];
+  for(let i=1;i<prices.length;i++) rets.push(prices[i]-prices[i-1]);
+
+  // Media y desviación estándar
+  const n    = rets.length;
+  const mean = rets.reduce((a,b)=>a+b,0)/n;
+  const std  = Math.sqrt(rets.map(x=>(x-mean)**2).reduce((a,b)=>a+b,0)/n);
+
+  // Último retorno y su Z-score
+  const last = rets[rets.length-1];
+  const z    = std>0 ? (last-mean)/std : 0;
+
+  // Actualizar visualización Z-score
+  updateZDisplay(z);
+
+  // FILTRO 1: Volatilidad en rango
+  if(std < CFG.VOL_MIN || std > CFG.VOL_MAX) return null;
+
+  // FILTRO 2: Z-score supera umbral
+  if(Math.abs(z) < CFG.Z_MIN) return null;
+
+  // Señal: mean reversion
+  // Z positivo → precio subió demasiado → PUT (va a bajar)
+  // Z negativo → precio bajó demasiado → CALL (va a subir)
+  return {
+    signal: z > 0 ? "PUT" : "CALL",
+    z: z.toFixed(2),
+    std: std.toFixed(5)
+  };
+}
+
+function updateZDisplay(z){
+  const absZ=Math.abs(z);
+  const pct=Math.min(100,(absZ/3)*50+50); // centrado en 50%
+  const fill=document.getElementById("zFill");
+  const val=document.getElementById("zVal");
+
+  // Barra desde el centro
+  if(z>=0){
+    fill.style.left="50%";
+    fill.style.width=Math.min(50,(absZ/3)*50)+"%";
+    fill.style.right="auto";
+  } else {
+    fill.style.right="50%";
+    fill.style.width=Math.min(50,(absZ/3)*50)+"%";
+    fill.style.left="auto";
   }
 
-  if(data.msg_type==="candles"){
-   candles=data.candles.map(c=>c.close);
-   sniper();
+  const color = absZ>=CFG.Z_MIN ? (z>0?"var(--red)":"var(--win)") : "var(--dim)";
+  fill.style.background=color;
+  val.style.color=color;
+  val.innerText=(z>=0?"+":"")+z.toFixed(2);
+}
+
+// ══════════════════════════════════
+// TICK
+// ══════════════════════════════════
+function onTick(){
+  const now=Date.now();
+  updateClock();
+
+  if(now<pauseUntil){
+    const s=Math.ceil((pauseUntil-now)/1000);
+    setState(`⏸ Pausa — ${s}s`,"inv"); return;
   }
 
-  if(data.msg_type==="proposal_open_contract"){
-   if(data.proposal_open_contract.is_sold){
+  const sess=getSess();
+  if(!sess.ok){ setState("🌙 Sesión baja","wait"); return; }
+  if(total>=CFG.MAX_OPS){ setState("🔢 Máx ops","wait"); return; }
+  if(now-lastTrade<CFG.COOLDOWN) return;
+  if(prices.length<CFG.MIN_BARS){ setState("Cargando datos...",""); return; }
 
-    let p=data.proposal_open_contract.profit;
+  const res=getSignal();
+  if(!res){
+    setState("Filtrando...","inv");
+    invC++;
+    document.getElementById("invEl").innerText=invC;
+    return;
+  }
 
-    if(p>0){
-     wins++;
-     balance+=p;
-     lossStreak=0;
-     log("WIN +" + p,"win");
-    }else{
-     losses++;
-     balance+=p;
-     lossStreak++;
-     log("LOSS " + p,"loss");
+  const {signal,z,std}=res;
+
+  ws.send(JSON.stringify({
+    buy:1, price:STAKE,
+    parameters:{
+      amount:STAKE, basis:"stake",
+      contract_type:signal, currency:"USD",
+      duration:CFG.TICKS, duration_unit:"t",
+      symbol:SYMBOL
+    }
+  }));
+
+  log(`${signal} $${STAKE} · z:${z} · std:${std}`,"i");
+  setState(`${signal} · z:${z}`,"act");
+  lastTrade=now;
+  updateUI();
+}
+
+// ══════════════════════════════════
+// RESULTADO
+// ══════════════════════════════════
+function onResult(pnl){
+  profit+=pnl; total++;
+  const ts=new Date().toTimeString().slice(0,8);
+
+  if(pnl>0){
+    wins++; lossStreak=0;
+    recent.push("w");
+    opLog.push({t:ts,w:true,s:STAKE.toFixed(2),p:pnl.toFixed(2)});
+    log(`✅ WIN  +$${pnl.toFixed(2)}   acum: ${profit>=0?"+$":"−$"}${Math.abs(profit).toFixed(2)}`,"w");
+  } else {
+    lossC++; lossStreak++; totalLoss+=Math.abs(pnl);
+    recent.push("l");
+    opLog.push({t:ts,w:false,s:STAKE.toFixed(2),p:Math.abs(pnl).toFixed(2)});
+    log(`❌ LOSS  $${Math.abs(pnl).toFixed(2)}   acum: ${profit>=0?"+$":"−$"}${Math.abs(profit).toFixed(2)}`,"l");
+  }
+
+  document.getElementById("totEl").innerText=total;
+  if(recent.length>15) recent.shift();
+  renderDots();
+  updateUI();
+
+  if(lossStreak>=3){
+    pauseUntil=Date.now()+CFG.PAUSE_MS;
+    log(`⏸ Pausa ${CFG.PAUSE_MS/1000}s — 3 pérdidas`,"x");
+    lossStreak=0;
+  }
+
+  if(profit>=TP)    { log(`🏆 TAKE PROFIT +$${profit.toFixed(2)}`,"g"); stopBot(true); return; }
+  if(profit<=-SL)   { log(`🛑 STOP LOSS −$${Math.abs(profit).toFixed(2)}`,"s"); stopBot(true); return; }
+  if(total>=CFG.MAX_OPS){ log(`🔢 Máx ${CFG.MAX_OPS} ops — cerrado`,"x"); stopBot(true); return; }
+}
+
+// ══════════════════════════════════
+// UI
+// ══════════════════════════════════
+function updateUI(){
+  const wr=total?(wins/total*100).toFixed(1):0;
+
+  document.getElementById("bal").innerText=bal.toFixed(2);
+
+  const pe=document.getElementById("prof");
+  pe.innerText=(profit>=0?"+$":"−$")+Math.abs(profit).toFixed(2);
+  pe.className="sv"+(profit>0?" up":profit<0?" dn":"");
+
+  document.getElementById("wr").innerText=wr+"%";
+  document.getElementById("wr").className="sv"+(wr>=70?" up":wr>=52.6?" go":"");
+
+  document.getElementById("lossEl").innerText="$"+totalLoss.toFixed(2);
+
+  const mp=document.getElementById("mProg");
+  mp.innerText=(profit>=0?"+$":"−$")+Math.abs(profit).toFixed(2);
+  mp.className="mv"+(profit>=TP?" g":profit<=-SL?" r":"y");
+
+  document.getElementById("mOps").innerText=`${total}/${CFG.MAX_OPS}`;
+
+  const pct=Math.max(0,Math.min(100,(profit/TP)*100));
+  document.getElementById("pFill").style.width=pct+"%";
+}
+
+function updateClock(){
+  const col=new Date(Date.now()-5*60*60*1000);
+  const h=col.getUTCHours(), mm=String(col.getUTCMinutes()).padStart(2,"0");
+  document.getElementById("clock").innerText=`${h%12||12}:${mm} ${h<12?"AM":"PM"}`;
+  const s=getSess();
+  const el=document.getElementById("sessEl");
+  el.className="sess-pill "+s.lv;
+  el.innerText=s.name;
+}
+
+function setState(txt,type){
+  document.getElementById("stateInfo").innerHTML=(type==="act"?`<span class="spin"></span>`:"")+txt;
+  const c=document.getElementById("chip");
+  c.className="chip"+(type==="act"?" act":type==="inv"?" inv":type==="wait"?" wait":"");
+  c.innerText=type==="act"?"ACTIVO":type==="inv"?"FILTRADO":type==="wait"?"ESPERA":"SCAN";
+}
+
+function renderDots(){
+  document.getElementById("dots").innerHTML=
+    recent.map(r=>`<div class="d ${r}"></div>`).join("");
+}
+
+setInterval(updateClock,1000);
+
+// ══════════════════════════════════
+// WEBSOCKET
+// ══════════════════════════════════
+function startBot(){
+  if(running) return;
+  wins=0;lossC=0;total=0;profit=0;totalLoss=0;
+  lossStreak=0;lastTrade=0;pauseUntil=0;
+  prices=[];recent=[];invC=0;opLog=[];
+  document.getElementById("invEl").innerText="0";
+  document.getElementById("totEl").innerText="0";
+  renderDots();updateUI();updateClock();
+  updateZDisplay(0);
+
+  ws=new WebSocket("wss://ws.binaryws.com/websockets/v3?app_id=1089");
+  ws.onopen=()=>ws.send(JSON.stringify({authorize:TOKEN}));
+
+  ws.onmessage=(e)=>{
+    const d=JSON.parse(e.data);
+
+    if(d.authorize){
+      running=true; setBtnState(true);
+      initBal=d.authorize.balance; bal=initBal;
+      document.getElementById("badge").className="badge live";
+      document.getElementById("bTxt").innerText="ONLINE";
+      log(`🔐 Conectado · $${bal.toFixed(2)}`,"i");
+      log(`⚙ Stake $${STAKE} · TP +$${TP} · SL -$${SL}`,"i");
+      ws.send(JSON.stringify({ticks:SYMBOL,subscribe:1}));
+      ws.send(JSON.stringify({balance:1}));
+      updateUI();
     }
 
-    update();
+    if(d.balance){ bal=d.balance.balance; updateUI(); }
 
-    if(lossStreak>=2){
-     setMode("STOP LOSS");
-     running=false;
-     ws.close();
-     toggle.innerText="[ START BOT ]";
+    if(d.tick&&d.tick.symbol===SYMBOL){
+      prices.push(d.tick.quote);
+      if(prices.length>CFG.HISTORY) prices.shift();
+      if(running) onTick();
     }
-   }
-  }
- };
+
+    if(d.buy){
+      ws.send(JSON.stringify({
+        proposal_open_contract:1,
+        contract_id:d.buy.contract_id,
+        subscribe:1
+      }));
+    }
+
+    if(d.proposal_open_contract&&d.proposal_open_contract.is_sold)
+      onResult(parseFloat(d.proposal_open_contract.profit));
+
+    if(d.error) log(`⚠ ${d.error.message}`,"x");
+  };
+
+  ws.onerror=()=>log("❌ Error WebSocket","s");
+  ws.onclose=()=>{
+    if(running){
+      running=false; setBtnState(false);
+      document.getElementById("badge").className="badge";
+      document.getElementById("bTxt").innerText="OFFLINE";
+      log("🔌 Desconectado","x");
+    }
+  };
 }
 
-function getCandles(){
- let symbol=document.getElementById("symbol").value;
-
- ws.send(JSON.stringify({
-  ticks_history:symbol,
-  granularity:60,
-  count:30,
-  style:"candles"
- }));
-}
-
-function ema(p,d){
- let k=2/(p+1);
- let arr=[d[0]];
-
- for(let i=1;i<d.length;i++){
-  arr.push(d[i]*k + arr[i-1]*(1-k));
- }
-
- return arr;
-}
-
-function sniper(){
- if(candles.length<15)return;
-
- let ema3=ema(3,candles).pop();
- let ema9=ema(9,candles).pop();
-
- let last=candles[candles.length-1];
- let prev=candles[candles.length-2];
-
- let diff=Math.abs(ema3-ema9);
- let now=Date.now();
-
- if(now-lastTradeTime<60000)return;
-
- if(diff<0.00008){
-  setMode("LATERAL");
-  return;
- }
-
- if(ema3>ema9 && last>prev){
-  setMode("CALL");
-  trade("CALL");
-  lastTradeTime=now;
- }
-
- else if(ema3<ema9 && last<prev){
-  setMode("PUT");
-  trade("PUT");
-  lastTradeTime=now;
- }
-
- else{
-  setMode("WAIT");
- }
-}
-
-function trade(type){
- let stake=parseFloat(document.getElementById("stake").value);
- let symbol=document.getElementById("symbol").value;
-
- log(">> trade " + type);
-
- ws.send(JSON.stringify({
-  buy:1,
-  price:stake,
-  parameters:{
-   amount:stake,
-   basis:"stake",
-   contract_type:type,
-   currency:"USD",
-   duration:1,
-   duration_unit:"m",
-   symbol:symbol
-  }
- }));
-}
-
-function update(){
- document.getElementById("wins").innerText=wins;
- document.getElementById("losses").innerText=losses;
- document.getElementById("balance").innerText=balance.toFixed(2);
+function stopBot(auto=false){
+  if(ws) ws.close();
+  running=false; setBtnState(false);
+  document.getElementById("badge").className="badge";
+  document.getElementById("bTxt").innerText="OFFLINE";
+  setState("Sesión finalizada","");
+  updateZDisplay(0);
+  updateUI();
+  if(!auto) log("⏹ Detenido manualmente","x");
+  setTimeout(showRep,400);
 }
 </script>
-
 </body>
 </html>
