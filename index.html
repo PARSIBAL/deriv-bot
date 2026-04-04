@@ -2,41 +2,65 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8">
-<title>HYBRID SNIPER V50</title>
+<title>AI SNIPER V50 PRO PANEL</title>
 
 <style>
-body{
-  background:#02060d;
-  color:#00ff9c;
-  font-family:monospace;
-  padding:20px;
+body{background:#02060d;color:#00ff9c;font-family:monospace;padding:20px;}
+.container{max-width:540px;margin:auto;background:#050a14;padding:20px;border-radius:10px;}
+
+input,button{
+ width:100%;padding:10px;margin:5px 0;
+ background:#000;color:#00ff9c;border:none;
 }
-.container{
-  max-width:520px;
-  margin:auto;
-  background:#050a14;
-  padding:20px;
-  border-radius:10px;
-}
-input,select,button{
-  width:100%;
-  padding:10px;
-  margin:5px 0;
-  background:#000;
-  color:#00ff9c;
-  border:none;
-}
-button{
-  background:#00ffc3;
-  color:#000;
-  font-weight:bold;
-}
+button{background:#00ffc3;color:#000;font-weight:bold;}
+
 .log{
-  height:150px;
-  overflow:auto;
-  background:#000;
-  padding:8px;
-  font-size:11px;
+ height:120px;overflow:auto;background:#000;padding:8px;font-size:11px;
+}
+
+/* PANEL PRO */
+.panel{
+ display:grid;
+ grid-template-columns:1fr 1fr;
+ gap:8px;
+ margin:10px 0;
+}
+
+.box{
+ background:#000;
+ padding:10px;
+ text-align:center;
+ border-radius:8px;
+}
+
+.label{font-size:10px;color:#888;}
+.value{font-size:16px;font-weight:bold;}
+
+.green{color:#2ed573;}
+.red{color:#ff4757;}
+.yellow{color:#feca57;}
+.blue{color:#70a1ff;}
+
+/* BARRA */
+.bar{
+ height:6px;
+ background:#111;
+ border-radius:4px;
+ overflow:hidden;
+ margin-top:5px;
+}
+.fill{
+ height:100%;
+ width:0%;
+ background:#00ff9c;
+}
+
+/* SEÑAL */
+.signal{
+ text-align:center;
+ font-size:20px;
+ font-weight:bold;
+ margin:10px 0;
 }
 </style>
 </head>
@@ -45,20 +69,47 @@ button{
 
 <div class="container">
 
-<h3>[ HYBRID SNIPER V50 ]</h3>
+<h3>[ AI SNIPER V50 PRO PANEL ]</h3>
 
-<div>const API_TOKEN =</div>
-<input type="text" id="e1lRgxNoxWwBkzx">
-
-<div>const STAKE_TREND =</div>
-<input type="number" id="stakeTrend" value="0.5">
-
-<div>const STAKE_REVERSA =</div>
-<input type="number" id="stakeRev" value="0.3">
+<input type="text" id="token" placeholder="e1lRgxNoxWwBkzx">
+<input type="number" id="stake" value="0.5">
+<input type="number" id="tp" value="3">
+<input type="number" id="sl" value="3">
 
 <button id="toggle">START</button>
 
 <div id="mode">STATUS: IDLE</div>
+
+<!-- PANEL -->
+<div class="panel">
+  <div class="box">
+    <div class="label">Z-SCORE</div>
+    <div id="zv" class="value">0</div>
+  </div>
+
+  <div class="box">
+    <div class="label">VOLATILIDAD</div>
+    <div id="volv" class="value">0</div>
+  </div>
+
+  <div class="box">
+    <div class="label">FUERZA</div>
+    <div id="trendv" class="value">0</div>
+  </div>
+
+  <div class="box">
+    <div class="label">MERCADO</div>
+    <div id="marketv" class="value">---</div>
+  </div>
+</div>
+
+<!-- BARRA -->
+<div class="bar">
+  <div id="strengthBar" class="fill"></div>
+</div>
+
+<!-- SEÑAL -->
+<div id="signal" class="signal">WAIT</div>
 
 <div>
 Wins: <span id="wins">0</span> |
@@ -71,62 +122,59 @@ Balance: <span id="balance">0</span>
 </div>
 
 <script>
-let ws, running=false;
+let ws,running=false,interval;
 let candles=[];
-let wins=0, losses=0, balance=0;
+let wins=0,losses=0,balance=0;
 let lastTradeTime=0;
-let lossStreak=0;
 
-document.getElementById("toggle").onclick=()=>{
+toggle.onclick=()=>{
  running=!running;
- if(running){ start(); toggle.innerText="STOP"; }
- else{ ws.close(); toggle.innerText="START"; }
+ if(running){start();toggle.innerText="STOP";}
+ else{clearInterval(interval);ws.close();toggle.innerText="START";}
 };
 
 function log(msg){
- let el=document.getElementById("log");
- el.innerHTML+="<div>"+msg+"</div>";
- el.scrollTop=el.scrollHeight;
+ logDiv.innerHTML+="<div>"+msg+"</div>";
+ logDiv.scrollTop=logDiv.scrollHeight;
 }
 
-function setMode(m){
- document.getElementById("mode").innerText="STATUS: "+m;
-}
+function setMode(m){mode.innerText="STATUS: "+m;}
 
 function start(){
- let token=document.getElementById("token").value;
+ let token=tokenInput.value;
 
  ws=new WebSocket("wss://ws.derivws.com/websockets/v3?app_id=1089");
 
- ws.onopen=()=> ws.send(JSON.stringify({authorize:token}));
+ ws.onopen=()=>{
+  ws.send(JSON.stringify({authorize:token}));
+  interval=setInterval(getCandles,5000);
+ };
 
  ws.onmessage=(msg)=>{
   let d=JSON.parse(msg.data);
 
-  if(d.msg_type==="authorize"){
-    log("Conectado");
-    getCandles();
-  }
+  if(d.msg_type==="authorize")log("Conectado");
 
   if(d.msg_type==="candles"){
     candles=d.candles.map(c=>c.close);
-    logic();
+    brain();
   }
 
   if(d.msg_type==="proposal_open_contract"){
     if(d.proposal_open_contract.is_sold){
-
       let p=d.proposal_open_contract.profit;
+      balance+=p;
 
-      if(p>0){ wins++; balance+=p; lossStreak=0; log("WIN "+p); }
-      else{ losses++; balance+=p; lossStreak++; log("LOSS "+p); }
+      if(p>0){wins++;log("WIN "+p);}
+      else{losses++;log("LOSS "+p);}
 
       update();
 
-      if(lossStreak>=2){
-        setMode("STOP LOSS");
-        ws.close();
+      if(balance>=tp.value || balance<=-sl.value){
+        setMode("STOP");
         running=false;
+        clearInterval(interval);
+        ws.close();
       }
     }
   }
@@ -143,102 +191,135 @@ function getCandles(){
 }
 
 function ema(p,d){
- let k=2/(p+1), arr=[d[0]];
- for(let i=1;i<d.length;i++){
-  arr.push(d[i]*k + arr[i-1]*(1-k));
- }
+ let k=2/(p+1),arr=[d[0]];
+ for(let i=1;i<d.length;i++)arr.push(d[i]*k+arr[i-1]*(1-k));
  return arr;
 }
 
-function zScore(data){
- let mean = data.reduce((a,b)=>a+b)/data.length;
- let std = Math.sqrt(data.map(x=>Math.pow(x-mean,2)).reduce((a,b)=>a+b)/data.length);
- return (data[data.length-1]-mean)/std;
+function zScore(d){
+ let m=d.reduce((a,b)=>a+b)/d.length;
+ let s=Math.sqrt(d.map(x=>(x-m)**2).reduce((a,b)=>a+b)/d.length);
+ return (d[d.length-1]-m)/s;
 }
 
-function logic(){
+function volatility(d){
+ let c=[];
+ for(let i=1;i<d.length;i++)c.push(Math.abs(d[i]-d[i-1]));
+ return c.reduce((a,b)=>a+b)/c.length;
+}
 
- if(candles.length<20) return;
+function brain(){
+
+ if(candles.length<25)return;
 
  let z=zScore(candles);
  let ema3=ema(3,candles).pop();
  let ema9=ema(9,candles).pop();
+ let vol=volatility(candles);
 
  let last=candles[candles.length-1];
  let prev=candles[candles.length-2];
 
+ let trend=Math.abs(ema3-ema9);
+
+ // PANEL UPDATE
+ zv.innerText=z.toFixed(2);
+ volv.innerText=vol.toFixed(2);
+ trendv.innerText=trend.toFixed(2);
+
+ let strength=Math.min(Math.abs(z)*20,100);
+ strengthBar.style.width=strength+"%";
+
  let now=Date.now();
- if(now-lastTradeTime<60000) return;
+ if(now-lastTradeTime<60000)return;
 
- // 🔴 REVERSA
- if(Math.abs(z)>2.0){
+ // MARKET TYPE
+ if(vol<0.2){
+  marketv.innerText="MUERTO";
+  signal.innerText="WAIT";
+  signal.className="signal yellow";
+  return;
+ }
 
-   if(z>2 && last<prev){
-     setMode("REVERSA PUT");
+ if(Math.abs(z)>2){
+  marketv.innerText="EXTREMO";
+ }else if(trend>0.3){
+  marketv.innerText="TENDENCIA";
+ }else{
+  marketv.innerText="LATERAL";
+ }
+
+ // REVERSA
+ if(Math.abs(z)>2.1){
+
+   if(z>2.1 && last<prev){
+     signal.innerText="PUT";
+     signal.className="signal red";
      trade("PUT","t");
      lastTradeTime=now;
      return;
    }
 
-   if(z<-2 && last>prev){
-     setMode("REVERSA CALL");
+   if(z<-2.1 && last>prev){
+     signal.innerText="CALL";
+     signal.className="signal green";
      trade("CALL","t");
      lastTradeTime=now;
      return;
    }
  }
 
- // 🔵 TENDENCIA
- if(Math.abs(z)>1.4 && Math.abs(z)<1.8){
+ // TENDENCIA
+ if(Math.abs(z)>1.4 && Math.abs(z)<1.8 && trend>0.3){
 
    if(ema3>ema9 && last>prev){
-     setMode("SNIPER CALL");
+     signal.innerText="CALL";
+     signal.className="signal green";
      trade("CALL","m");
      lastTradeTime=now;
      return;
    }
 
    if(ema3<ema9 && last<prev){
-     setMode("SNIPER PUT");
+     signal.innerText="PUT";
+     signal.className="signal red";
      trade("PUT","m");
      lastTradeTime=now;
      return;
    }
  }
 
- setMode("WAIT");
+ signal.innerText="WAIT";
+ signal.className="signal yellow";
 }
 
 function trade(type,mode){
 
- let stake = mode==="t"
-   ? parseFloat(document.getElementById("stakeRev").value)
-   : parseFloat(document.getElementById("stakeTrend").value);
-
+ let stake=parseFloat(stakeInput.value);
  let duration = mode==="t"?3:1;
  let unit = mode==="t"?"t":"m";
 
- log("TRADE "+type+" ("+mode+")");
+ log("TRADE "+type);
 
  ws.send(JSON.stringify({
   buy:1,
   price:stake,
   parameters:{
-    amount:stake,
-    basis:"stake",
-    contract_type:type,
-    currency:"USD",
-    duration:duration,
-    duration_unit:unit,
-    symbol:"R_50"
+   amount:stake,
+   basis:"stake",
+   contract_type:type,
+   currency:"USD",
+   duration:duration,
+   duration_unit:unit,
+   symbol:"R_50"
   }
  }));
 }
 
 function update(){
- winsEl.innerText=wins;
- lossesEl.innerText=losses;
- balanceEl.innerText=balance.toFixed(2);
+ wins.innerText=wins;
+ losses.innerText=losses;
+ balance.innerText=balance.toFixed(2);
 }
 </script>
 
