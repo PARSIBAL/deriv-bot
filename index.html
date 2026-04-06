@@ -493,7 +493,7 @@ function getSignal(){
   // Z positivo → precio subió demasiado → PUT (va a bajar)
   // Z negativo → precio bajó demasiado → CALL (va a subir)
   return {
-    signal: z > 0 ? "CALL" : "PUT",
+    signal: z > 0 ? "PUT" : "PUT",
     z: z.toFixed(2),
     std: std.toFixed(5)
   };
