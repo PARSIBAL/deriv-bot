@@ -336,7 +336,7 @@ const TOKEN  = "e1lRgxNoxWwBkzx";
 const SYMBOL = "R_50";
 
 const CFG = {
-  TICKS:    5,
+  TICKS:    3,
   COOLDOWN: 7500,
   PAUSE_MS: 45000,
   MIN_BARS: 20,
@@ -493,7 +493,7 @@ function getSignal(){
   // Z positivo → precio subió demasiado → PUT (va a bajar)
   // Z negativo → precio bajó demasiado → CALL (va a subir)
   return {
-    signal: z > 0 ? "PUT" : "PUT",
+    signal: z > 0 ? "PUT" : "CALL",
     z: z.toFixed(2),
     std: std.toFixed(5)
   };
