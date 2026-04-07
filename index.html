@@ -241,20 +241,6 @@ body{
       </div>
     </div>
 
-    <!-- ========================================== -->
-    <!-- CAMPO PARA TOKEN API DE DERIV (AÑADIDO)    -->
-    <!-- ========================================== -->
-    <div class="m-group" style="grid-column: span 2; margin-top: 8px;">
-      <div class="m-lbl">🔑 TOKEN API DE DERIV</div>
-      <input class="m-input" type="password" id="apiToken" placeholder="e1lRgxNoxWwBkzx" value="" style="text-align: left; padding-left: 12px;">
-      <div class="m-presets" style="justify-content: center; margin-top: 6px;">
-        <div class="mp" onclick="document.getElementById('apiToken').value=''">LIMPIAR</div>
-        <div class="mp" onclick="alert('📌 Cómo obtener tu token:\n1. Ve a deriv.com\n2. Configuración → API Token\n3. Crea token con permisos: Read + Trade\n4. Cópialo y pégalo aquí')">❓ AYUDA</div>
-      </div>
-      <div class="m-lbl" style="font-size: 7px; color: #ffaa33; margin-top: 5px;">⚠️ El token se guarda solo en este navegador. Nunca lo compartas.</div>
-    </div>
-    <!-- ========================================== -->
-
     <!-- SELECTOR DE ACTIVOS -->
     <div class="m-assets-title">📊 ACTIVOS — SELECCIONA LOS QUE DESEAS OPERAR</div>
     <div class="assets-grid" id="assetGrid">
@@ -369,4 +355,107 @@ body{
   <div class="stats">
     <div class="st"><div class="sl">💰 Balance</div><div class="sv cy" id="bal">0.00</div></div>
     <div class="st"><div class="sl">📈 Ganancia</div><div class="sv" id="prof">+0.00</div></div>
-    <div
+    <div class="st"><div class="sl">🏆 Winrate</div><div class="sv" id="wr">0%</div></div>
+    <div class="st"><div class="sl">📉 Pérdidas</div><div class="sv dn" id="lossEl">$0.00</div></div>
+  </div>
+
+  <!-- HISTORIAL DOTS -->
+  <div class="dots-row">
+    <span class="dl">ÚLTIMAS</span>
+    <div id="dots"></div>
+  </div>
+
+  <!-- ESTADO -->
+  <div class="state-row">
+    <span id="stateInfo">Presiona INICIAR</span>
+    <span class="chip" id="chip">IDLE</span>
+  </div>
+
+  <!-- CONTADORES -->
+  <div class="count-row">
+    <span>🚫 INVALIDADAS <span class="cnt" id="invEl">0</span></span>
+    <span>✅ EJECUTADAS <span class="cnt" id="totEl">0</span></span>
+  </div>
+
+  <!-- LOG -->
+  <div class="log-wrap">
+    <div class="log" id="log"></div>
+  </div>
+
+  <!-- FOOTER -->
+  <div class="ftr">
+    <span id="ftrTxt">$0.35/op · TP $10 · SL $5</span>
+    <button class="rep-link" onclick="showRep()">📊 REPORTE</button>
+  </div>
+
+</div>
+</div>
+
+<script>
+// ══════════════════════════════════════════════════════
+// 🔑 COLOCA AQUÍ TU TOKEN API DE DERIV (ejemplo: "wGqX3mK9...")
+// ══════════════════════════════════════════════════════
+const API_TOKEN = "e1lRgxNoxWwBkzx";
+
+// ══════════════════════════════════════════════════════
+// FIN - NO MODIFICAR NADA MÁS ABAJO
+// ══════════════════════════════════════════════════════
+
+let apiToken = API_TOKEN;
+
+function refreshSummary() {}
+function sp2(type, val) {
+  if(type === 'stake') document.getElementById('iStake').value = val;
+  if(type === 'tp') document.getElementById('iTP').value = val;
+  if(type === 'sl') document.getElementById('iSL').value = val;
+  refreshSummary();
+}
+
+function toggleAsset(el) {
+  el.classList.toggle('on');
+}
+
+function launch() {
+  if(apiToken === "" || apiToken === "ESCRIBE_AQUI_TU_TOKEN_REAL") {
+    alert("⚠️ No has configurado el token API.\n\nEdita el código y busca la línea:\nconst API_TOKEN = 'ESCRIBE_AQUI_TU_TOKEN_REAL';\n\nReemplázala por tu token real de Deriv.");
+    return;
+  }
+  console.log("🔐 Token cargado:", apiToken.substring(0, 10) + "...");
+  document.getElementById('mOverlay').classList.add('hidden');
+  addLog("✅ Token API configurado correctamente.", "success");
+  addLog("⚠️ Este frontend requiere conexión real vía backend (Node.js) para operar con Deriv.", "warning");
+}
+
+function toggle() {
+  addLog("⚙️ Bot listo. Token: " + (apiToken && apiToken !== "ESCRIBE_AQUI_TU_TOKEN_REAL" ? "✅ Configurado" : "❌ No configurado"), "info");
+}
+
+function showRep() { document.getElementById('rOverlay').classList.remove('hidden'); }
+function closeRep() { document.getElementById('rOverlay').classList.add('hidden'); }
+
+function addLog(msg, type) {
+  let logDiv = document.getElementById('log');
+  let le = document.createElement('div'); le.className='le';
+  let lt = document.createElement('span'); lt.className='lt'; lt.innerText = new Date().toLocaleTimeString();
+  let lm = document.createElement('span');
+  if(type=='win') lm.className='lw';
+  else if(type=='loss') lm.className='ll';
+  else if(type=='success') lm.className='lg';
+  else if(type=='warning') lm.className='lx';
+  else lm.className='li';
+  lm.innerText = msg;
+  le.appendChild(lt); le.appendChild(lm);
+  logDiv.appendChild(le);
+  logDiv.scrollTop = logDiv.scrollHeight;
+}
+
+setInterval(() => {
+  document.getElementById('clock').innerText = new Date().toLocaleTimeString();
+}, 1000);
+
+document.getElementById('stakeEl').innerText = "$0.35";
+document.getElementById('ftrTxt').innerText = "$0.35/op · TP $10 · SL $5";
+</script>
+
+</body>
+</html>
