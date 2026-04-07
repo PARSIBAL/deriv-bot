@@ -393,12 +393,12 @@ body{
 
 <script>
 // ══════════════════════════════════════════════════════
-// 🔑 COLOCA AQUÍ TU TOKEN API DE DERIV (ejemplo: "wGqX3mK9...")
+// 🔑 COLOCA AQUÍ TU TOKEN (REAL O DEMO) - ÚNICA MODIFICACIÓN
 // ══════════════════════════════════════════════════════
-const API_TOKEN = "e1lRgxNoxWwBkzx";
+const API_TOKEN = "e1lRgxNoxWwBkzx";  // <--- ESCRIBE TU TOKEN ENTRE LAS COMILLAS
 
 // ══════════════════════════════════════════════════════
-// FIN - NO MODIFICAR NADA MÁS ABAJO
+// FIN DE LA MODIFICACIÓN - EL RESTO NO CAMBIA
 // ══════════════════════════════════════════════════════
 
 let apiToken = API_TOKEN;
@@ -416,8 +416,8 @@ function toggleAsset(el) {
 }
 
 function launch() {
-  if(apiToken === "" || apiToken === "ESCRIBE_AQUI_TU_TOKEN_REAL") {
-    alert("⚠️ No has configurado el token API.\n\nEdita el código y busca la línea:\nconst API_TOKEN = 'ESCRIBE_AQUI_TU_TOKEN_REAL';\n\nReemplázala por tu token real de Deriv.");
+  if(apiToken === "" || apiToken === "TU_TOKEN_AQUI") {
+    alert("⚠️ No has configurado el token API.\n\nEdita el código y busca la línea:\nconst API_TOKEN = 'TU_TOKEN_AQUI';\n\nReemplázala por tu token real de Deriv.");
     return;
   }
   console.log("🔐 Token cargado:", apiToken.substring(0, 10) + "...");
@@ -427,7 +427,7 @@ function launch() {
 }
 
 function toggle() {
-  addLog("⚙️ Bot listo. Token: " + (apiToken && apiToken !== "ESCRIBE_AQUI_TU_TOKEN_REAL" ? "✅ Configurado" : "❌ No configurado"), "info");
+  addLog("⚙️ Bot listo. Token: " + (apiToken && apiToken !== "TU_TOKEN_AQUI" ? "✅ Configurado" : "❌ No configurado"), "info");
 }
 
 function showRep() { document.getElementById('rOverlay').classList.remove('hidden'); }
