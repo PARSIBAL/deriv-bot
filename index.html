@@ -415,7 +415,7 @@ const ASSET_CFG = {
   R_25: {
     label:   "V_25",
     vol:     "25%",
-    Z_MIN:   1.75,   // Vol media-baja → umbral medio
+    Z_MIN:   1.90,   // Vol media-baja → umbral medio
     TICKS:   5,      // 5-8 ticks, usamos 5
     VOL_MIN: 0.0008,
     VOL_MAX: 0.008,
@@ -424,7 +424,7 @@ const ASSET_CFG = {
   R_50: {
     label:   "V_50",
     vol:     "50%",
-    Z_MIN:   2.00,   // Umbral clásico ±2σ — punto dulce
+    Z_MIN:   2.20,   // Umbral clásico ±2σ — punto dulce
     TICKS:   4,      // 3-5 ticks, usamos 4
     VOL_MIN: 0.0025,
     VOL_MAX: 0.020,
@@ -433,7 +433,7 @@ const ASSET_CFG = {
   R_75: {
     label:   "V_75",
     vol:     "75%",
-    Z_MIN:   2.25,   // Alta vol → señal más fuerte requerida
+    Z_MIN:   2.40,   // Alta vol → señal más fuerte requerida
     TICKS:   3,      // 3-4 ticks, usamos 3
     VOL_MIN: 0.006,
     VOL_MAX: 0.040,
@@ -442,7 +442,7 @@ const ASSET_CFG = {
   R_100: {
     label:   "V_100",
     vol:     "100%",
-    Z_MIN:   2.75,   // Muy alta vol → sólo señales extremas
+    Z_MIN:   2.90,   // Muy alta vol → sólo señales extremas
     TICKS:   2,      // 1-3 ticks, usamos 2
     VOL_MIN: 0.010,
     VOL_MAX: 0.080,
@@ -655,7 +655,7 @@ function getSignal(sym){
   }
 
   return {
-    signal: z > 0 ? "PUT" : "CALL",
+    signal: z > 0 ? "CALL" : "PUT",
     z: z.toFixed(2),
     std: std.toFixed(5),
     ticks: cfg.TICKS
