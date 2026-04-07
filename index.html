@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>BOT APEX v15 — MULTI ACTIVO</title>
+<title>BOT APEX v13</title>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Oxanium:wght@300;400;600;800&display=swap');
 
@@ -29,51 +29,39 @@ body{
   padding:16px;
 }
 
-.wrap{width:100%;max-width:440px;}
+.wrap{width:100%;max-width:400px;}
 
 /* MODAL */
 .modal-overlay{position:fixed;inset:0;background:rgba(4,8,15,.96);display:flex;align-items:center;justify-content:center;z-index:999;backdrop-filter:blur(8px);transition:opacity .3s;}
 .modal-overlay.hidden{opacity:0;pointer-events:none;}
-.modal{background:var(--bg1);border:1px solid var(--border);border-radius:18px;padding:22px 20px;max-width:340px;width:95%;position:relative;max-height:90vh;overflow-y:auto;}
+.modal{background:var(--bg1);border:1px solid var(--border);border-radius:18px;padding:24px 22px;max-width:320px;width:92%;position:relative;}
 .modal::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,transparent,var(--g1),transparent);}
-.m-title{font-size:15px;font-weight:800;color:#fff;letter-spacing:3px;text-align:center;margin-bottom:4px;}
-.m-sub{font-size:9px;color:var(--dim);text-align:center;letter-spacing:2px;margin-bottom:14px;}
-.m-row{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px;}
+.m-title{font-size:16px;font-weight:800;color:#fff;letter-spacing:3px;text-align:center;margin-bottom:16px;}
+.m-row{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px;}
 .m-group{}
 .m-lbl{font-size:9px;color:var(--dim);letter-spacing:1px;margin-bottom:6px;}
-.m-input{width:100%;background:var(--bg2);border:1px solid var(--dim);border-radius:10px;color:#fff;font-family:'Oxanium',monospace;font-size:16px;font-weight:800;padding:9px;outline:none;text-align:center;transition:border .2s;}
+.m-input{width:100%;background:var(--bg2);border:1px solid var(--dim);border-radius:10px;color:#fff;font-family:'Oxanium',monospace;font-size:18px;font-weight:800;padding:10px;outline:none;text-align:center;transition:border .2s;}
 .m-input:focus{border-color:var(--g1);}
 .m-presets{display:flex;gap:5px;margin-top:5px;flex-wrap:wrap;}
 .mp{font-size:9px;padding:4px 8px;border:1px solid var(--dim);border-radius:6px;color:var(--dim);background:var(--bg2);cursor:pointer;transition:all .2s;}
 .mp:hover{border-color:var(--g1);color:var(--g1);}
 .mp.on{border-color:var(--g1);color:#000;background:var(--g1);}
-
-/* ACTIVOS SELECTOR */
-.m-assets-title{font-size:9px;color:var(--dim);letter-spacing:2px;margin-bottom:8px;margin-top:4px;}
-.assets-grid{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:14px;}
-.asset-toggle{background:var(--bg2);border:1px solid var(--dim);border-radius:10px;padding:8px 6px;cursor:pointer;transition:all .2s;text-align:center;}
-.asset-toggle.on{border-color:var(--g1);background:rgba(0,255,224,0.08);}
-.at-sym{font-size:11px;font-weight:800;color:#fff;}
-.asset-toggle.on .at-sym{color:var(--g1);}
-.at-info{font-size:8px;color:var(--dim);margin-top:2px;}
-.asset-toggle.on .at-info{color:rgba(0,255,224,0.6);}
-.at-z{font-size:8px;color:var(--gold);margin-top:1px;}
-
 .m-btn{width:100%;font-size:13px;font-weight:800;letter-spacing:3px;padding:14px;border:none;border-radius:12px;background:linear-gradient(135deg,#00b09b,#00ffe0);color:#000;cursor:pointer;margin-top:4px;transition:all .2s;}
 .m-btn:hover{box-shadow:0 4px 20px rgba(0,255,224,.4);}
 
 /* REPORTE */
 .rep-overlay{position:fixed;inset:0;background:rgba(4,8,15,.96);display:flex;align-items:center;justify-content:center;z-index:998;backdrop-filter:blur(8px);transition:opacity .3s;}
 .rep-overlay.hidden{opacity:0;pointer-events:none;}
-.rep{background:var(--bg1);border:1px solid var(--border);border-radius:18px;padding:22px 20px;max-width:340px;width:95%;max-height:90vh;overflow-y:auto;}
+.rep{background:var(--bg1);border:1px solid var(--border);border-radius:18px;padding:22px 20px;max-width:320px;width:92%;}
+.rep::before{display:none;}
 .rep-title{font-size:15px;font-weight:800;color:#fff;letter-spacing:3px;text-align:center;margin-bottom:14px;}
 .rep-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px;}
 .rs{background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:12px 8px;text-align:center;}
 .rs-l{font-size:8px;color:var(--dim);letter-spacing:1px;margin-bottom:4px;}
-.rs-v{font-size:20px;font-weight:800;color:#fff;}
+.rs-v{font-size:22px;font-weight:800;color:#fff;}
 .rs-v.up{color:var(--win);}.rs-v.dn{color:var(--red);}
 .rs-v.go{color:var(--gold);}.rs-v.cy{color:var(--g1);}
-.rep-ops{background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:10px;margin-bottom:12px;max-height:180px;overflow-y:auto;}
+.rep-ops{background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:10px;margin-bottom:12px;max-height:160px;overflow-y:auto;}
 .rep-ops-lbl{font-size:8px;color:var(--dim);letter-spacing:1px;margin-bottom:6px;}
 .op{display:flex;justify-content:space-between;font-size:10px;padding:3px 0;border-bottom:1px solid rgba(255,255,255,.04);}
 .op:last-child{border:none;}
@@ -117,26 +105,11 @@ body{
 .prog{height:3px;background:var(--border);margin-top:10px;border-radius:0;overflow:hidden;}
 .prog-fill{height:100%;width:0%;background:linear-gradient(90deg,var(--g2),var(--win));transition:width .5s;}
 
-/* ACTIVOS ACTIVOS (panel) */
-.assets-panel{margin-top:10px;display:grid;grid-template-columns:1fr 1fr 1fr;gap:4px;}
-.ap{background:var(--bg2);border:1px solid var(--dim);border-radius:8px;padding:5px 4px;text-align:center;transition:all .3s;}
-.ap.active{border-color:var(--g1);background:rgba(0,255,224,0.06);}
-.ap.trading{border-color:var(--gold);background:rgba(254,202,87,0.08);animation:pulse 1s infinite;}
-.ap.won{border-color:var(--win);background:rgba(46,213,115,0.08);}
-.ap.lost{border-color:var(--red);background:rgba(255,71,87,0.08);}
-@keyframes pulse{0%,100%{opacity:1;}50%{opacity:.6;}}
-.ap-sym{font-size:9px;font-weight:800;color:var(--dim);}
-.ap.active .ap-sym,.ap.trading .ap-sym{color:var(--g1);}
-.ap.won .ap-sym{color:var(--win);}
-.ap.lost .ap-sym{color:var(--red);}
-.ap-z{font-size:8px;color:var(--dim);margin-top:1px;}
-.ap-st{font-size:7px;color:var(--dim);margin-top:1px;}
-
-/* Z-SCORE VISUAL */
+/* Z-SCORE VISUAL — el corazón del bot */
 .zscore-display{
-  margin-top:8px;
+  margin-top:10px;
   background:var(--bg2);border:1px solid var(--border);border-radius:10px;
-  padding:8px 14px;display:flex;align-items:center;gap:12px;
+  padding:10px 14px;display:flex;align-items:center;gap:12px;
 }
 .zs-lbl{font-size:8px;color:var(--dim);letter-spacing:1px;flex-shrink:0;}
 .zs-bar{flex:1;height:6px;background:rgba(255,255,255,.06);border-radius:3px;position:relative;overflow:visible;}
@@ -162,7 +135,7 @@ body{
 .sv.cy{color:var(--g1);}.sv.go{color:var(--gold);}
 
 /* HISTORIAL DOTS */
-.dots-row{background:var(--bg1);border-top:1px solid var(--border);padding:8px 15px;display:flex;gap:4px;align-items:center;flex-wrap:wrap;}
+.dots-row{background:var(--bg1);border-top:1px solid var(--border);padding:8px 15px;display:flex;gap:4px;align-items:center;}
 .dl{font-size:9px;color:var(--dim);letter-spacing:1px;margin-right:4px;}
 .d{width:9px;height:9px;border-radius:2px;background:var(--bg2);border:1px solid var(--dim);transition:all .3s;}
 .d.w{background:var(--win);border-color:var(--win);box-shadow:0 0 4px var(--win);}
@@ -181,7 +154,7 @@ body{
 
 /* LOG */
 .log-wrap{background:var(--bg1);border-top:1px solid var(--border);padding:10px 12px;}
-.log{background:#020609;border:1px solid rgba(0,255,224,.07);border-radius:10px;height:160px;overflow-y:auto;padding:8px 10px;font-size:10px;line-height:1.9;scrollbar-width:thin;scrollbar-color:var(--border) transparent;}
+.log{background:#020609;border:1px solid rgba(0,255,224,.07);border-radius:10px;height:150px;overflow-y:auto;padding:8px 10px;font-size:10px;line-height:1.9;scrollbar-width:thin;scrollbar-color:var(--border) transparent;}
 .log::-webkit-scrollbar{width:3px;}
 .log::-webkit-scrollbar-thumb{background:var(--border);}
 .le{display:flex;gap:6px;}
@@ -205,72 +178,39 @@ body{
 <!-- MODAL CONFIG -->
 <div class="modal-overlay" id="mOverlay">
   <div class="modal">
-    <div class="m-title">⚡ APEX v15</div>
-    <div class="m-sub">MULTI ACTIVO · Z-SCORE OPTIMIZADO</div>
-
+    <div class="m-title">⚡ APEX v13</div>
     <div class="m-row">
       <div class="m-group">
-        <div class="m-lbl">💰 STAKE POR OP ($)</div>
+        <div class="m-lbl">💰 STAKE ($)</div>
         <input class="m-input" type="number" id="iStake" value="0.35" min="0.35" max="100" step="0.05" oninput="refreshSummary()">
         <div class="m-presets">
-          <div class="mp on" onclick="sp2('stake',0.35)">0.35</div>
-          <div class="mp"    onclick="sp2('stake',0.50)">0.50</div>
-          <div class="mp"    onclick="sp2('stake',1.00)">1.00</div>
-          <div class="mp"    onclick="sp2('stake',2.00)">2.00</div>
+          <div class="mp on"  onclick="sp2('stake',0.35)">0.35</div>
+          <div class="mp"     onclick="sp2('stake',0.50)">0.50</div>
+          <div class="mp"     onclick="sp2('stake',1.00)">1.00</div>
+          <div class="mp"     onclick="sp2('stake',2.00)">2.00</div>
         </div>
       </div>
       <div class="m-group" style="display:flex;flex-direction:column;gap:8px;">
         <div>
           <div class="m-lbl">🎯 TAKE PROFIT ($)</div>
-          <input class="m-input" type="number" id="iTP" value="10" min="0.5" max="500" step="0.5" oninput="refreshSummary()">
+          <input class="m-input" type="number" id="iTP" value="5" min="0.5" max="500" step="0.5" oninput="refreshSummary()">
           <div class="m-presets">
-            <div class="mp" onclick="sp2('tp',5)">$5</div>
-            <div class="mp on" onclick="sp2('tp',10)">$10</div>
+            <div class="mp on" onclick="sp2('tp',5)">$5</div>
+            <div class="mp"    onclick="sp2('tp',10)">$10</div>
             <div class="mp"    onclick="sp2('tp',20)">$20</div>
           </div>
         </div>
         <div>
           <div class="m-lbl">🛡 STOP LOSS ($)</div>
-          <input class="m-input" type="number" id="iSL" value="5" min="0.5" max="500" step="0.5" oninput="refreshSummary()">
+          <input class="m-input" type="number" id="iSL" value="3" min="0.5" max="500" step="0.5" oninput="refreshSummary()">
           <div class="m-presets">
-            <div class="mp" onclick="sp2('sl',3)">$3</div>
-            <div class="mp on" onclick="sp2('sl',5)">$5</div>
+            <div class="mp on" onclick="sp2('sl',3)">$3</div>
+            <div class="mp"    onclick="sp2('sl',5)">$5</div>
             <div class="mp"    onclick="sp2('sl',10)">$10</div>
           </div>
         </div>
       </div>
     </div>
-
-    <!-- SELECTOR DE ACTIVOS -->
-    <div class="m-assets-title">📊 ACTIVOS — SELECCIONA LOS QUE DESEAS OPERAR</div>
-    <div class="assets-grid" id="assetGrid">
-      <div class="asset-toggle on" data-sym="R_10" onclick="toggleAsset(this)">
-        <div class="at-sym">V_10</div>
-        <div class="at-info">Vol 10% · 5-8 ticks</div>
-        <div class="at-z">Z ≥ 1.6</div>
-      </div>
-      <div class="asset-toggle on" data-sym="R_25" onclick="toggleAsset(this)">
-        <div class="at-sym">V_25</div>
-        <div class="at-info">Vol 25% · 5-8 ticks</div>
-        <div class="at-z">Z ≥ 1.75</div>
-      </div>
-      <div class="asset-toggle on" data-sym="R_50" onclick="toggleAsset(this)">
-        <div class="at-sym">V_50</div>
-        <div class="at-info">Vol 50% · 3-5 ticks</div>
-        <div class="at-z">Z ≥ 2.0</div>
-      </div>
-      <div class="asset-toggle on" data-sym="R_75" onclick="toggleAsset(this)">
-        <div class="at-sym">V_75</div>
-        <div class="at-info">Vol 75% · 3-4 ticks</div>
-        <div class="at-z">Z ≥ 2.25</div>
-      </div>
-      <div class="asset-toggle on" data-sym="R_100" onclick="toggleAsset(this)">
-        <div class="at-sym">V_100</div>
-        <div class="at-info">Vol 100% · 1-3 ticks</div>
-        <div class="at-z">Z ≥ 2.75</div>
-      </div>
-    </div>
-
     <button class="m-btn" onclick="launch()">▶ COMENZAR</button>
   </div>
 </div>
@@ -285,7 +225,7 @@ body{
       <div class="rs"><div class="rs-l">WINS ✅</div><div class="rs-v up" id="rW">0</div></div>
       <div class="rs"><div class="rs-l">LOSSES ❌</div><div class="rs-v dn" id="rL">0</div></div>
       <div class="rs"><div class="rs-l">TOTAL OPS</div><div class="rs-v cy" id="rT">0</div></div>
-      <div class="rs"><div class="rs-l">ACTIVOS</div><div class="rs-v go" id="rActivos">0</div></div>
+      <div class="rs"><div class="rs-l">INVALIDADAS</div><div class="rs-v go" id="rI">0</div></div>
     </div>
     <div class="rep-ops">
       <div class="rep-ops-lbl">ÚLTIMAS OPERACIONES</div>
@@ -304,7 +244,7 @@ body{
     <div class="top-row">
       <div>
         <div class="brand">⚡ APEX</div>
-        <div class="ver">v15 · MULTI ACTIVO · Z-SCORE · ALL SESSIONS</div>
+        <div class="ver">v13 · R_50 · Z-SCORE · 3 TICKS</div>
       </div>
       <div class="badge" id="badge"><span class="dot"></span><span id="bTxt">OFFLINE</span></div>
     </div>
@@ -319,25 +259,22 @@ body{
         <div class="sess-pill" id="sessEl">--</div>
       </div>
       <div class="ibox">
-        <div class="il">STAKE/OP</div>
+        <div class="il">STAKE</div>
         <div class="iv" id="stakeEl">$0.35</div>
       </div>
     </div>
 
     <div class="meta">
-      <div class="mi"><div class="ml">PROFIT</div><div class="mv g" id="mGoal">+$10</div></div>
+      <div class="mi"><div class="ml">PROFIT</div><div class="mv g" id="mGoal">+$5</div></div>
       <div class="mi"><div class="ml">HOY</div><div class="mv" id="mProg">$0.00</div></div>
-      <div class="mi"><div class="ml">STOP</div><div class="mv r" id="mStop">-$5</div></div>
-      <div class="mi"><div class="ml">OPS</div><div class="mv y" id="mOps">0/50</div></div>
+      <div class="mi"><div class="ml">STOP</div><div class="mv r" id="mStop">-$3</div></div>
+      <div class="mi"><div class="ml">OPS</div><div class="mv y" id="mOps">0/25</div></div>
     </div>
     <div class="prog"><div class="prog-fill" id="pFill"></div></div>
 
-    <!-- PANEL DE ACTIVOS EN VIVO -->
-    <div class="assets-panel" id="assetsPanel"></div>
-
-    <!-- Z-SCORE VISUAL (último activo que disparó señal) -->
+    <!-- Z-SCORE VISUAL -->
     <div class="zscore-display">
-      <div class="zs-lbl">Z ÚLTIMO</div>
+      <div class="zs-lbl">Z-SCORE</div>
       <div class="zs-bar">
         <div class="zs-center"></div>
         <div class="zs-fill" id="zFill"></div>
@@ -359,7 +296,7 @@ body{
     <div class="st"><div class="sl">📉 Pérdidas</div><div class="sv dn" id="lossEl">$0.00</div></div>
   </div>
 
-  <!-- HISTORIAL DOTS -->
+  <!-- HISTORIAL -->
   <div class="dots-row">
     <span class="dl">ÚLTIMAS</span>
     <div id="dots"></div>
@@ -384,7 +321,7 @@ body{
 
   <!-- FOOTER -->
   <div class="ftr">
-    <span id="ftrTxt">$0.35/op · TP $10 · SL $5</span>
+    <span id="ftrTxt">$0.35 · TP $5 · SL $3</span>
     <button class="rep-link" onclick="showRep()">📊 REPORTE</button>
   </div>
 
@@ -392,70 +329,404 @@ body{
 </div>
 
 <script>
-// ══════════════════════════════════════════════════════
-// 🔑 COLOCA AQUÍ TU TOKEN (REAL O DEMO) - ÚNICA MODIFICACIÓN
-// ══════════════════════════════════════════════════════
-const API_TOKEN = "e1lRgxNoxWwBkzx";  // <--- ESCRIBE TU TOKEN ENTRE LAS COMILLAS
+// ══════════════════════════════════
+// CONFIG
+// ══════════════════════════════════
+const TOKEN  = "e1lRgxNoxWwBkzx";
+const SYMBOL = "R_50";
 
-// ══════════════════════════════════════════════════════
-// FIN DE LA MODIFICACIÓN - EL RESTO NO CAMBIA
-// ══════════════════════════════════════════════════════
+const CFG = {
+  TICKS:    5,
+  COOLDOWN: 7500,
+  PAUSE_MS: 45000,
+  MIN_BARS: 20,
+  HISTORY:  80,
+  // Rango de volatilidad óptimo para R_50
+  // Calibrado para capturar el 70% del tiempo de mercado activo
+  VOL_MIN:  0.0025,
+  VOL_MAX:  0.020,
+  // Z-score: umbral para detectar desviación estadística real
+  // 1.45 = señal moderada pero consistente
+  // La media revierte cuando Z > umbral
+  Z_MIN:    2.20,
+  MAX_OPS:  15,
+};
 
-let apiToken = API_TOKEN;
+// ══════════════════════════════════
+// ESTADO
+// ══════════════════════════════════
+let ws;
+let bal=0, initBal=0;
+let running=false;
+let wins=0, lossC=0, total=0, profit=0, totalLoss=0;
+let lossStreak=0;
+let lastTrade=0, pauseUntil=0;
+let prices=[], recent=[], invC=0;
+let STAKE=0.35, TP=5, SL=3;
+let opLog=[];
 
-function refreshSummary() {}
-function sp2(type, val) {
-  if(type === 'stake') document.getElementById('iStake').value = val;
-  if(type === 'tp') document.getElementById('iTP').value = val;
-  if(type === 'sl') document.getElementById('iSL').value = val;
+// ══════════════════════════════════
+// MODAL
+// ══════════════════════════════════
+function sp2(t,v){
+  if(t==="stake"){ document.getElementById("iStake").value=v; document.querySelectorAll(".m-presets .mp").forEach(b=>{ if(b.closest(".m-group")) b.className="mp"+(parseFloat(b.innerText)===v?" on":""); }); }
+  else if(t==="tp")  document.getElementById("iTP").value=v;
+  else               document.getElementById("iSL").value=v;
   refreshSummary();
 }
+function refreshSummary(){}
 
-function toggleAsset(el) {
-  el.classList.toggle('on');
+function launch(){
+  STAKE = Math.max(0.35, parseFloat(document.getElementById("iStake").value)||0.35);
+  TP    = parseFloat(document.getElementById("iTP").value)||5;
+  SL    = parseFloat(document.getElementById("iSL").value)||3;
+  document.getElementById("mOverlay").className="modal-overlay hidden";
+  document.getElementById("stakeEl").innerText="$"+STAKE.toFixed(2);
+  document.getElementById("mGoal").innerText="+$"+TP;
+  document.getElementById("mStop").innerText="-$"+SL;
+  document.getElementById("ftrTxt").innerText=`$${STAKE.toFixed(2)} · TP $${TP} · SL $${SL}`;
+  startBot();
 }
 
-function launch() {
-  if(apiToken === "" || apiToken === "TU_TOKEN_AQUI") {
-    alert("⚠️ No has configurado el token API.\n\nEdita el código y busca la línea:\nconst API_TOKEN = 'TU_TOKEN_AQUI';\n\nReemplázala por tu token real de Deriv.");
+// ══════════════════════════════════
+// TOGGLE
+// ══════════════════════════════════
+function toggle(){
+  if(!running){
+    document.getElementById("mOverlay").className="modal-overlay";
+  } else {
+    stopBot(false);
+  }
+}
+
+function setBtnState(on){
+  const b=document.getElementById("btnT");
+  if(on){ b.className="btn-toggle stop"; b.innerText="■ DETENER"; }
+  else   { b.className="btn-toggle go";  b.innerText="▶ INICIAR"; }
+}
+
+// ══════════════════════════════════
+// REPORTE
+// ══════════════════════════════════
+function showRep(){
+  const wr=total?(wins/total*100).toFixed(1):0;
+  const rv=document.getElementById("rRes");
+  rv.innerText=(profit>=0?"+$":"−$")+Math.abs(profit).toFixed(2);
+  rv.className="rs-v"+(profit>=0?" up":" dn");
+  document.getElementById("rWR").innerText=wr+"%";
+  document.getElementById("rW").innerText=wins;
+  document.getElementById("rL").innerText=lossC;
+  document.getElementById("rT").innerText=total;
+  document.getElementById("rI").innerText=invC;
+  const c=document.getElementById("rOps");
+  c.innerHTML=opLog.length===0
+    ?'<div style="font-size:10px;color:var(--dim);text-align:center;padding:6px">Sin operaciones</div>'
+    :opLog.slice(-12).reverse().map(o=>`
+      <div class="op">
+        <span style="color:var(--dim);font-size:9px">${o.t}</span>
+        <span class="${o.w?'op-w':'op-l'}">${o.w?'WIN':'LOSS'}</span>
+        <span style="color:var(--dim)">$${o.s}</span>
+        <span class="${o.w?'op-w':'op-l'}">${o.w?'+':'-'}$${o.p}</span>
+      </div>`).join("");
+  document.getElementById("rOverlay").className="rep-overlay";
+}
+function closeRep(){ document.getElementById("rOverlay").className="rep-overlay hidden"; }
+
+// ══════════════════════════════════
+// SESIÓN COLOMBIA
+// ══════════════════════════════════
+function getSess(){
+  const col=new Date(Date.now()-5*60*60*1000);
+  const d=col.getUTCHours()+col.getUTCMinutes()/60;
+  if((d>=1&&d<7)||(d>=13&&d<19)) return {name:"🟢 ÓPTIMA",lv:"hot",  ok:true};
+  if((d>=7&&d<10)||(d>=20&&d<24)||d<1) return {name:"🟡 NORMAL",lv:"warm",ok:true};
+  return {name:"🔴 BAJA",lv:"cold",ok:false};
+}
+
+// ══════════════════════════════════
+// LOG
+// ══════════════════════════════════
+function log(msg,t="i"){
+  const el=document.getElementById("log");
+  const ts=new Date().toTimeString().slice(0,8);
+  const c={w:"lw",l:"ll",i:"li",x:"lx",s:"ls",inv:"linv",g:"lg"}[t]||"li";
+  el.innerHTML+=`<div class="le"><span class="lt">${ts}</span><span class="${c}">${msg}</span></div>`;
+  el.scrollTop=el.scrollHeight;
+}
+
+// ══════════════════════════════════
+// SEÑAL — SOLO Z-SCORE + VOLATILIDAD
+// Lógica pura estadística para R_50:
+// 1. Verificar que la volatilidad está en rango
+//    (mercado activo pero no errático)
+// 2. Calcular Z-score del último retorno
+//    (qué tan lejos está de la media)
+// 3. Si Z supera el umbral → mean reversion
+//    (el precio tiende a volver al promedio)
+// ══════════════════════════════════
+function getSignal(){
+  if(prices.length < CFG.MIN_BARS) return null;
+
+  // Calcular retornos tick a tick
+  const rets=[];
+  for(let i=1;i<prices.length;i++) rets.push(prices[i]-prices[i-1]);
+
+  // Media y desviación estándar
+  const n    = rets.length;
+  const mean = rets.reduce((a,b)=>a+b,0)/n;
+  const std  = Math.sqrt(rets.map(x=>(x-mean)**2).reduce((a,b)=>a+b,0)/n);
+
+  // Último retorno y su Z-score
+  const last = rets[rets.length-1];
+  const z    = std>0 ? (last-mean)/std : 0;
+
+  // Actualizar visualización Z-score
+  updateZDisplay(z);
+
+  // FILTRO 1: Volatilidad en rango
+  if(std < CFG.VOL_MIN || std > CFG.VOL_MAX) return null;
+
+  // FILTRO 2: Z-score supera umbral
+  if(Math.abs(z) < CFG.Z_MIN) return null;
+
+  // Señal: mean reversion
+  // Z positivo → precio subió demasiado → PUT (va a bajar)
+  // Z negativo → precio bajó demasiado → CALL (va a subir)
+  return {
+    signal: z > 0 ? "PUT" : "PUT",
+    z: z.toFixed(2),
+    std: std.toFixed(5)
+  };
+}
+
+function updateZDisplay(z){
+  const absZ=Math.abs(z);
+  const pct=Math.min(100,(absZ/3)*50+50); // centrado en 50%
+  const fill=document.getElementById("zFill");
+  const val=document.getElementById("zVal");
+
+  // Barra desde el centro
+  if(z>=0){
+    fill.style.left="50%";
+    fill.style.width=Math.min(50,(absZ/3)*50)+"%";
+    fill.style.right="auto";
+  } else {
+    fill.style.right="50%";
+    fill.style.width=Math.min(50,(absZ/3)*50)+"%";
+    fill.style.left="auto";
+  }
+
+  const color = absZ>=CFG.Z_MIN ? (z>0?"var(--red)":"var(--win)") : "var(--dim)";
+  fill.style.background=color;
+  val.style.color=color;
+  val.innerText=(z>=0?"+":"")+z.toFixed(2);
+}
+
+// ══════════════════════════════════
+// TICK
+// ══════════════════════════════════
+function onTick(){
+  const now=Date.now();
+  updateClock();
+
+  if(now<pauseUntil){
+    const s=Math.ceil((pauseUntil-now)/1000);
+    setState(`⏸ Pausa — ${s}s`,"inv"); return;
+  }
+
+  const sess=getSess();
+  if(!sess.ok){ setState("🌙 Sesión baja","wait"); return; }
+  if(total>=CFG.MAX_OPS){ setState("🔢 Máx ops","wait"); return; }
+  if(now-lastTrade<CFG.COOLDOWN) return;
+  if(prices.length<CFG.MIN_BARS){ setState("Cargando datos...",""); return; }
+
+  const res=getSignal();
+  if(!res){
+    setState("Filtrando...","inv");
+    invC++;
+    document.getElementById("invEl").innerText=invC;
     return;
   }
-  console.log("🔐 Token cargado:", apiToken.substring(0, 10) + "...");
-  document.getElementById('mOverlay').classList.add('hidden');
-  addLog("✅ Token API configurado correctamente.", "success");
-  addLog("⚠️ Este frontend requiere conexión real vía backend (Node.js) para operar con Deriv.", "warning");
+
+  const {signal,z,std}=res;
+
+  ws.send(JSON.stringify({
+    buy:1, price:STAKE,
+    parameters:{
+      amount:STAKE, basis:"stake",
+      contract_type:signal, currency:"USD",
+      duration:CFG.TICKS, duration_unit:"t",
+      symbol:SYMBOL
+    }
+  }));
+
+  log(`${signal} $${STAKE} · z:${z} · std:${std}`,"i");
+  setState(`${signal} · z:${z}`,"act");
+  lastTrade=now;
+  updateUI();
 }
 
-function toggle() {
-  addLog("⚙️ Bot listo. Token: " + (apiToken && apiToken !== "TU_TOKEN_AQUI" ? "✅ Configurado" : "❌ No configurado"), "info");
+// ══════════════════════════════════
+// RESULTADO
+// ══════════════════════════════════
+function onResult(pnl){
+  profit+=pnl; total++;
+  const ts=new Date().toTimeString().slice(0,8);
+
+  if(pnl>0){
+    wins++; lossStreak=0;
+    recent.push("w");
+    opLog.push({t:ts,w:true,s:STAKE.toFixed(2),p:pnl.toFixed(2)});
+    log(`✅ WIN  +$${pnl.toFixed(2)}   acum: ${profit>=0?"+$":"−$"}${Math.abs(profit).toFixed(2)}`,"w");
+  } else {
+    lossC++; lossStreak++; totalLoss+=Math.abs(pnl);
+    recent.push("l");
+    opLog.push({t:ts,w:false,s:STAKE.toFixed(2),p:Math.abs(pnl).toFixed(2)});
+    log(`❌ LOSS  $${Math.abs(pnl).toFixed(2)}   acum: ${profit>=0?"+$":"−$"}${Math.abs(profit).toFixed(2)}`,"l");
+  }
+
+  document.getElementById("totEl").innerText=total;
+  if(recent.length>15) recent.shift();
+  renderDots();
+  updateUI();
+
+  if(lossStreak>=3){
+    pauseUntil=Date.now()+CFG.PAUSE_MS;
+    log(`⏸ Pausa ${CFG.PAUSE_MS/1000}s — 3 pérdidas`,"x");
+    lossStreak=0;
+  }
+
+  if(profit>=TP)    { log(`🏆 TAKE PROFIT +$${profit.toFixed(2)}`,"g"); stopBot(true); return; }
+  if(profit<=-SL)   { log(`🛑 STOP LOSS −$${Math.abs(profit).toFixed(2)}`,"s"); stopBot(true); return; }
+  if(total>=CFG.MAX_OPS){ log(`🔢 Máx ${CFG.MAX_OPS} ops — cerrado`,"x"); stopBot(true); return; }
 }
 
-function showRep() { document.getElementById('rOverlay').classList.remove('hidden'); }
-function closeRep() { document.getElementById('rOverlay').classList.add('hidden'); }
+// ══════════════════════════════════
+// UI
+// ══════════════════════════════════
+function updateUI(){
+  const wr=total?(wins/total*100).toFixed(1):0;
 
-function addLog(msg, type) {
-  let logDiv = document.getElementById('log');
-  let le = document.createElement('div'); le.className='le';
-  let lt = document.createElement('span'); lt.className='lt'; lt.innerText = new Date().toLocaleTimeString();
-  let lm = document.createElement('span');
-  if(type=='win') lm.className='lw';
-  else if(type=='loss') lm.className='ll';
-  else if(type=='success') lm.className='lg';
-  else if(type=='warning') lm.className='lx';
-  else lm.className='li';
-  lm.innerText = msg;
-  le.appendChild(lt); le.appendChild(lm);
-  logDiv.appendChild(le);
-  logDiv.scrollTop = logDiv.scrollHeight;
+  document.getElementById("bal").innerText=bal.toFixed(2);
+
+  const pe=document.getElementById("prof");
+  pe.innerText=(profit>=0?"+$":"−$")+Math.abs(profit).toFixed(2);
+  pe.className="sv"+(profit>0?" up":profit<0?" dn":"");
+
+  document.getElementById("wr").innerText=wr+"%";
+  document.getElementById("wr").className="sv"+(wr>=70?" up":wr>=52.6?" go":"");
+
+  document.getElementById("lossEl").innerText="$"+totalLoss.toFixed(2);
+
+  const mp=document.getElementById("mProg");
+  mp.innerText=(profit>=0?"+$":"−$")+Math.abs(profit).toFixed(2);
+  mp.className="mv"+(profit>=TP?" g":profit<=-SL?" r":"y");
+
+  document.getElementById("mOps").innerText=`${total}/${CFG.MAX_OPS}`;
+
+  const pct=Math.max(0,Math.min(100,(profit/TP)*100));
+  document.getElementById("pFill").style.width=pct+"%";
 }
 
-setInterval(() => {
-  document.getElementById('clock').innerText = new Date().toLocaleTimeString();
-}, 1000);
+function updateClock(){
+  const col=new Date(Date.now()-5*60*60*1000);
+  const h=col.getUTCHours(), mm=String(col.getUTCMinutes()).padStart(2,"0");
+  document.getElementById("clock").innerText=`${h%12||12}:${mm} ${h<12?"AM":"PM"}`;
+  const s=getSess();
+  const el=document.getElementById("sessEl");
+  el.className="sess-pill "+s.lv;
+  el.innerText=s.name;
+}
 
-document.getElementById('stakeEl').innerText = "$0.35";
-document.getElementById('ftrTxt').innerText = "$0.35/op · TP $10 · SL $5";
+function setState(txt,type){
+  document.getElementById("stateInfo").innerHTML=(type==="act"?`<span class="spin"></span>`:"")+txt;
+  const c=document.getElementById("chip");
+  c.className="chip"+(type==="act"?" act":type==="inv"?" inv":type==="wait"?" wait":"");
+  c.innerText=type==="act"?"ACTIVO":type==="inv"?"FILTRADO":type==="wait"?"ESPERA":"SCAN";
+}
+
+function renderDots(){
+  document.getElementById("dots").innerHTML=
+    recent.map(r=>`<div class="d ${r}"></div>`).join("");
+}
+
+setInterval(updateClock,1000);
+
+// ══════════════════════════════════
+// WEBSOCKET
+// ══════════════════════════════════
+function startBot(){
+  if(running) return;
+  wins=0;lossC=0;total=0;profit=0;totalLoss=0;
+  lossStreak=0;lastTrade=0;pauseUntil=0;
+  prices=[];recent=[];invC=0;opLog=[];
+  document.getElementById("invEl").innerText="0";
+  document.getElementById("totEl").innerText="0";
+  renderDots();updateUI();updateClock();
+  updateZDisplay(0);
+
+  ws=new WebSocket("wss://ws.binaryws.com/websockets/v3?app_id=1089");
+  ws.onopen=()=>ws.send(JSON.stringify({authorize:TOKEN}));
+
+  ws.onmessage=(e)=>{
+    const d=JSON.parse(e.data);
+
+    if(d.authorize){
+      running=true; setBtnState(true);
+      initBal=d.authorize.balance; bal=initBal;
+      document.getElementById("badge").className="badge live";
+      document.getElementById("bTxt").innerText="ONLINE";
+      log(`🔐 Conectado · $${bal.toFixed(2)}`,"i");
+      log(`⚙ Stake $${STAKE} · TP +$${TP} · SL -$${SL}`,"i");
+      ws.send(JSON.stringify({ticks:SYMBOL,subscribe:1}));
+      ws.send(JSON.stringify({balance:1}));
+      updateUI();
+    }
+
+    if(d.balance){ bal=d.balance.balance; updateUI(); }
+
+    if(d.tick&&d.tick.symbol===SYMBOL){
+      prices.push(d.tick.quote);
+      if(prices.length>CFG.HISTORY) prices.shift();
+      if(running) onTick();
+    }
+
+    if(d.buy){
+      ws.send(JSON.stringify({
+        proposal_open_contract:1,
+        contract_id:d.buy.contract_id,
+        subscribe:1
+      }));
+    }
+
+    if(d.proposal_open_contract&&d.proposal_open_contract.is_sold)
+      onResult(parseFloat(d.proposal_open_contract.profit));
+
+    if(d.error) log(`⚠ ${d.error.message}`,"x");
+  };
+
+  ws.onerror=()=>log("❌ Error WebSocket","s");
+  ws.onclose=()=>{
+    if(running){
+      running=false; setBtnState(false);
+      document.getElementById("badge").className="badge";
+      document.getElementById("bTxt").innerText="OFFLINE";
+      log("🔌 Desconectado","x");
+    }
+  };
+}
+
+function stopBot(auto=false){
+  if(ws) ws.close();
+  running=false; setBtnState(false);
+  document.getElementById("badge").className="badge";
+  document.getElementById("bTxt").innerText="OFFLINE";
+  setState("Sesión finalizada","");
+  updateZDisplay(0);
+  updateUI();
+  if(!auto) log("⏹ Detenido manualmente","x");
+  setTimeout(showRep,400);
+}
 </script>
-
 </body>
 </html>
