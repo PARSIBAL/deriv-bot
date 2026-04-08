@@ -406,7 +406,7 @@ const ASSET_CFG = {
   R_10: {
     label:   "V_10",
     vol:     "10%",
-    Z_MIN:   1.30,   // Baja volatilidad → umbral moderado
+    Z_MIN:   1.60,   // Baja volatilidad → umbral moderado
     TICKS:   6,      // 5-8 ticks óptimo, usamos 6
     VOL_MIN: 0.0003,
     VOL_MAX: 0.003,
@@ -415,7 +415,7 @@ const ASSET_CFG = {
   R_25: {
     label:   "V_25",
     vol:     "25%",
-    Z_MIN:   1.45,   // Vol media-baja → umbral medio
+    Z_MIN:   1.75,   // Vol media-baja → umbral medio
     TICKS:   5,      // 5-8 ticks, usamos 5
     VOL_MIN: 0.0008,
     VOL_MAX: 0.008,
@@ -424,7 +424,7 @@ const ASSET_CFG = {
   R_50: {
     label:   "V_50",
     vol:     "50%",
-    Z_MIN:   2.20,   // Umbral clásico ±2σ — punto dulce
+    Z_MIN:   2.00,   // Umbral clásico ±2σ — punto dulce
     TICKS:   4,      // 3-5 ticks, usamos 4
     VOL_MIN: 0.0025,
     VOL_MAX: 0.020,
@@ -433,7 +433,7 @@ const ASSET_CFG = {
   R_75: {
     label:   "V_75",
     vol:     "75%",
-    Z_MIN:   1.70,   // Alta vol → señal más fuerte requerida
+    Z_MIN:   2.25,   // Alta vol → señal más fuerte requerida
     TICKS:   3,      // 3-4 ticks, usamos 3
     VOL_MIN: 0.006,
     VOL_MAX: 0.040,
@@ -442,7 +442,7 @@ const ASSET_CFG = {
   R_100: {
     label:   "V_100",
     vol:     "100%",
-    Z_MIN:   2.50,   // Muy alta vol → sólo señales extremas
+    Z_MIN:   2.75,   // Muy alta vol → sólo señales extremas
     TICKS:   2,      // 1-3 ticks, usamos 2
     VOL_MIN: 0.010,
     VOL_MAX: 0.080,
@@ -476,6 +476,8 @@ let assetState = {};
 let activeSymbols = [];
 // Contratos abiertos por activo
 let openContracts = {};
+// Mapa inverso: contract_id → símbolo (fix multi-activo)
+let contractToSym = {};
 
 // ══════════════════════════════════════════════════════
 // SELECTOR DE ACTIVOS EN MODAL
@@ -655,7 +657,7 @@ function getSignal(sym){
   }
 
   return {
-    signal: z > 0 ? "CALL" : "PUT",
+    signal: z > 0 ? "PUT" : "CALL",
     z: z.toFixed(2),
     std: std.toFixed(5),
     ticks: cfg.TICKS
@@ -705,7 +707,7 @@ function onTick(sym){
   if(now - st.lastTrade < cfg.COOLDOWN) return;
 
   // Contrato ya abierto en este activo
-  if(openContracts[sym]) return;
+  if(openContracts[sym] && openContracts[sym]!==false) return;
 
   if(st.prices.length < CFG.MIN_BARS){
     updateAssetPanel(sym, 0,"CARGANDO","");
@@ -733,7 +735,7 @@ function onTick(sym){
   }));
 
   st.lastTrade=now;
-  openContracts[sym]=true;
+  openContracts[sym]="pending"; // se reemplaza con contract_id al confirmar
 
   const lbl=ASSET_CFG[sym].label;
   log(`📊 ${lbl} → ${signal} $${STAKE} · z:${z} · ${ticks}t`,"i");
@@ -749,7 +751,7 @@ function onResult(sym, pnl){
   const ts=new Date().toTimeString().slice(0,8);
   const lbl=ASSET_CFG[sym]?.label||sym;
   profit+=pnl; total++;
-  openContracts[sym]=false;
+  openContracts[sym]=null;
 
   if(pnl>0){
     wins++; lossStreak=0;
@@ -841,6 +843,7 @@ function startBot(){
   lossStreak=0;pauseUntil=0;
   recent=[];invC=0;opLog=[];
   openContracts={};
+  contractToSym={};
   document.getElementById("invEl").innerText="0";
   document.getElementById("totEl").innerText="0";
   renderDots();updateUI();updateClock();
@@ -850,7 +853,7 @@ function startBot(){
   assetState={};
   activeSymbols.forEach(sym=>{
     assetState[sym]={prices:[], lastTrade:0, lastZ:0};
-    openContracts[sym]=false;
+    openContracts[sym]=null;
   });
 
   ws=new WebSocket("wss://ws.binaryws.com/websockets/v3?app_id=1089");
@@ -891,16 +894,19 @@ function startBot(){
       }
     }
 
-    // Compra ejecutada — suscribir contrato
+    // Compra ejecutada — registrar contract_id por activo
+    // BUG FIX: usar poc.underlying para identificar activo con certeza
     if(d.buy){
-      // Identificar a qué activo pertenece por el símbolo del contrato
-      const sym = d.buy.shortcode
-        ? activeSymbols.find(s=>d.buy.shortcode.includes(s)) || null
-        : null;
-      if(sym) openContracts[sym]=d.buy.contract_id;
+      const cid = d.buy.contract_id;
+      // Buscar cuál activo tiene "pending" — el que acaba de enviar la orden
+      const pendingSym = activeSymbols.find(s=>openContracts[s]==="pending");
+      if(pendingSym){
+        openContracts[pendingSym]=cid; // guardar contract_id real
+        contractToSym[cid]=pendingSym; // mapa inverso contract_id → símbolo
+      }
       ws.send(JSON.stringify({
         proposal_open_contract:1,
-        contract_id:d.buy.contract_id,
+        contract_id:cid,
         subscribe:1
       }));
     }
@@ -908,11 +914,13 @@ function startBot(){
     // Resultado del contrato
     if(d.proposal_open_contract && d.proposal_open_contract.is_sold){
       const poc=d.proposal_open_contract;
-      // Buscar qué activo era este contrato
-      const sym = activeSymbols.find(s=>openContracts[s]===poc.contract_id)
+      // BUG FIX: usar mapa inverso contract_id→sym, luego poc.underlying, nunca fallback a R_50
+      const sym = contractToSym[poc.contract_id]
                || activeSymbols.find(s=>poc.underlying===s)
-               || "R_50";
-      openContracts[sym]=false;
+               || activeSymbols.find(s=>openContracts[s]===poc.contract_id);
+      if(!sym){ log(\`⚠ No se identificó activo para contrato \${poc.contract_id}\`,"x"); return; }
+      delete contractToSym[poc.contract_id];
+      openContracts[sym]=null;
       onResult(sym, parseFloat(poc.profit));
     }
 
