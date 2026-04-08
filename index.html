@@ -1013,7 +1013,7 @@ function startBot(){
       const sym = contractToSym[poc.contract_id]
                || activeSymbols.find(s=>poc.underlying===s)
                || activeSymbols.find(s=>openContracts[s]===poc.contract_id);
-      if(!sym){ log(\`⚠ No se identificó activo para contrato \${poc.contract_id}\`,"x"); return; }
+      if(!sym){ log("⚠ Sin activo para contrato: "+poc.contract_id,"x"); return; }
       delete contractToSym[poc.contract_id];
       openContracts[sym]=null;
       onResult(sym, parseFloat(poc.profit));
