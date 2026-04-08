@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>BOT APEX v17 — MULTI ACTIVO</title>
+<title>BOT APEX v19 — MULTI ACTIVO</title>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Oxanium:wght@300;400;600;800&display=swap');
 
@@ -205,8 +205,8 @@ body{
 <!-- MODAL CONFIG -->
 <div class="modal-overlay" id="mOverlay">
   <div class="modal">
-    <div class="m-title">⚡ APEX v17</div>
-    <div class="m-sub">SESIONES CORTAS · $1/op · TP $5 · SL $3</div>
+    <div class="m-title">⚡ APEX v19</div>
+    <div class="m-sub">v19 · DUAL MODE · $1/op · TP $5 · SL $3</div>
 
     <div class="m-row">
       <div class="m-group">
@@ -415,77 +415,74 @@ const TOKEN = "e1lRgxNoxWwBkzx";
 //           antes de ejecutar (aumenta winrate real vs backtest)
 // ══════════════════════════════════════════════════════
 const ASSET_CFG = {
+  // ── NOTA v18: VOL_MIN/VOL_MAX eliminados como filtro bloqueante ──────────
+  // Cada índice tiene su propia escala de precio muy diferente.
+  // Calibrar rangos fijos es imposible sin datos reales de cada activo.
+  // El filtro de calidad lo hace el Z-Score solo — que es estadísticamente
+  // independiente de la escala del precio (ya está normalizado por std).
+  // ─────────────────────────────────────────────────────────────────────────
   R_10: {
-    label:   "V_10",
-    vol:     "10%",
-    // V_10: movimientos suaves. Z=2.0 ya es rareza estadística.
-    // Retroceso estimado: 78-85% en Z≥2.5 → 3-5 ticks
-    Z_MIN:   2.20,   // Entrada conservadora (>95% confianza)
-    Z_OPT:   2.50,   // Zona óptima: 2.3–2.8
-    TICKS:   4,      // Tick de retorno: 3-5 ticks, usamos 4
-    VOL_MIN: 0.0003,
-    VOL_MAX: 0.003,
-    COOLDOWN:35000,  // 35s — optimizado para sesiones cortas
-    CONFIRM: 1,      // Esperar 1 tick tras el pico antes de entrar
+    label:    "V_10",
+    vol:      "10%",
+    Z_MIN:    2.20,   // umbral mean reversion
+    Z_OPT:    2.50,
+    TICKS:    8,      // subido para dar más margen al retroceso
+    TICKS_TR: 5,      // ticks en modo tendencia (más corto — momentum)
+    COOLDOWN: 35000,
+    CONFIRM:  1,
   },
   R_25: {
-    label:   "V_25",
-    vol:     "25%",
-    // V_25: retroceso 72-80% en Z≥2.8 → 4-7 ticks
-    Z_MIN:   2.20,   // Entrada moderada
-    Z_OPT:   2.80,   // Zona óptima: 2.5–3.0
-    TICKS:   5,      // Tick de retorno: 4-7 ticks, usamos 5
-    VOL_MIN: 0.0008,
-    VOL_MAX: 0.008,
-    COOLDOWN:35000,  // 35s
-    CONFIRM: 1,      // 1 tick de confirmación
+    label:    "V_25",
+    vol:      "25%",
+    Z_MIN:    2.20,
+    Z_OPT:    2.80,
+    TICKS:    8,
+    TICKS_TR: 5,
+    COOLDOWN: 35000,
+    CONFIRM:  1,
   },
   R_50: {
-    label:   "V_50",
-    vol:     "50%",
-    // V_50: retroceso 65-75% en Z≥3.0 → 5-8 ticks
-    Z_MIN:   2.50,   // Umbral balanceado
-    Z_OPT:   3.00,   // Zona óptima: 2.8–3.5
-    TICKS:   6,      // Tick de retorno: 5-8 ticks, usamos 6
-    VOL_MIN: 0.0025,
-    VOL_MAX: 0.020,
-    COOLDOWN:40000,  // 40s — equilibrio señal/velocidad
-    CONFIRM: 1,      // 1 tick de confirmación
+    label:    "V_50",
+    vol:      "50%",
+    Z_MIN:    2.50,
+    Z_OPT:    3.00,
+    TICKS:    9,      // más margen para reversión
+    TICKS_TR: 6,      // tendencia más corta
+    COOLDOWN: 40000,
+    CONFIRM:  1,
   },
   R_75: {
-    label:   "V_75",
-    vol:     "75%",
-    // V_75: retroceso 60-70% en Z≥3.5 → 6-10 ticks
-    Z_MIN:   2.70,   // Umbral alto por ruido natural
-    Z_OPT:   3.50,   // Zona óptima: 3.0–3.8
-    TICKS:   7,      // Tick de retorno: 6-10 ticks, usamos 7
-    VOL_MIN: 0.006,
-    VOL_MAX: 0.040,
-    COOLDOWN:45000,  // 45s — reducido para sesiones cortas
-    CONFIRM: 2,      // 2 ticks de confirmación (mayor ruido)
+    label:    "V_75",
+    vol:      "75%",
+    Z_MIN:    2.70,
+    Z_OPT:    3.50,
+    TICKS:    10,
+    TICKS_TR: 6,
+    COOLDOWN: 45000,
+    CONFIRM:  2,
   },
   R_100: {
-    label:   "V_100",
-    vol:     "100%",
-    // V_100: retroceso 55-65% en Z≥4.0 → 8-12 ticks
-    // Rebote violento cuando ocurre. Estrategia agresiva/paciencia alta.
-    // Entrar cuando Z baja de 3.5 → 3.0 captura mayor parte del rebote
-    Z_MIN:   3.00,   // Mínimo para filtrar ruido extremo
-    Z_OPT:   3.50,   // Zona óptima: 3.5–4.5
-    TICKS:   9,      // Tick de retorno: 8-12 ticks, usamos 9
-    VOL_MIN: 0.010,
-    VOL_MAX: 0.080,
-    COOLDOWN:45000,  // 45s
-    CONFIRM: 2,      // 2 ticks — inercia alta, confirmar antes
+    label:    "V_100",
+    vol:      "100%",
+    Z_MIN:    3.00,
+    Z_OPT:    3.50,
+    TICKS:    10,
+    TICKS_TR: 6,
+    COOLDOWN: 45000,
+    CONFIRM:  2,
   },
 };
 
 // Parámetros globales de sesión
 const CFG = {
-  MIN_BARS: 20,
-  HISTORY:  80,
-  PAUSE_MS: 30000,  // 30s pausa — ajustado para sesiones cortas
-  MAX_OPS:  20,     // sesiones cortas — ~15-25 min estimado
+  MIN_BARS:   20,
+  HISTORY:    80,
+  PAUSE_MS:   30000,
+  MAX_OPS:    20,
+  // Dual Mode config
+  TREND_BARS: 5,     // últimas N barras para detectar tendencia
+  TREND_MIN:  0.70,  // % mínimo de barras en misma dirección = tendencia (70%)
+  Z_DROP:     0.50,  // caída mínima del Z desde el pico para confirmar reversión
 };
 
 // ══════════════════════════════════════════════════════
@@ -619,6 +616,7 @@ function showRep(){
       <div class="op">
         <span style="color:var(--dim);font-size:9px">${o.t}</span>
         <span style="color:var(--g2);font-size:9px">${o.sym}</span>
+        <span style="color:var(--dim);font-size:8px">${o.mode||''}</span>
         <span class="${o.w?'op-w':'op-l'}">${o.w?'WIN':'LOSS'}</span>
         <span class="${o.w?'op-w':'op-l'}">${o.w?'+':'-'}$${o.p}</span>
       </div>`).join("");
@@ -652,12 +650,12 @@ function log(msg,t="i"){
 // SEÑAL Z-SCORE — CALIBRADA POR ACTIVO
 // ══════════════════════════════════════════════════════
 function getSignal(sym){
-  const st=assetState[sym];
-  const cfg=ASSET_CFG[sym];
+  const st  = assetState[sym];
+  const cfg = ASSET_CFG[sym];
   if(!st || st.prices.length < CFG.MIN_BARS) return null;
 
-  const prices=st.prices;
-  const rets=[];
+  const prices = st.prices;
+  const rets   = [];
   for(let i=1;i<prices.length;i++) rets.push(prices[i]-prices[i-1]);
 
   const n    = rets.length;
@@ -666,39 +664,60 @@ function getSignal(sym){
   const last = rets[rets.length-1];
   const z    = std>0 ? (last-mean)/std : 0;
 
-  // Guardar z actual
   st.lastZ = z;
-  updateAssetPanel(sym, z, std<cfg.VOL_MIN||std>cfg.VOL_MAX?"FUERA VOL":Math.abs(z)<cfg.Z_MIN?"SCAN":"SEÑAL ⚡",
-    Math.abs(z)>=cfg.Z_MIN?"trading":"active");
-
-  // Si es el último z relevante, actualizar display principal
-  if(Math.abs(z)>=cfg.Z_MIN) updateZDisplay(z);
-
-  // FILTRO 1: Volatilidad en rango del activo
-  if(std < cfg.VOL_MIN || std > cfg.VOL_MAX){
-    updateAssetPanel(sym, z, "FUERA VOL","active");
-    return null;
-  }
-
-  // FILTRO 2: Z-score supera umbral calibrado
-  if(Math.abs(z) < cfg.Z_MIN){
-    updateAssetPanel(sym, z, "SCAN","active");
-    return null;
-  }
-
-  // Guardar pico máximo de Z para el filtro de confirmación
   if(Math.abs(z) > Math.abs(st.peakZ)) st.peakZ = z;
 
-  // Indicar si está en zona óptima
-  const inOptZone = Math.abs(z) >= cfg.Z_OPT;
+  // ── DETECTOR DE TENDENCIA ─────────────────────────────────────────────
+  // Últimas TREND_BARS barras: si ≥70% van en la misma dirección → tendencia
+  const tBars    = rets.slice(-CFG.TREND_BARS);
+  const tTotal   = tBars.length;
+  const posRat   = tBars.filter(r=>r>0).length / tTotal;
+  const negRat   = tBars.filter(r=>r<0).length / tTotal;
+  let   trendDir = null;
+  let   trendStr = 0;
+  if(posRat >= CFG.TREND_MIN){ trendDir="up";   trendStr=posRat; }
+  else if(negRat >= CFG.TREND_MIN){ trendDir="down"; trendStr=negRat; }
 
+  const hasTrend    = trendDir !== null;
+  const hasReversion= Math.abs(z) >= cfg.Z_MIN;
+  const inOptZone   = Math.abs(z) >= cfg.Z_OPT;
+
+  // ── Panel visual ─────────────────────────────────────────────────────
+  if(hasTrend){
+    updateAssetPanel(sym, z,
+      "TREND "+(trendDir==="up"?"↑":"↓")+" "+(trendStr*100).toFixed(0)+"%",
+      "trading");
+  } else if(hasReversion){
+    updateAssetPanel(sym, z, inOptZone?"SEÑAL ⚡":"SCAN Z","trading");
+  } else {
+    updateAssetPanel(sym, z,"SCAN","active");
+  }
+  if(hasTrend||hasReversion) updateZDisplay(z);
+
+  if(!hasTrend && !hasReversion) return null;
+
+  // ── MODO TENDENCIA (prioridad — tendencia destruye la reversión) ──────
+  if(hasTrend){
+    return {
+      mode:    "TREND",
+      signal:  trendDir==="up" ? "CALL" : "PUT",
+      z:       z.toFixed(2),
+      ticks:   cfg.TICKS_TR,
+      inOptZone: false,
+      peakZ:   st.peakZ.toFixed(2),
+      tStr:    (trendStr*100).toFixed(0)+"%",
+    };
+  }
+
+  // ── MODO REVERSIÓN — solo sin tendencia ──────────────────────────────
   return {
-    signal: z > 0 ? "PUT" : "CALL",
-    z: z.toFixed(2),
-    std: std.toFixed(5),
-    ticks: cfg.TICKS,
+    mode:      "REV",
+    signal:    z > 0 ? "PUT" : "CALL",
+    z:         z.toFixed(2),
+    ticks:     cfg.TICKS,
     inOptZone: inOptZone,
-    peakZ: st.peakZ.toFixed(2)
+    peakZ:     st.peakZ.toFixed(2),
+    tStr:      null,
   };
 }
 
@@ -758,70 +777,85 @@ function onTick(sym){
 
   const res=getSignal(sym);
 
-  // ── FILTRO DE CONFIRMACIÓN ──────────────────────────────────────────────
-  // Fase 1: Detectar pico Z — guardar señal pendiente, NO ejecutar aún
+  // ── FILTRO DE CONFIRMACIÓN DUAL MODE ──────────────────────────────────
+  // Fase 1: detectar señal → guardar como pendiente, NO ejecutar aún
   if(res && !st.pendingSignal){
-    st.pendingSignal = res;          // guardar señal del pico
-    st.confirmTicks  = 0;            // reiniciar contador de confirmación
+    st.pendingSignal = res;
+    st.confirmTicks  = 0;
     st.peakZ         = parseFloat(res.z);
-    const lbl=cfg.label;
-    const zone = res.inOptZone ? "🎯 ZONA ÓPT" : "⚡ SEÑAL";
-    log(`${zone} ${lbl} · z:${res.z} (pico) · esperando ${cfg.CONFIRM}t confirmación`,"x");
-    updateAssetPanel(sym, res.z, `CONFIRMANDO (0/${cfg.CONFIRM})`, "trading");
-    invC++;
-    document.getElementById("invEl").innerText=invC;
+    const lbl = cfg.label;
+    const modeTag = res.mode==="TREND"
+      ? "📈 TREND "+res.tStr
+      : (res.inOptZone ? "🎯 ZONA ÓPT" : "⚡ SEÑAL");
+    log(`${modeTag} ${lbl} · z:${res.z} · modo:${res.mode} · esperando confirmación`,"x");
+    updateAssetPanel(sym, res.z,
+      res.mode==="TREND"
+        ? "TREND CONF..."
+        : "REV CONF...",
+      "trading");
     return;
   }
 
-  // Fase 2: Contar ticks de confirmación mientras hay señal pendiente
+  // Fase 2: contar confirmación mientras hay señal pendiente
   if(st.pendingSignal){
     st.confirmTicks++;
     const currentZ = Math.abs(st.lastZ||0);
     const peakAbs  = Math.abs(st.peakZ);
-    const lbl=cfg.label;
+    const lbl      = cfg.label;
+    const mode     = st.pendingSignal.mode;
 
-    // Validar fading: Z debe estancarse o bajar (no seguir subiendo)
-    // Si el Z sigue creciendo, actualizar pico y reiniciar confirmación
-    if(currentZ > peakAbs + 0.3){
-      st.peakZ = st.lastZ;
-      st.confirmTicks = 0;
-      st.pendingSignal.z = st.lastZ.toFixed(2);
-      // Actualizar dirección si cambió
-      st.pendingSignal.signal = st.lastZ > 0 ? "PUT" : "CALL";
-      updateAssetPanel(sym, st.lastZ, `NUEVO PICO z:${st.lastZ.toFixed(2)}`, "trading");
-      return;
+    if(mode === "REV"){
+      // ── REVERSIÓN: confirmar por caída de Z ≥ Z_DROP desde el pico ──
+      // Si el Z sigue subiendo → actualizar pico y esperar más
+      if(currentZ > peakAbs + 0.3){
+        st.peakZ = st.lastZ;
+        st.confirmTicks = 0;
+        st.pendingSignal.z = st.lastZ.toFixed(2);
+        st.pendingSignal.signal = st.lastZ>0 ? "PUT" : "CALL";
+        updateAssetPanel(sym, st.lastZ,"NUEVO PICO z:"+st.lastZ.toFixed(2),"trading");
+        return;
+      }
+      // Confirmar cuando el Z cayó al menos Z_DROP desde el pico
+      const zDrop = peakAbs - currentZ;
+      updateAssetPanel(sym, st.lastZ||0,
+        "REV CONF "+zDrop.toFixed(2)+"/"+CFG.Z_DROP,"trading");
+      if(zDrop < CFG.Z_DROP) return; // aún no cayó suficiente
+
+    } else {
+      // ── TENDENCIA: confirmar con ticks fijos (momentum no espera) ──
+      updateAssetPanel(sym, st.lastZ||0,
+        "TREND CONF ("+st.confirmTicks+"/"+cfg.CONFIRM+")","trading");
+      if(st.confirmTicks < cfg.CONFIRM) return;
     }
 
-    updateAssetPanel(sym, st.lastZ||0, `CONFIRMANDO (${st.confirmTicks}/${cfg.CONFIRM})`, "trading");
+    // Fase 3: confirmación alcanzada → ejecutar
+    const {signal,ticks,z,peakZ,mode:m,tStr}=st.pendingSignal;
+    st.pendingSignal = null;
+    st.confirmTicks  = 0;
+    st.peakZ         = 0;
 
-    // Fase 3: Confirmación alcanzada — ejecutar orden
-    if(st.confirmTicks >= cfg.CONFIRM){
-      const {signal,ticks,z,peakZ}=st.pendingSignal;
-      st.pendingSignal = null;
-      st.confirmTicks  = 0;
-      st.peakZ         = 0;
+    ws.send(JSON.stringify({
+      buy:1, price:STAKE,
+      parameters:{
+        amount:STAKE, basis:"stake",
+        contract_type:signal, currency:"USD",
+        duration:ticks, duration_unit:"t",
+        symbol:sym
+      }
+    }));
 
-      // Ejecutar operación
-      ws.send(JSON.stringify({
-        buy:1, price:STAKE,
-        parameters:{
-          amount:STAKE, basis:"stake",
-          contract_type:signal, currency:"USD",
-          duration:ticks, duration_unit:"t",
-          symbol:sym
-        }
-      }));
+    st.lastTrade = now;
+    st.lastMode  = m;
+    openContracts[sym] = "pending";
 
-      st.lastTrade=now;
-      openContracts[sym]="pending";
-
-      log(`📊 ${lbl} → ${signal} $${STAKE} · z:${z} · pico:${peakZ} · ${ticks}t`,"i");
-      setState(`${lbl}: ${signal} z:${z}`,"act");
-      updateAssetPanel(sym, z,"OPERANDO ⚡","trading");
-      updateUI();
-    }
+    const lbl2   = cfg.label;
+    const mIcon  = m==="TREND" ? "📈" : "🔄";
+    const mInfo  = m==="TREND" ? "TREND "+tStr : "REV pico:"+peakZ;
+    log(`${mIcon} ${lbl2} → ${signal} $${STAKE} · z:${z} · ${mInfo} · ${ticks}t`,"i");
+    setState(`${lbl2}: ${m} ${signal} z:${z}`,"act");
+    updateAssetPanel(sym, z, "OPERANDO ⚡","trading");
+    updateUI();
     return;
-  }
 
   // Sin señal y sin pendiente — escaneo normal
   if(!res){
@@ -848,13 +882,13 @@ function onResult(sym, pnl){
   if(pnl>0){
     wins++; lossStreak=0;
     recent.push("w");
-    opLog.push({t:ts,sym:lbl,w:true,s:STAKE.toFixed(2),p:pnl.toFixed(2)});
+    opLog.push({t:ts,sym:lbl,w:true,s:STAKE.toFixed(2),p:pnl.toFixed(2),mode:assetState[sym]?.lastMode||'?'});
     log(`✅ ${lbl} WIN  +$${pnl.toFixed(2)}   acum: ${profit>=0?"+$":"−$"}${Math.abs(profit).toFixed(2)}`,"w");
     updateAssetPanel(sym, assetState[sym]?.lastZ||0,"WIN ✅","won");
   } else {
     lossC++; lossStreak++; totalLoss+=Math.abs(pnl);
     recent.push("l");
-    opLog.push({t:ts,sym:lbl,w:false,s:STAKE.toFixed(2),p:Math.abs(pnl).toFixed(2)});
+    opLog.push({t:ts,sym:lbl,w:false,s:STAKE.toFixed(2),p:Math.abs(pnl).toFixed(2),mode:assetState[sym]?.lastMode||'?'});
     log(`❌ ${lbl} LOSS  $${Math.abs(pnl).toFixed(2)}   acum: ${profit>=0?"+$":"−$"}${Math.abs(profit).toFixed(2)}`,"l");
     updateAssetPanel(sym, assetState[sym]?.lastZ||0,"LOSS ❌","lost");
   }
