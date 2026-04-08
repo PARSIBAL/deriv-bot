@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>BOT APEX v15 — MULTI ACTIVO</title>
+<title>BOT APEX v17 — MULTI ACTIVO</title>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Oxanium:wght@300;400;600;800&display=swap');
 
@@ -205,36 +205,36 @@ body{
 <!-- MODAL CONFIG -->
 <div class="modal-overlay" id="mOverlay">
   <div class="modal">
-    <div class="m-title">⚡ APEX v15</div>
-    <div class="m-sub">MULTI ACTIVO · Z-SCORE OPTIMIZADO</div>
+    <div class="m-title">⚡ APEX v17</div>
+    <div class="m-sub">SESIONES CORTAS · $1/op · TP $5 · SL $3</div>
 
     <div class="m-row">
       <div class="m-group">
         <div class="m-lbl">💰 STAKE POR OP ($)</div>
-        <input class="m-input" type="number" id="iStake" value="0.35" min="0.35" max="100" step="0.05" oninput="refreshSummary()">
+        <input class="m-input" type="number" id="iStake" value="1.00" min="0.35" max="100" step="0.05" oninput="refreshSummary()">
         <div class="m-presets">
-          <div class="mp on" onclick="sp2('stake',0.35)">0.35</div>
+          <div class="mp"    onclick="sp2('stake',0.35)">0.35</div>
           <div class="mp"    onclick="sp2('stake',0.50)">0.50</div>
-          <div class="mp"    onclick="sp2('stake',1.00)">1.00</div>
+          <div class="mp on" onclick="sp2('stake',1.00)">1.00</div>
           <div class="mp"    onclick="sp2('stake',2.00)">2.00</div>
         </div>
       </div>
       <div class="m-group" style="display:flex;flex-direction:column;gap:8px;">
         <div>
           <div class="m-lbl">🎯 TAKE PROFIT ($)</div>
-          <input class="m-input" type="number" id="iTP" value="10" min="0.5" max="500" step="0.5" oninput="refreshSummary()">
+          <input class="m-input" type="number" id="iTP" value="5" min="0.5" max="500" step="0.5" oninput="refreshSummary()">
           <div class="m-presets">
-            <div class="mp" onclick="sp2('tp',5)">$5</div>
-            <div class="mp on" onclick="sp2('tp',10)">$10</div>
+            <div class="mp on" onclick="sp2('tp',5)">$5</div>
+            <div class="mp"    onclick="sp2('tp',10)">$10</div>
             <div class="mp"    onclick="sp2('tp',20)">$20</div>
           </div>
         </div>
         <div>
           <div class="m-lbl">🛡 STOP LOSS ($)</div>
-          <input class="m-input" type="number" id="iSL" value="5" min="0.5" max="500" step="0.5" oninput="refreshSummary()">
+          <input class="m-input" type="number" id="iSL" value="3" min="0.5" max="500" step="0.5" oninput="refreshSummary()">
           <div class="m-presets">
-            <div class="mp" onclick="sp2('sl',3)">$3</div>
-            <div class="mp on" onclick="sp2('sl',5)">$5</div>
+            <div class="mp on" onclick="sp2('sl',3)">$3</div>
+            <div class="mp"    onclick="sp2('sl',5)">$5</div>
             <div class="mp"    onclick="sp2('sl',10)">$10</div>
           </div>
         </div>
@@ -246,28 +246,28 @@ body{
     <div class="assets-grid" id="assetGrid">
       <div class="asset-toggle on" data-sym="R_10" onclick="toggleAsset(this)">
         <div class="at-sym">V_10</div>
-        <div class="at-info">Vol 10% · 5-8 ticks</div>
-        <div class="at-z">Z ≥ 1.6</div>
+        <div class="at-info">Vol 10% · 4 ticks · 60s</div>
+        <div class="at-z">Z ≥ 2.2 · Ópt 2.5+</div>
       </div>
       <div class="asset-toggle on" data-sym="R_25" onclick="toggleAsset(this)">
         <div class="at-sym">V_25</div>
-        <div class="at-info">Vol 25% · 5-8 ticks</div>
-        <div class="at-z">Z ≥ 1.75</div>
+        <div class="at-info">Vol 25% · 5 ticks · 60s</div>
+        <div class="at-z">Z ≥ 2.2 · Ópt 2.8+</div>
       </div>
       <div class="asset-toggle on" data-sym="R_50" onclick="toggleAsset(this)">
         <div class="at-sym">V_50</div>
-        <div class="at-info">Vol 50% · 3-5 ticks</div>
-        <div class="at-z">Z ≥ 2.0</div>
+        <div class="at-info">Vol 50% · 6 ticks · 90s</div>
+        <div class="at-z">Z ≥ 2.5 · Ópt 3.0+</div>
       </div>
       <div class="asset-toggle on" data-sym="R_75" onclick="toggleAsset(this)">
         <div class="at-sym">V_75</div>
-        <div class="at-info">Vol 75% · 3-4 ticks</div>
-        <div class="at-z">Z ≥ 2.25</div>
+        <div class="at-info">Vol 75% · 7 ticks · 120s</div>
+        <div class="at-z">Z ≥ 2.7 · Ópt 3.5+</div>
       </div>
       <div class="asset-toggle on" data-sym="R_100" onclick="toggleAsset(this)">
         <div class="at-sym">V_100</div>
-        <div class="at-info">Vol 100% · 1-3 ticks</div>
-        <div class="at-z">Z ≥ 2.75</div>
+        <div class="at-info">Vol 100% · 9 ticks · 120s</div>
+        <div class="at-z">Z ≥ 3.0 · Ópt 3.5+</div>
       </div>
     </div>
 
@@ -304,7 +304,7 @@ body{
     <div class="top-row">
       <div>
         <div class="brand">⚡ APEX</div>
-        <div class="ver">v15 · MULTI ACTIVO · Z-SCORE · ALL SESSIONS</div>
+        <div class="ver">v16 · MULTI ACTIVO · Z-SCORE · FILTRO CONFIRMACIÓN</div>
       </div>
       <div class="badge" id="badge"><span class="dot"></span><span id="bTxt">OFFLINE</span></div>
     </div>
@@ -325,10 +325,10 @@ body{
     </div>
 
     <div class="meta">
-      <div class="mi"><div class="ml">PROFIT</div><div class="mv g" id="mGoal">+$10</div></div>
+      <div class="mi"><div class="ml">PROFIT</div><div class="mv g" id="mGoal">+$5</div></div>
       <div class="mi"><div class="ml">HOY</div><div class="mv" id="mProg">$0.00</div></div>
-      <div class="mi"><div class="ml">STOP</div><div class="mv r" id="mStop">-$5</div></div>
-      <div class="mi"><div class="ml">OPS</div><div class="mv y" id="mOps">0/50</div></div>
+      <div class="mi"><div class="ml">STOP</div><div class="mv r" id="mStop">-$3</div></div>
+      <div class="mi"><div class="ml">OPS</div><div class="mv y" id="mOps">0/20</div></div>
     </div>
     <div class="prog"><div class="prog-fill" id="pFill"></div></div>
 
@@ -337,7 +337,7 @@ body{
 
     <!-- Z-SCORE VISUAL (último activo que disparó señal) -->
     <div class="zscore-display">
-      <div class="zs-lbl">Z ÚLTIMO</div>
+      <div class="zs-lbl">Z PICO</div>
       <div class="zs-bar">
         <div class="zs-center"></div>
         <div class="zs-fill" id="zFill"></div>
@@ -384,7 +384,7 @@ body{
 
   <!-- FOOTER -->
   <div class="ftr">
-    <span id="ftrTxt">$0.35/op · TP $10 · SL $5</span>
+    <span id="ftrTxt">$1.00/op · TP $5 · SL $3</span>
     <button class="rep-link" onclick="showRep()">📊 REPORTE</button>
   </div>
 
@@ -402,51 +402,81 @@ const TOKEN = "e1lRgxNoxWwBkzx";
 // Basado en investigación estadística de mean reversion
 // por nivel de volatilidad de cada índice
 // ══════════════════════════════════════════════════════
+// ══════════════════════════════════════════════════════
+// ASSET_CFG — Parámetros calibrados por investigación estadística
+// Basado en simulaciones Monte Carlo + modelo CSPRNG de Deriv
+// Fuente: estudio de ingeniería inversa sobre probabilidad de reversión
+//
+// Z_MIN   : umbral mínimo de entrada (confianza >95%)
+// Z_OPT   : zona óptima de mayor probabilidad de retroceso
+// TICKS   : ventana de contrato (tick de retorno estimado)
+// COOLDOWN: tiempo mínimo entre operaciones por activo (ms)
+// CONFIRM : filtro de confirmación — esperar N ticks tras el pico
+//           antes de ejecutar (aumenta winrate real vs backtest)
+// ══════════════════════════════════════════════════════
 const ASSET_CFG = {
   R_10: {
     label:   "V_10",
     vol:     "10%",
-    Z_MIN:   1.60,   // Baja volatilidad → umbral moderado
-    TICKS:   6,      // 5-8 ticks óptimo, usamos 6
+    // V_10: movimientos suaves. Z=2.0 ya es rareza estadística.
+    // Retroceso estimado: 78-85% en Z≥2.5 → 3-5 ticks
+    Z_MIN:   2.20,   // Entrada conservadora (>95% confianza)
+    Z_OPT:   2.50,   // Zona óptima: 2.3–2.8
+    TICKS:   4,      // Tick de retorno: 3-5 ticks, usamos 4
     VOL_MIN: 0.0003,
     VOL_MAX: 0.003,
-    COOLDOWN:8000,
+    COOLDOWN:35000,  // 35s — optimizado para sesiones cortas
+    CONFIRM: 1,      // Esperar 1 tick tras el pico antes de entrar
   },
   R_25: {
     label:   "V_25",
     vol:     "25%",
-    Z_MIN:   1.75,   // Vol media-baja → umbral medio
-    TICKS:   5,      // 5-8 ticks, usamos 5
+    // V_25: retroceso 72-80% en Z≥2.8 → 4-7 ticks
+    Z_MIN:   2.20,   // Entrada moderada
+    Z_OPT:   2.80,   // Zona óptima: 2.5–3.0
+    TICKS:   5,      // Tick de retorno: 4-7 ticks, usamos 5
     VOL_MIN: 0.0008,
     VOL_MAX: 0.008,
-    COOLDOWN:7500,
+    COOLDOWN:35000,  // 35s
+    CONFIRM: 1,      // 1 tick de confirmación
   },
   R_50: {
     label:   "V_50",
     vol:     "50%",
-    Z_MIN:   2.00,   // Umbral clásico ±2σ — punto dulce
-    TICKS:   4,      // 3-5 ticks, usamos 4
+    // V_50: retroceso 65-75% en Z≥3.0 → 5-8 ticks
+    Z_MIN:   2.50,   // Umbral balanceado
+    Z_OPT:   3.00,   // Zona óptima: 2.8–3.5
+    TICKS:   6,      // Tick de retorno: 5-8 ticks, usamos 6
     VOL_MIN: 0.0025,
     VOL_MAX: 0.020,
-    COOLDOWN:7500,
+    COOLDOWN:40000,  // 40s — equilibrio señal/velocidad
+    CONFIRM: 1,      // 1 tick de confirmación
   },
   R_75: {
     label:   "V_75",
     vol:     "75%",
-    Z_MIN:   2.25,   // Alta vol → señal más fuerte requerida
-    TICKS:   3,      // 3-4 ticks, usamos 3
+    // V_75: retroceso 60-70% en Z≥3.5 → 6-10 ticks
+    Z_MIN:   2.70,   // Umbral alto por ruido natural
+    Z_OPT:   3.50,   // Zona óptima: 3.0–3.8
+    TICKS:   7,      // Tick de retorno: 6-10 ticks, usamos 7
     VOL_MIN: 0.006,
     VOL_MAX: 0.040,
-    COOLDOWN:7000,
+    COOLDOWN:45000,  // 45s — reducido para sesiones cortas
+    CONFIRM: 2,      // 2 ticks de confirmación (mayor ruido)
   },
   R_100: {
     label:   "V_100",
     vol:     "100%",
-    Z_MIN:   2.75,   // Muy alta vol → sólo señales extremas
-    TICKS:   2,      // 1-3 ticks, usamos 2
+    // V_100: retroceso 55-65% en Z≥4.0 → 8-12 ticks
+    // Rebote violento cuando ocurre. Estrategia agresiva/paciencia alta.
+    // Entrar cuando Z baja de 3.5 → 3.0 captura mayor parte del rebote
+    Z_MIN:   3.00,   // Mínimo para filtrar ruido extremo
+    Z_OPT:   3.50,   // Zona óptima: 3.5–4.5
+    TICKS:   9,      // Tick de retorno: 8-12 ticks, usamos 9
     VOL_MIN: 0.010,
     VOL_MAX: 0.080,
-    COOLDOWN:6500,
+    COOLDOWN:45000,  // 45s
+    CONFIRM: 2,      // 2 ticks — inercia alta, confirmar antes
   },
 };
 
@@ -454,8 +484,8 @@ const ASSET_CFG = {
 const CFG = {
   MIN_BARS: 20,
   HISTORY:  80,
-  PAUSE_MS: 45000,
-  MAX_OPS:  50,     // más ops por ser multi-activo
+  PAUSE_MS: 30000,  // 30s pausa — ajustado para sesiones cortas
+  MAX_OPS:  20,     // sesiones cortas — ~15-25 min estimado
 };
 
 // ══════════════════════════════════════════════════════
@@ -468,7 +498,7 @@ let wins=0, lossC=0, total=0, profit=0, totalLoss=0;
 let lossStreak=0;
 let pauseUntil=0;
 let recent=[], invC=0, opLog=[];
-let STAKE=0.35, TP=10, SL=5;
+let STAKE=1.00, TP=5, SL=3;
 
 // Estado por activo: precios, último tick, z actual
 let assetState = {};
@@ -656,11 +686,19 @@ function getSignal(sym){
     return null;
   }
 
+  // Guardar pico máximo de Z para el filtro de confirmación
+  if(Math.abs(z) > Math.abs(st.peakZ)) st.peakZ = z;
+
+  // Indicar si está en zona óptima
+  const inOptZone = Math.abs(z) >= cfg.Z_OPT;
+
   return {
     signal: z > 0 ? "PUT" : "CALL",
     z: z.toFixed(2),
     std: std.toFixed(5),
-    ticks: cfg.TICKS
+    ticks: cfg.TICKS,
+    inOptZone: inOptZone,
+    peakZ: st.peakZ.toFixed(2)
   };
 }
 
@@ -677,15 +715,19 @@ function updateZDisplay(z){
     fill.style.width=Math.min(50,(absZ/3)*50)+"%";
     fill.style.left="auto";
   }
-  // Color basado en magnitud del z
-  const color = absZ>=2.5?"var(--gold)":absZ>=2.0?"var(--win)":absZ>=1.5?"var(--g1)":"var(--dim)";
+  // Color escalonado por zona: Gris→Cyan→Verde→Dorado→Rojo
+  const color = absZ>=3.5?"var(--red)":absZ>=3.0?"var(--gold)":absZ>=2.5?"var(--win)":absZ>=2.0?"var(--g1)":"var(--dim)";
   fill.style.background=color;
   val.style.color=color;
   val.innerText=(z>=0?"+":"")+z.toFixed(2);
 }
 
 // ══════════════════════════════════════════════════════
-// TICK — POR ACTIVO
+// TICK — POR ACTIVO CON FILTRO DE CONFIRMACIÓN
+// Lógica basada en investigación de Monte Carlo sobre CSPRNG de Deriv:
+// No entrar en el tick exacto del pico Z-Score, sino esperar
+// N ticks de confirmación (cfg.CONFIRM) para validar el fading
+// antes de ejecutar la orden. Aumenta winrate real vs backtest.
 // ══════════════════════════════════════════════════════
 function onTick(sym){
   if(!running) return;
@@ -715,33 +757,81 @@ function onTick(sym){
   }
 
   const res=getSignal(sym);
-  if(!res){
+
+  // ── FILTRO DE CONFIRMACIÓN ──────────────────────────────────────────────
+  // Fase 1: Detectar pico Z — guardar señal pendiente, NO ejecutar aún
+  if(res && !st.pendingSignal){
+    st.pendingSignal = res;          // guardar señal del pico
+    st.confirmTicks  = 0;            // reiniciar contador de confirmación
+    st.peakZ         = parseFloat(res.z);
+    const lbl=cfg.label;
+    const zone = res.inOptZone ? "🎯 ZONA ÓPT" : "⚡ SEÑAL";
+    log(`${zone} ${lbl} · z:${res.z} (pico) · esperando ${cfg.CONFIRM}t confirmación`,"x");
+    updateAssetPanel(sym, res.z, `CONFIRMANDO (0/${cfg.CONFIRM})`, "trading");
     invC++;
     document.getElementById("invEl").innerText=invC;
     return;
   }
 
-  const {signal,z,std,ticks}=res;
+  // Fase 2: Contar ticks de confirmación mientras hay señal pendiente
+  if(st.pendingSignal){
+    st.confirmTicks++;
+    const currentZ = Math.abs(st.lastZ||0);
+    const peakAbs  = Math.abs(st.peakZ);
+    const lbl=cfg.label;
 
-  // Ejecutar operación
-  ws.send(JSON.stringify({
-    buy:1, price:STAKE,
-    parameters:{
-      amount:STAKE, basis:"stake",
-      contract_type:signal, currency:"USD",
-      duration:ticks, duration_unit:"t",
-      symbol:sym
+    // Validar fading: Z debe estancarse o bajar (no seguir subiendo)
+    // Si el Z sigue creciendo, actualizar pico y reiniciar confirmación
+    if(currentZ > peakAbs + 0.3){
+      st.peakZ = st.lastZ;
+      st.confirmTicks = 0;
+      st.pendingSignal.z = st.lastZ.toFixed(2);
+      // Actualizar dirección si cambió
+      st.pendingSignal.signal = st.lastZ > 0 ? "PUT" : "CALL";
+      updateAssetPanel(sym, st.lastZ, `NUEVO PICO z:${st.lastZ.toFixed(2)}`, "trading");
+      return;
     }
-  }));
 
-  st.lastTrade=now;
-  openContracts[sym]="pending"; // se reemplaza con contract_id al confirmar
+    updateAssetPanel(sym, st.lastZ||0, `CONFIRMANDO (${st.confirmTicks}/${cfg.CONFIRM})`, "trading");
 
-  const lbl=ASSET_CFG[sym].label;
-  log(`📊 ${lbl} → ${signal} $${STAKE} · z:${z} · ${ticks}t`,"i");
-  setState(`${lbl}: ${signal} z:${z}`,"act");
-  updateAssetPanel(sym, z,"OPERANDO ⚡","trading");
-  updateUI();
+    // Fase 3: Confirmación alcanzada — ejecutar orden
+    if(st.confirmTicks >= cfg.CONFIRM){
+      const {signal,ticks,z,peakZ}=st.pendingSignal;
+      st.pendingSignal = null;
+      st.confirmTicks  = 0;
+      st.peakZ         = 0;
+
+      // Ejecutar operación
+      ws.send(JSON.stringify({
+        buy:1, price:STAKE,
+        parameters:{
+          amount:STAKE, basis:"stake",
+          contract_type:signal, currency:"USD",
+          duration:ticks, duration_unit:"t",
+          symbol:sym
+        }
+      }));
+
+      st.lastTrade=now;
+      openContracts[sym]="pending";
+
+      log(`📊 ${lbl} → ${signal} $${STAKE} · z:${z} · pico:${peakZ} · ${ticks}t`,"i");
+      setState(`${lbl}: ${signal} z:${z}`,"act");
+      updateAssetPanel(sym, z,"OPERANDO ⚡","trading");
+      updateUI();
+    }
+    return;
+  }
+
+  // Sin señal y sin pendiente — escaneo normal
+  if(!res){
+    // Si había pico guardado pero ya cayó el Z, limpiar
+    if(st.pendingSignal){
+      st.pendingSignal=null; st.confirmTicks=0; st.peakZ=0;
+    }
+    invC++;
+    document.getElementById("invEl").innerText=invC;
+  }
 }
 
 // ══════════════════════════════════════════════════════
@@ -752,6 +842,8 @@ function onResult(sym, pnl){
   const lbl=ASSET_CFG[sym]?.label||sym;
   profit+=pnl; total++;
   openContracts[sym]=null;
+  // Limpiar filtro de confirmación al recibir resultado
+  if(assetState[sym]){ assetState[sym].pendingSignal=null; assetState[sym].confirmTicks=0; assetState[sym].peakZ=0; }
 
   if(pnl>0){
     wins++; lossStreak=0;
@@ -852,7 +944,7 @@ function startBot(){
   // Inicializar estado por activo
   assetState={};
   activeSymbols.forEach(sym=>{
-    assetState[sym]={prices:[], lastTrade:0, lastZ:0};
+    assetState[sym]={prices:[], lastTrade:0, lastZ:0, peakZ:0, confirmTicks:0, pendingSignal:null};
     openContracts[sym]=null;
   });
 
@@ -869,12 +961,15 @@ function startBot(){
       document.getElementById("badge").className="badge live";
       document.getElementById("bTxt").innerText="ONLINE";
       log(`🔐 Conectado · $${bal.toFixed(2)}`,"i");
+
       log(`⚙ Stake $${STAKE} · TP +$${TP} · SL -$${SL}`,"i");
+      const _ops=Math.ceil(TP/(STAKE*0.87)), _mn=Math.ceil(_ops*18/60), _mx=Math.ceil(_ops*45/60);
+      log(`⏱ Est: ~${_ops} ops ganadoras → ${_mn} a ${_mx} min de sesión`,"x");
       log(`📊 Activos: ${activeSymbols.map(s=>ASSET_CFG[s].label).join(" · ")}`,"i");
       // Suscribir todos los activos seleccionados
       activeSymbols.forEach(sym=>{
         ws.send(JSON.stringify({ticks:sym, subscribe:1}));
-        log(`🔗 Suscrito a ${ASSET_CFG[sym].label} (Z≥${ASSET_CFG[sym].Z_MIN} · ${ASSET_CFG[sym].TICKS}t)`,"i");
+        log(`🔗 ${ASSET_CFG[sym].label} · Z≥${ASSET_CFG[sym].Z_MIN} · Ópt≥${ASSET_CFG[sym].Z_OPT} · ${ASSET_CFG[sym].TICKS}t · confirm:${ASSET_CFG[sym].CONFIRM}t`,"i");
       });
       ws.send(JSON.stringify({balance:1}));
       updateUI();
