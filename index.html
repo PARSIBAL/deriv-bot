@@ -406,7 +406,7 @@ const ASSET_CFG = {
   R_10: {
     label:   "V_10",
     vol:     "10%",
-    Z_MIN:   1.60,   // Baja volatilidad → umbral moderado
+    Z_MIN:   1.30,   // Baja volatilidad → umbral moderado
     TICKS:   6,      // 5-8 ticks óptimo, usamos 6
     VOL_MIN: 0.0003,
     VOL_MAX: 0.003,
@@ -415,7 +415,7 @@ const ASSET_CFG = {
   R_25: {
     label:   "V_25",
     vol:     "25%",
-    Z_MIN:   1.90,   // Vol media-baja → umbral medio
+    Z_MIN:   1.45,   // Vol media-baja → umbral medio
     TICKS:   5,      // 5-8 ticks, usamos 5
     VOL_MIN: 0.0008,
     VOL_MAX: 0.008,
@@ -433,7 +433,7 @@ const ASSET_CFG = {
   R_75: {
     label:   "V_75",
     vol:     "75%",
-    Z_MIN:   2.40,   // Alta vol → señal más fuerte requerida
+    Z_MIN:   1.70,   // Alta vol → señal más fuerte requerida
     TICKS:   3,      // 3-4 ticks, usamos 3
     VOL_MIN: 0.006,
     VOL_MAX: 0.040,
@@ -442,7 +442,7 @@ const ASSET_CFG = {
   R_100: {
     label:   "V_100",
     vol:     "100%",
-    Z_MIN:   2.90,   // Muy alta vol → sólo señales extremas
+    Z_MIN:   2.50,   // Muy alta vol → sólo señales extremas
     TICKS:   2,      // 1-3 ticks, usamos 2
     VOL_MIN: 0.010,
     VOL_MAX: 0.080,
