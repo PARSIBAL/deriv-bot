@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>BOT APEX v19 — MULTI ACTIVO</title>
+<title>BOT APEX v20 — MULTI ACTIVO</title>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Oxanium:wght@300;400;600;800&display=swap');
 
@@ -205,8 +205,8 @@ body{
 <!-- MODAL CONFIG -->
 <div class="modal-overlay" id="mOverlay">
   <div class="modal">
-    <div class="m-title">⚡ APEX v19</div>
-    <div class="m-sub">v19 · DUAL MODE · $1/op · TP $5 · SL $3</div>
+    <div class="m-title">⚡ APEX v20</div>
+    <div class="m-sub">v20 · 3 TICKS FIJO · $1/op · TP $5 · SL $3</div>
 
     <div class="m-row">
       <div class="m-group">
@@ -415,19 +415,17 @@ const TOKEN = "e1lRgxNoxWwBkzx";
 //           antes de ejecutar (aumenta winrate real vs backtest)
 // ══════════════════════════════════════════════════════
 const ASSET_CFG = {
-  // ── NOTA v18: VOL_MIN/VOL_MAX eliminados como filtro bloqueante ──────────
-  // Cada índice tiene su propia escala de precio muy diferente.
-  // Calibrar rangos fijos es imposible sin datos reales de cada activo.
-  // El filtro de calidad lo hace el Z-Score solo — que es estadísticamente
-  // independiente de la escala del precio (ya está normalizado por std).
+  // ── v20: 3 TICKS FIJO en ambos modos — validado empíricamente ────────────
+  // El trader confirmó que 3 ticks es el punto dulce real en su operativa.
+  // Aplica igual a modo REV y TREND en todos los activos.
   // ─────────────────────────────────────────────────────────────────────────
   R_10: {
     label:    "V_10",
     vol:      "10%",
     Z_MIN:    2.20,   // umbral mean reversion
     Z_OPT:    2.50,
-    TICKS:    8,      // subido para dar más margen al retroceso
-    TICKS_TR: 5,      // ticks en modo tendencia (más corto — momentum)
+    TICKS:    3,      // ✅ 3 ticks — validado empíricamente
+    TICKS_TR: 3,      // ✅ 3 ticks — igual en tendencia
     COOLDOWN: 35000,
     CONFIRM:  1,
   },
@@ -436,8 +434,8 @@ const ASSET_CFG = {
     vol:      "25%",
     Z_MIN:    2.20,
     Z_OPT:    2.80,
-    TICKS:    8,
-    TICKS_TR: 5,
+    TICKS:    3,
+    TICKS_TR: 3,
     COOLDOWN: 35000,
     CONFIRM:  1,
   },
@@ -446,8 +444,8 @@ const ASSET_CFG = {
     vol:      "50%",
     Z_MIN:    2.50,
     Z_OPT:    3.00,
-    TICKS:    9,      // más margen para reversión
-    TICKS_TR: 6,      // tendencia más corta
+    TICKS:    3,      // ✅ 3 ticks — validado empíricamente
+    TICKS_TR: 3,      // ✅ 3 ticks — igual en tendencia
     COOLDOWN: 40000,
     CONFIRM:  1,
   },
@@ -456,8 +454,8 @@ const ASSET_CFG = {
     vol:      "75%",
     Z_MIN:    2.70,
     Z_OPT:    3.50,
-    TICKS:    10,
-    TICKS_TR: 6,
+    TICKS:    3,
+    TICKS_TR: 3,
     COOLDOWN: 45000,
     CONFIRM:  2,
   },
@@ -466,8 +464,8 @@ const ASSET_CFG = {
     vol:      "100%",
     Z_MIN:    3.00,
     Z_OPT:    3.50,
-    TICKS:    10,
-    TICKS_TR: 6,
+    TICKS:    3,
+    TICKS_TR: 3,
     COOLDOWN: 45000,
     CONFIRM:  2,
   },
@@ -857,9 +855,10 @@ function onTick(sym){
     updateUI();
     return;
 
+  } // ← cierre if(st.pendingSignal) Fase 2
+
   // Sin señal y sin pendiente — escaneo normal
   if(!res){
-    // Si había pico guardado pero ya cayó el Z, limpiar
     if(st.pendingSignal){
       st.pendingSignal=null; st.confirmTicks=0; st.peakZ=0;
     }
