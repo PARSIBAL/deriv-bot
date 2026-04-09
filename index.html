@@ -537,15 +537,15 @@ body {
     <div class="assets-grid">
       <div class="atog on" data-sym="R_10" onclick="this.classList.toggle('on')">
         <div class="atog-sym">V_10</div>
-        <div class="atog-z">Z ≥ 2.50</div>
+        <div class="atog-z">Z ≥ 2.8</div>
       </div>
       <div class="atog on" data-sym="R_25" onclick="this.classList.toggle('on')">
         <div class="atog-sym">V_25</div>
-        <div class="atog-z">Z ≥ 2.80</div>
+        <div class="atog-z">Z ≥ 3.0</div>
       </div>
       <div class="atog on" data-sym="R_50" onclick="this.classList.toggle('on')">
         <div class="atog-sym">V_50</div>
-        <div class="atog-z">Z ≥ 3.0</div>
+        <div class="atog-z">Z ≥ 3.2</div>
       </div>
     </div>
 
@@ -693,11 +693,11 @@ const TOKEN = "e1lRgxNoxWwBkzx";
 // COOLDOWN : tiempo mínimo entre ops por activo (ms)
 const ASSETS = {
   // V_10: reversión lenta y gradual → 5 ticks para capturar el recorrido completo
-  R_10: { label:"V_10", Z_MIN:2.50, Z_DROP:0.6, TICKS:5, COOLDOWN:45000 },
+  R_10: { label:"V_10", Z_MIN:2.8, Z_DROP:0.6, TICKS:5, COOLDOWN:45000 },
   // V_25: reversión media → 4 ticks, un tick extra marca diferencia
-  R_25: { label:"V_25", Z_MIN:2.80, Z_DROP:0.6, TICKS:4, COOLDOWN:45000 },
+  R_25: { label:"V_25", Z_MIN:3.0, Z_DROP:0.6, TICKS:4, COOLDOWN:45000 },
   // V_50: validado empíricamente → 3 ticks es el punto dulce
-  R_50: { label:"V_50", Z_MIN:3.0, Z_DROP:0.7, TICKS:3, COOLDOWN:50000 },
+  R_50: { label:"V_50", Z_MIN:3.2, Z_DROP:0.7, TICKS:3, COOLDOWN:50000 },
 };
 
 // ── CONFIG GLOBAL ────────────────────────────────────────
