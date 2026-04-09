@@ -1,1082 +1,233 @@
-<!DOCTYPE html>
-<html lang="es">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>BOT APEX v20 — MULTI ACTIVO</title>
-<style>
-@import url('https://fonts.googleapis.com/css2?family=Oxanium:wght@300;400;600;800&display=swap');
-
-:root {
-  --g1: #00ffe0;
-  --g2: #00b4d8;
-  --red: #ff4757;
-  --gold: #feca57;
-  --win: #2ed573;
-  --bg0: #04080f;
-  --bg1: #080f1a;
-  --bg2: #0d1626;
-  --border: rgba(0,255,224,0.1);
-  --dim: #3d5a72;
-}
-
-*{box-sizing:border-box;margin:0;padding:0;}
-body{
-  background:var(--bg0);
-  font-family:'Oxanium',monospace;
-  min-height:100vh;
-  display:flex;align-items:center;justify-content:center;
-  padding:16px;
-}
-
-.wrap{width:100%;max-width:440px;}
-
-/* MODAL */
-.modal-overlay{position:fixed;inset:0;background:rgba(4,8,15,.96);display:flex;align-items:center;justify-content:center;z-index:999;backdrop-filter:blur(8px);transition:opacity .3s;}
-.modal-overlay.hidden{opacity:0;pointer-events:none;}
-.modal{background:var(--bg1);border:1px solid var(--border);border-radius:18px;padding:22px 20px;max-width:340px;width:95%;position:relative;max-height:90vh;overflow-y:auto;}
-.modal::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,transparent,var(--g1),transparent);}
-.m-title{font-size:15px;font-weight:800;color:#fff;letter-spacing:3px;text-align:center;margin-bottom:4px;}
-.m-sub{font-size:9px;color:var(--dim);text-align:center;letter-spacing:2px;margin-bottom:14px;}
-.m-row{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px;}
-.m-group{}
-.m-lbl{font-size:9px;color:var(--dim);letter-spacing:1px;margin-bottom:6px;}
-.m-input{width:100%;background:var(--bg2);border:1px solid var(--dim);border-radius:10px;color:#fff;font-family:'Oxanium',monospace;font-size:16px;font-weight:800;padding:9px;outline:none;text-align:center;transition:border .2s;}
-.m-input:focus{border-color:var(--g1);}
-.m-presets{display:flex;gap:5px;margin-top:5px;flex-wrap:wrap;}
-.mp{font-size:9px;padding:4px 8px;border:1px solid var(--dim);border-radius:6px;color:var(--dim);background:var(--bg2);cursor:pointer;transition:all .2s;}
-.mp:hover{border-color:var(--g1);color:var(--g1);}
-.mp.on{border-color:var(--g1);color:#000;background:var(--g1);}
-
-/* ACTIVOS SELECTOR */
-.m-assets-title{font-size:9px;color:var(--dim);letter-spacing:2px;margin-bottom:8px;margin-top:4px;}
-.assets-grid{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:14px;}
-.asset-toggle{background:var(--bg2);border:1px solid var(--dim);border-radius:10px;padding:8px 6px;cursor:pointer;transition:all .2s;text-align:center;}
-.asset-toggle.on{border-color:var(--g1);background:rgba(0,255,224,0.08);}
-.at-sym{font-size:11px;font-weight:800;color:#fff;}
-.asset-toggle.on .at-sym{color:var(--g1);}
-.at-info{font-size:8px;color:var(--dim);margin-top:2px;}
-.asset-toggle.on .at-info{color:rgba(0,255,224,0.6);}
-.at-z{font-size:8px;color:var(--gold);margin-top:1px;}
-
-.m-btn{width:100%;font-size:13px;font-weight:800;letter-spacing:3px;padding:14px;border:none;border-radius:12px;background:linear-gradient(135deg,#00b09b,#00ffe0);color:#000;cursor:pointer;margin-top:4px;transition:all .2s;}
-.m-btn:hover{box-shadow:0 4px 20px rgba(0,255,224,.4);}
-
-/* REPORTE */
-.rep-overlay{position:fixed;inset:0;background:rgba(4,8,15,.96);display:flex;align-items:center;justify-content:center;z-index:998;backdrop-filter:blur(8px);transition:opacity .3s;}
-.rep-overlay.hidden{opacity:0;pointer-events:none;}
-.rep{background:var(--bg1);border:1px solid var(--border);border-radius:18px;padding:22px 20px;max-width:340px;width:95%;max-height:90vh;overflow-y:auto;}
-.rep-title{font-size:15px;font-weight:800;color:#fff;letter-spacing:3px;text-align:center;margin-bottom:14px;}
-.rep-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px;}
-.rs{background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:12px 8px;text-align:center;}
-.rs-l{font-size:8px;color:var(--dim);letter-spacing:1px;margin-bottom:4px;}
-.rs-v{font-size:20px;font-weight:800;color:#fff;}
-.rs-v.up{color:var(--win);}.rs-v.dn{color:var(--red);}
-.rs-v.go{color:var(--gold);}.rs-v.cy{color:var(--g1);}
-.rep-ops{background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:10px;margin-bottom:12px;max-height:180px;overflow-y:auto;}
-.rep-ops-lbl{font-size:8px;color:var(--dim);letter-spacing:1px;margin-bottom:6px;}
-.op{display:flex;justify-content:space-between;font-size:10px;padding:3px 0;border-bottom:1px solid rgba(255,255,255,.04);}
-.op:last-child{border:none;}
-.op-w{color:var(--win);}.op-l{color:var(--red);}
-.rep-btn{width:100%;font-size:11px;font-weight:700;letter-spacing:2px;padding:11px;border:1px solid var(--dim);border-radius:10px;background:transparent;color:var(--dim);cursor:pointer;transition:all .2s;}
-.rep-btn:hover{border-color:var(--g1);color:var(--g1);}
-
-/* CARD PRINCIPAL */
-.card{background:var(--bg1);border:1px solid var(--border);border-radius:18px;overflow:hidden;}
-
-/* TOP */
-.top{padding:16px 18px 12px;border-bottom:1px solid var(--border);position:relative;}
-.top::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,transparent,var(--g2) 30%,var(--g1) 70%,transparent);}
-.top-row{display:flex;justify-content:space-between;align-items:center;}
-.brand{font-size:22px;font-weight:800;color:#fff;letter-spacing:4px;}
-.ver{font-size:8px;color:var(--dim);letter-spacing:2px;margin-top:2px;}
-.badge{font-size:9px;letter-spacing:2px;padding:4px 10px;border-radius:20px;border:1px solid var(--dim);color:var(--dim);transition:all .4s;}
-.badge.live{border-color:var(--win);color:var(--win);animation:glow 2s infinite;}
-@keyframes glow{0%,100%{box-shadow:0 0 6px rgba(46,213,115,.2);}50%{box-shadow:0 0 14px rgba(46,213,115,.5);}}
-.dot{display:inline-block;width:5px;height:5px;border-radius:50%;background:currentColor;margin-right:4px;vertical-align:middle;}
-.badge.live .dot{animation:blink 1s infinite;}
-@keyframes blink{0%,100%{opacity:1;}50%{opacity:.2;}}
-
-/* INFO ROW */
-.info-row{display:flex;gap:6px;margin-top:10px;}
-.ibox{flex:1;background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:7px 10px;}
-.il{font-size:8px;color:var(--dim);letter-spacing:1px;}
-.iv{font-size:12px;color:var(--gold);margin-top:2px;font-weight:700;}
-.sess-pill{font-size:8px;padding:2px 8px;border-radius:10px;border:1px solid var(--dim);color:var(--dim);display:inline-block;margin-top:2px;}
-.sess-pill.hot{border-color:var(--win);color:var(--win);}
-.sess-pill.warm{border-color:var(--gold);color:var(--gold);}
-.sess-pill.cold{border-color:var(--red);color:var(--red);}
-
-/* META */
-.meta{display:flex;margin-top:10px;background:var(--bg2);border:1px solid var(--border);border-radius:8px;overflow:hidden;}
-.mi{flex:1;padding:7px 6px;text-align:center;border-right:1px solid var(--border);}
-.mi:last-child{border-right:none;}
-.ml{font-size:8px;color:var(--dim);}
-.mv{font-size:13px;font-weight:800;color:#fff;margin-top:1px;}
-.mv.g{color:var(--win);}.mv.r{color:var(--red);}.mv.y{color:var(--gold);}
-.prog{height:3px;background:var(--border);margin-top:10px;border-radius:0;overflow:hidden;}
-.prog-fill{height:100%;width:0%;background:linear-gradient(90deg,var(--g2),var(--win));transition:width .5s;}
-
-/* ACTIVOS ACTIVOS (panel) */
-.assets-panel{margin-top:10px;display:grid;grid-template-columns:1fr 1fr 1fr;gap:4px;}
-.ap{background:var(--bg2);border:1px solid var(--dim);border-radius:8px;padding:5px 4px;text-align:center;transition:all .3s;}
-.ap.active{border-color:var(--g1);background:rgba(0,255,224,0.06);}
-.ap.trading{border-color:var(--gold);background:rgba(254,202,87,0.08);animation:pulse 1s infinite;}
-.ap.won{border-color:var(--win);background:rgba(46,213,115,0.08);}
-.ap.lost{border-color:var(--red);background:rgba(255,71,87,0.08);}
-@keyframes pulse{0%,100%{opacity:1;}50%{opacity:.6;}}
-.ap-sym{font-size:9px;font-weight:800;color:var(--dim);}
-.ap.active .ap-sym,.ap.trading .ap-sym{color:var(--g1);}
-.ap.won .ap-sym{color:var(--win);}
-.ap.lost .ap-sym{color:var(--red);}
-.ap-z{font-size:8px;color:var(--dim);margin-top:1px;}
-.ap-st{font-size:7px;color:var(--dim);margin-top:1px;}
-
-/* Z-SCORE VISUAL */
-.zscore-display{
-  margin-top:8px;
-  background:var(--bg2);border:1px solid var(--border);border-radius:10px;
-  padding:8px 14px;display:flex;align-items:center;gap:12px;
-}
-.zs-lbl{font-size:8px;color:var(--dim);letter-spacing:1px;flex-shrink:0;}
-.zs-bar{flex:1;height:6px;background:rgba(255,255,255,.06);border-radius:3px;position:relative;overflow:visible;}
-.zs-center{position:absolute;top:-4px;left:50%;width:2px;height:14px;background:var(--dim);border-radius:1px;}
-.zs-fill{position:absolute;top:0;height:100%;border-radius:3px;transition:all .4s;}
-.zs-val{font-size:14px;font-weight:800;width:44px;text-align:right;flex-shrink:0;}
-
-/* BOTÓN TOGGLE */
-.btn-wrap{padding:12px 14px;background:var(--bg1);border-top:1px solid var(--border);}
-.btn-toggle{width:100%;font-size:14px;font-weight:800;letter-spacing:3px;padding:14px;border:none;border-radius:12px;cursor:pointer;transition:all .3s;}
-.btn-toggle.go{background:linear-gradient(135deg,#00b09b,#00ffe0);color:#000;}
-.btn-toggle.go:hover{box-shadow:0 4px 20px rgba(0,255,224,.4);}
-.btn-toggle.stop{background:linear-gradient(135deg,#b91c1c,#ff4757);color:#fff;}
-.btn-toggle.stop:hover{box-shadow:0 4px 20px rgba(255,71,87,.4);}
-.btn-toggle:active{transform:scale(.98);}
-
-/* STATS 2x2 */
-.stats{display:grid;grid-template-columns:1fr 1fr;gap:1px;background:var(--border);border-top:1px solid var(--border);}
-.st{background:var(--bg1);padding:12px 15px;}
-.sl{font-size:8px;color:var(--dim);letter-spacing:2px;text-transform:uppercase;margin-bottom:3px;}
-.sv{font-size:20px;font-weight:800;color:#fff;transition:color .3s;}
-.sv.up{color:var(--win);}.sv.dn{color:var(--red);}
-.sv.cy{color:var(--g1);}.sv.go{color:var(--gold);}
-
-/* HISTORIAL DOTS */
-.dots-row{background:var(--bg1);border-top:1px solid var(--border);padding:8px 15px;display:flex;gap:4px;align-items:center;flex-wrap:wrap;}
-.dl{font-size:9px;color:var(--dim);letter-spacing:1px;margin-right:4px;}
-.d{width:9px;height:9px;border-radius:2px;background:var(--bg2);border:1px solid var(--dim);transition:all .3s;}
-.d.w{background:var(--win);border-color:var(--win);box-shadow:0 0 4px var(--win);}
-.d.l{background:var(--red);border-color:var(--red);}
-
-/* ESTADO */
-.state-row{background:var(--bg1);border-top:1px solid var(--border);padding:7px 15px;display:flex;justify-content:space-between;align-items:center;font-size:10px;color:var(--dim);}
-.chip{font-size:9px;letter-spacing:1px;padding:3px 8px;border-radius:5px;background:rgba(0,180,216,.1);color:var(--g2);border:1px solid rgba(0,180,216,.2);transition:all .3s;}
-.chip.act{background:rgba(0,255,224,.1);color:var(--g1);border-color:rgba(0,255,224,.3);}
-.chip.inv{background:rgba(255,71,87,.08);color:var(--red);border-color:rgba(255,71,87,.2);}
-.chip.wait{background:rgba(254,202,87,.08);color:var(--gold);border-color:rgba(254,202,87,.2);}
-
-/* CONTADORES */
-.count-row{background:var(--bg2);border-top:1px solid var(--border);padding:7px 15px;display:flex;justify-content:space-between;font-size:9px;color:var(--dim);letter-spacing:1px;}
-.cnt{font-family:'Oxanium',monospace;font-size:12px;color:var(--gold);}
-
-/* LOG */
-.log-wrap{background:var(--bg1);border-top:1px solid var(--border);padding:10px 12px;}
-.log{background:#020609;border:1px solid rgba(0,255,224,.07);border-radius:10px;height:160px;overflow-y:auto;padding:8px 10px;font-size:10px;line-height:1.9;scrollbar-width:thin;scrollbar-color:var(--border) transparent;}
-.log::-webkit-scrollbar{width:3px;}
-.log::-webkit-scrollbar-thumb{background:var(--border);}
-.le{display:flex;gap:6px;}
-.lt{color:var(--dim);font-size:9px;flex-shrink:0;}
-.lw{color:var(--win);}.ll{color:var(--red);}
-.li{color:var(--g2);}.lx{color:var(--gold);}
-.ls{color:var(--red);font-weight:700;}.linv{color:#3d5a72;font-style:italic;}
-.lg{color:var(--win);font-weight:700;}
-
-/* FOOTER */
-.ftr{background:var(--bg1);border-top:1px solid var(--border);padding:9px 15px 12px;display:flex;justify-content:space-between;align-items:center;font-size:9px;color:var(--dim);letter-spacing:1px;}
-.rep-link{font-size:9px;padding:4px 10px;border:1px solid var(--dim);border-radius:6px;background:transparent;color:var(--dim);cursor:pointer;transition:all .2s;letter-spacing:1px;}
-.rep-link:hover{border-color:var(--gold);color:var(--gold);}
-
-.spin{display:inline-block;width:7px;height:7px;border:1.5px solid transparent;border-top-color:var(--g1);border-radius:50%;animation:sp 1s linear infinite;margin-right:4px;vertical-align:middle;}
-@keyframes sp{to{transform:rotate(360deg);}}
-</style>
-</head>
-<body>
-
-<!-- MODAL CONFIG -->
-<div class="modal-overlay" id="mOverlay">
-  <div class="modal">
-    <div class="m-title">⚡ APEX v20</div>
-    <div class="m-sub">v20 · 3 TICKS FIJO · $1/op · TP $5 · SL $3</div>
-
-    <div class="m-row">
-      <div class="m-group">
-        <div class="m-lbl">💰 STAKE POR OP ($)</div>
-        <input class="m-input" type="number" id="iStake" value="1.00" min="0.35" max="100" step="0.05" oninput="refreshSummary()">
-        <div class="m-presets">
-          <div class="mp"    onclick="sp2('stake',0.35)">0.35</div>
-          <div class="mp"    onclick="sp2('stake',0.50)">0.50</div>
-          <div class="mp on" onclick="sp2('stake',1.00)">1.00</div>
-          <div class="mp"    onclick="sp2('stake',2.00)">2.00</div>
-        </div>
-      </div>
-      <div class="m-group" style="display:flex;flex-direction:column;gap:8px;">
-        <div>
-          <div class="m-lbl">🎯 TAKE PROFIT ($)</div>
-          <input class="m-input" type="number" id="iTP" value="5" min="0.5" max="500" step="0.5" oninput="refreshSummary()">
-          <div class="m-presets">
-            <div class="mp on" onclick="sp2('tp',5)">$5</div>
-            <div class="mp"    onclick="sp2('tp',10)">$10</div>
-            <div class="mp"    onclick="sp2('tp',20)">$20</div>
-          </div>
-        </div>
-        <div>
-          <div class="m-lbl">🛡 STOP LOSS ($)</div>
-          <input class="m-input" type="number" id="iSL" value="3" min="0.5" max="500" step="0.5" oninput="refreshSummary()">
-          <div class="m-presets">
-            <div class="mp on" onclick="sp2('sl',3)">$3</div>
-            <div class="mp"    onclick="sp2('sl',5)">$5</div>
-            <div class="mp"    onclick="sp2('sl',10)">$10</div>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- SELECTOR DE ACTIVOS -->
-    <div class="m-assets-title">📊 ACTIVOS — SELECCIONA LOS QUE DESEAS OPERAR</div>
-    <div class="assets-grid" id="assetGrid">
-      <div class="asset-toggle on" data-sym="R_10" onclick="toggleAsset(this)">
-        <div class="at-sym">V_10</div>
-        <div class="at-info">Vol 10% · 4 ticks · 60s</div>
-        <div class="at-z">Z ≥ 2.2 · Ópt 2.5+</div>
-      </div>
-      <div class="asset-toggle on" data-sym="R_25" onclick="toggleAsset(this)">
-        <div class="at-sym">V_25</div>
-        <div class="at-info">Vol 25% · 5 ticks · 60s</div>
-        <div class="at-z">Z ≥ 2.2 · Ópt 2.8+</div>
-      </div>
-      <div class="asset-toggle on" data-sym="R_50" onclick="toggleAsset(this)">
-        <div class="at-sym">V_50</div>
-        <div class="at-info">Vol 50% · 6 ticks · 90s</div>
-        <div class="at-z">Z ≥ 2.5 · Ópt 3.0+</div>
-      </div>
-      <div class="asset-toggle on" data-sym="R_75" onclick="toggleAsset(this)">
-        <div class="at-sym">V_75</div>
-        <div class="at-info">Vol 75% · 7 ticks · 120s</div>
-        <div class="at-z">Z ≥ 2.7 · Ópt 3.5+</div>
-      </div>
-      <div class="asset-toggle on" data-sym="R_100" onclick="toggleAsset(this)">
-        <div class="at-sym">V_100</div>
-        <div class="at-info">Vol 100% · 9 ticks · 120s</div>
-        <div class="at-z">Z ≥ 3.0 · Ópt 3.5+</div>
-      </div>
-    </div>
-
-    <button class="m-btn" onclick="launch()">▶ COMENZAR</button>
-  </div>
-</div>
-
-<!-- MODAL REPORTE -->
-<div class="rep-overlay hidden" id="rOverlay">
-  <div class="rep">
-    <div class="rep-title">📊 REPORTE DE SESIÓN</div>
-    <div class="rep-grid">
-      <div class="rs"><div class="rs-l">RESULTADO</div><div class="rs-v" id="rRes">$0.00</div></div>
-      <div class="rs"><div class="rs-l">WINRATE</div><div class="rs-v go" id="rWR">0%</div></div>
-      <div class="rs"><div class="rs-l">WINS ✅</div><div class="rs-v up" id="rW">0</div></div>
-      <div class="rs"><div class="rs-l">LOSSES ❌</div><div class="rs-v dn" id="rL">0</div></div>
-      <div class="rs"><div class="rs-l">TOTAL OPS</div><div class="rs-v cy" id="rT">0</div></div>
-      <div class="rs"><div class="rs-l">ACTIVOS</div><div class="rs-v go" id="rActivos">0</div></div>
-    </div>
-    <div class="rep-ops">
-      <div class="rep-ops-lbl">ÚLTIMAS OPERACIONES</div>
-      <div id="rOps"></div>
-    </div>
-    <button class="rep-btn" onclick="closeRep()">✕ CERRAR</button>
-  </div>
-</div>
-
-<!-- MAIN -->
-<div class="wrap">
-<div class="card">
-
-  <!-- TOP -->
-  <div class="top">
-    <div class="top-row">
-      <div>
-        <div class="brand">⚡ APEX</div>
-        <div class="ver">v16 · MULTI ACTIVO · Z-SCORE · FILTRO CONFIRMACIÓN</div>
-      </div>
-      <div class="badge" id="badge"><span class="dot"></span><span id="bTxt">OFFLINE</span></div>
-    </div>
-
-    <div class="info-row">
-      <div class="ibox">
-        <div class="il">COLOMBIA</div>
-        <div class="iv" id="clock">--:--</div>
-      </div>
-      <div class="ibox">
-        <div class="il">SESIÓN</div>
-        <div class="sess-pill" id="sessEl">--</div>
-      </div>
-      <div class="ibox">
-        <div class="il">STAKE/OP</div>
-        <div class="iv" id="stakeEl">$0.35</div>
-      </div>
-    </div>
-
-    <div class="meta">
-      <div class="mi"><div class="ml">PROFIT</div><div class="mv g" id="mGoal">+$5</div></div>
-      <div class="mi"><div class="ml">HOY</div><div class="mv" id="mProg">$0.00</div></div>
-      <div class="mi"><div class="ml">STOP</div><div class="mv r" id="mStop">-$3</div></div>
-      <div class="mi"><div class="ml">OPS</div><div class="mv y" id="mOps">0/20</div></div>
-    </div>
-    <div class="prog"><div class="prog-fill" id="pFill"></div></div>
-
-    <!-- PANEL DE ACTIVOS EN VIVO -->
-    <div class="assets-panel" id="assetsPanel"></div>
-
-    <!-- Z-SCORE VISUAL (último activo que disparó señal) -->
-    <div class="zscore-display">
-      <div class="zs-lbl">Z PICO</div>
-      <div class="zs-bar">
-        <div class="zs-center"></div>
-        <div class="zs-fill" id="zFill"></div>
-      </div>
-      <div class="zs-val" id="zVal" style="color:var(--dim)">0.00</div>
-    </div>
-  </div>
-
-  <!-- BOTÓN TOGGLE -->
-  <div class="btn-wrap">
-    <button class="btn-toggle go" id="btnT" onclick="toggle()">▶ INICIAR</button>
-  </div>
-
-  <!-- STATS -->
-  <div class="stats">
-    <div class="st"><div class="sl">💰 Balance</div><div class="sv cy" id="bal">0.00</div></div>
-    <div class="st"><div class="sl">📈 Ganancia</div><div class="sv" id="prof">+0.00</div></div>
-    <div class="st"><div class="sl">🏆 Winrate</div><div class="sv" id="wr">0%</div></div>
-    <div class="st"><div class="sl">📉 Pérdidas</div><div class="sv dn" id="lossEl">$0.00</div></div>
-  </div>
-
-  <!-- HISTORIAL DOTS -->
-  <div class="dots-row">
-    <span class="dl">ÚLTIMAS</span>
-    <div id="dots"></div>
-  </div>
-
-  <!-- ESTADO -->
-  <div class="state-row">
-    <span id="stateInfo">Presiona INICIAR</span>
-    <span class="chip" id="chip">IDLE</span>
-  </div>
-
-  <!-- CONTADORES -->
-  <div class="count-row">
-    <span>🚫 INVALIDADAS <span class="cnt" id="invEl">0</span></span>
-    <span>✅ EJECUTADAS <span class="cnt" id="totEl">0</span></span>
-  </div>
-
-  <!-- LOG -->
-  <div class="log-wrap">
-    <div class="log" id="log"></div>
-  </div>
-
-  <!-- FOOTER -->
-  <div class="ftr">
-    <span id="ftrTxt">$1.00/op · TP $5 · SL $3</span>
-    <button class="rep-link" onclick="showRep()">📊 REPORTE</button>
-  </div>
-
-</div>
-</div>
-
 <script>
-// ══════════════════════════════════════════════════════
-// TOKEN — REEMPLAZA CON TU TOKEN DE DERIV
-// ══════════════════════════════════════════════════════
-const TOKEN = "e1lRgxNoxWwBkzx";
 
-// ══════════════════════════════════════════════════════
-// CONFIGURACIÓN POR ACTIVO — Z-SCORE + TICKS OPTIMIZADOS
-// Basado en investigación estadística de mean reversion
-// por nivel de volatilidad de cada índice
-// ══════════════════════════════════════════════════════
-// ══════════════════════════════════════════════════════
-// ASSET_CFG — Parámetros calibrados por investigación estadística
-// Basado en simulaciones Monte Carlo + modelo CSPRNG de Deriv
-// Fuente: estudio de ingeniería inversa sobre probabilidad de reversión
-//
-// Z_MIN   : umbral mínimo de entrada (confianza >95%)
-// Z_OPT   : zona óptima de mayor probabilidad de retroceso
-// TICKS   : ventana de contrato (tick de retorno estimado)
-// COOLDOWN: tiempo mínimo entre operaciones por activo (ms)
-// CONFIRM : filtro de confirmación — esperar N ticks tras el pico
-//           antes de ejecutar (aumenta winrate real vs backtest)
-// ══════════════════════════════════════════════════════
-const ASSET_CFG = {
-  // ── v20: 3 TICKS FIJO en ambos modos — validado empíricamente ────────────
-  // El trader confirmó que 3 ticks es el punto dulce real en su operativa.
-  // Aplica igual a modo REV y TREND en todos los activos.
-  // ─────────────────────────────────────────────────────────────────────────
-  R_10: {
-    label:    "V_10",
-    vol:      "10%",
-    Z_MIN:    2.20,   // umbral mean reversion
-    Z_OPT:    2.50,
-    TICKS:    3,      // ✅ 3 ticks — validado empíricamente
-    TICKS_TR: 5,      // ✅ 3 ticks — igual en tendencia
-    COOLDOWN: 35000,
-    CONFIRM:  1,
-  },
-  R_25: {
-    label:    "V_25",
-    vol:      "25%",
-    Z_MIN:    2.20,
-    Z_OPT:    2.80,
-    TICKS:    3,
-    TICKS_TR: 4,
-    COOLDOWN: 35000,
-    CONFIRM:  1,
-  },
-  R_50: {
-    label:    "V_50",
-    vol:      "50%",
-    Z_MIN:    2.50,
-    Z_OPT:    3.00,
-    TICKS:    3,      // ✅ 3 ticks — validado empíricamente
-    TICKS_TR: 3,      // ✅ 3 ticks — igual en tendencia
-    COOLDOWN: 40000,
-    CONFIRM:  1,
-  },
-  R_75: {
-    label:    "V_75",
-    vol:      "75%",
-    Z_MIN:    2.70,
-    Z_OPT:    3.50,
-    TICKS:    3,
-    TICKS_TR: 4,
-    COOLDOWN: 45000,
-    CONFIRM:  2,
-  },
-  R_100: {
-    label:    "V_100",
-    vol:      "100%",
-    Z_MIN:    3.00,
-    Z_OPT:    3.50,
-    TICKS:    3,
-    TICKS_TR: 5,
-    COOLDOWN: 45000,
-    CONFIRM:  2,
-  },
+// ================== CONFIG SNIPER ==================
+const SNIPER_CONFIG = {
+  R_10:  { zEntry: 2.5, ticks: 4 },
+  R_25:  { zEntry: 2.8, ticks: 5 },
+  R_50:  { zEntry: 3.0, ticks: 6 },
+  R_75:  { zEntry: 3.2, ticks: 7 },
+  R_100: { zEntry: 3.5, ticks: 9 }
 };
 
-// Parámetros globales de sesión
-const CFG = {
-  MIN_BARS:   20,
-  HISTORY:    30,
-  PAUSE_MS:   30000,
-  MAX_OPS:    100,
-  // Dual Mode config
-  TREND_BARS: 3,     // últimas N barras para detectar tendencia
-  TREND_MIN:  0.80,  // % mínimo de barras en misma dirección = tendencia (70%)
-  Z_DROP:     0.50,  // caída mínima del Z desde el pico para confirmar reversión
-};
+// ================== VARIABLES ==================
+let running = false;
+let paused = false;
+let lossStreak = 0;
 
-// ══════════════════════════════════════════════════════
-// ESTADO GLOBAL
-// ══════════════════════════════════════════════════════
+let wins = 0;
+let losses = 0;
+let totalOps = 0;
+let profit = 0;
+
+// ================== API CONFIG ==================
+// 🔥 AQUI COLOCAS TU TOKEN REAL
+const API_TOKEN = "e1lRgxNoxWwBkzx";
+const APP_ID = "1089"; // puedes cambiarlo
+
 let ws;
-let bal=0, initBal=0;
-let running=false;
-let wins=0, lossC=0, total=0, profit=0, totalLoss=0;
-let lossStreak=0;
-let pauseUntil=0;
-let recent=[], invC=0, opLog=[];
-let STAKE=1.00, TP=5, SL=3;
 
-// Estado por activo: precios, último tick, z actual
-let assetState = {};
-// Activos seleccionados por el usuario
-let activeSymbols = [];
-// Contratos abiertos por activo
-let openContracts = {};
-// Mapa inverso: contract_id → símbolo (fix multi-activo)
-let contractToSym = {};
+// ================== CONEXIÓN ==================
+function connectAPI(){
 
-// ══════════════════════════════════════════════════════
-// SELECTOR DE ACTIVOS EN MODAL
-// ══════════════════════════════════════════════════════
-function toggleAsset(el){
-  el.classList.toggle("on");
-}
+  ws = new WebSocket(`wss://ws.deriv.com/websockets/v3?app_id=${APP_ID}`);
 
-function sp2(t,v){
-  if(t==="stake"){
-    document.getElementById("iStake").value=v;
-    document.querySelectorAll("#mOverlay .m-presets .mp").forEach(b=>{
-      if(b.closest(".m-group:not(.assets-grid)"))
-        b.className="mp"+(parseFloat(b.innerText)===v?" on":"");
-    });
-  }
-  else if(t==="tp") document.getElementById("iTP").value=v;
-  else              document.getElementById("iSL").value=v;
-}
-
-function refreshSummary(){}
-
-function launch(){
-  // Recoger activos seleccionados
-  const sel=[];
-  document.querySelectorAll(".asset-toggle.on").forEach(el=>{
-    sel.push(el.dataset.sym);
-  });
-  if(sel.length===0){
-    alert("Selecciona al menos 1 activo");
-    return;
-  }
-  activeSymbols = sel;
-
-  STAKE = Math.max(0.35, parseFloat(document.getElementById("iStake").value)||0.35);
-  TP    = parseFloat(document.getElementById("iTP").value)||10;
-  SL    = parseFloat(document.getElementById("iSL").value)||5;
-
-  document.getElementById("mOverlay").className="modal-overlay hidden";
-  document.getElementById("stakeEl").innerText="$"+STAKE.toFixed(2);
-  document.getElementById("mGoal").innerText="+$"+TP;
-  document.getElementById("mStop").innerText="-$"+SL;
-  document.getElementById("ftrTxt").innerText=`$${STAKE.toFixed(2)}/op · TP $${TP} · SL $${SL}`;
-  document.getElementById("mOps").innerText=`0/${CFG.MAX_OPS}`;
-
-  renderAssetsPanel();
-  startBot();
-}
-
-// ══════════════════════════════════════════════════════
-// PANEL DE ACTIVOS EN VIVO
-// ══════════════════════════════════════════════════════
-function renderAssetsPanel(){
-  const p=document.getElementById("assetsPanel");
-  p.innerHTML=activeSymbols.map(sym=>{
-    const cfg=ASSET_CFG[sym];
-    return `<div class="ap" id="ap_${sym}">
-      <div class="ap-sym">${cfg.label}</div>
-      <div class="ap-z" id="apz_${sym}">z: 0.00</div>
-      <div class="ap-st" id="apst_${sym}">SCAN</div>
-    </div>`;
-  }).join("");
-}
-
-function updateAssetPanel(sym, z, status, cls){
-  const ap=document.getElementById("ap_"+sym);
-  const apz=document.getElementById("apz_"+sym);
-  const apst=document.getElementById("apst_"+sym);
-  if(!ap) return;
-  ap.className="ap "+(cls||"active");
-  apz.innerText="z:"+(z>=0?"+":"")+parseFloat(z).toFixed(2);
-  apst.innerText=status;
-}
-
-// ══════════════════════════════════════════════════════
-// TOGGLE
-// ══════════════════════════════════════════════════════
-function toggle(){
-  if(!running){
-    document.getElementById("mOverlay").className="modal-overlay";
-  } else {
-    stopBot(false);
-  }
-}
-
-function setBtnState(on){
-  const b=document.getElementById("btnT");
-  if(on){ b.className="btn-toggle stop"; b.innerText="■ DETENER"; }
-  else   { b.className="btn-toggle go";  b.innerText="▶ INICIAR"; }
-}
-
-// ══════════════════════════════════════════════════════
-// REPORTE
-// ══════════════════════════════════════════════════════
-function showRep(){
-  const wr=total?(wins/total*100).toFixed(1):0;
-  const rv=document.getElementById("rRes");
-  rv.innerText=(profit>=0?"+$":"−$")+Math.abs(profit).toFixed(2);
-  rv.className="rs-v"+(profit>=0?" up":" dn");
-  document.getElementById("rWR").innerText=wr+"%";
-  document.getElementById("rW").innerText=wins;
-  document.getElementById("rL").innerText=lossC;
-  document.getElementById("rT").innerText=total;
-  document.getElementById("rActivos").innerText=activeSymbols.length||"-";
-  const c=document.getElementById("rOps");
-  c.innerHTML=opLog.length===0
-    ?'<div style="font-size:10px;color:var(--dim);text-align:center;padding:6px">Sin operaciones</div>'
-    :opLog.slice(-14).reverse().map(o=>`
-      <div class="op">
-        <span style="color:var(--dim);font-size:9px">${o.t}</span>
-        <span style="color:var(--g2);font-size:9px">${o.sym}</span>
-        <span style="color:var(--dim);font-size:8px">${o.mode||''}</span>
-        <span class="${o.w?'op-w':'op-l'}">${o.w?'WIN':'LOSS'}</span>
-        <span class="${o.w?'op-w':'op-l'}">${o.w?'+':'-'}$${o.p}</span>
-      </div>`).join("");
-  document.getElementById("rOverlay").className="rep-overlay";
-}
-function closeRep(){ document.getElementById("rOverlay").className="rep-overlay hidden"; }
-
-// ══════════════════════════════════════════════════════
-// SESIÓN COLOMBIA — ALL SESSIONS HABILITADAS
-// ══════════════════════════════════════════════════════
-function getSess(){
-  const col=new Date(Date.now()-5*60*60*1000);
-  const d=col.getUTCHours()+col.getUTCMinutes()/60;
-  if((d>=1&&d<7)||(d>=13&&d<19)) return {name:"🟢 ÓPTIMA",lv:"hot"};
-  if((d>=7&&d<10)||(d>=20&&d<24)||d<1) return {name:"🟡 NORMAL",lv:"warm"};
-  return {name:"🔴 BAJA",lv:"cold"};
-}
-
-// ══════════════════════════════════════════════════════
-// LOG
-// ══════════════════════════════════════════════════════
-function log(msg,t="i"){
-  const el=document.getElementById("log");
-  const ts=new Date().toTimeString().slice(0,8);
-  const c={w:"lw",l:"ll",i:"li",x:"lx",s:"ls",inv:"linv",g:"lg"}[t]||"li";
-  el.innerHTML+=`<div class="le"><span class="lt">${ts}</span><span class="${c}">${msg}</span></div>`;
-  el.scrollTop=el.scrollHeight;
-}
-
-// ══════════════════════════════════════════════════════
-// SEÑAL Z-SCORE — CALIBRADA POR ACTIVO
-// ══════════════════════════════════════════════════════
-function getSignal(sym){
-  const st  = assetState[sym];
-  const cfg = ASSET_CFG[sym];
-  if(!st || st.prices.length < CFG.MIN_BARS) return null;
-
-  const prices = st.prices;
-  const rets   = [];
-  for(let i=1;i<prices.length;i++) rets.push(prices[i]-prices[i-1]);
-
-  const n    = rets.length;
-  const mean = rets.reduce((a,b)=>a+b,0)/n;
-  const std  = Math.sqrt(rets.map(x=>(x-mean)**2).reduce((a,b)=>a+b,0)/n);
-  const last = rets[rets.length-1];
-  const z    = std>0 ? (last-mean)/std : 0;
-
-  st.lastZ = z;
-  if(Math.abs(z) > Math.abs(st.peakZ)) st.peakZ = z;
-
-  // ── DETECTOR DE TENDENCIA ─────────────────────────────────────────────
-  // Últimas TREND_BARS barras: si ≥70% van en la misma dirección → tendencia
-  const tBars    = rets.slice(-CFG.TREND_BARS);
-  const tTotal   = tBars.length;
-  const posRat   = tBars.filter(r=>r>0).length / tTotal;
-  const negRat   = tBars.filter(r=>r<0).length / tTotal;
-  let   trendDir = null;
-  let   trendStr = 0;
-  if(posRat >= CFG.TREND_MIN){ trendDir="up";   trendStr=posRat; }
-  else if(negRat >= CFG.TREND_MIN){ trendDir="down"; trendStr=negRat; }
-
-  const hasTrend    = trendDir !== null;
-  const hasReversion= Math.abs(z) >= cfg.Z_MIN;
-  const inOptZone   = Math.abs(z) >= cfg.Z_OPT;
-
-  // ── Panel visual ─────────────────────────────────────────────────────
-  if(hasTrend){
-    updateAssetPanel(sym, z,
-      "TREND "+(trendDir==="up"?"↑":"↓")+" "+(trendStr*100).toFixed(0)+"%",
-      "trading");
-  } else if(hasReversion){
-    updateAssetPanel(sym, z, inOptZone?"SEÑAL ⚡":"SCAN Z","trading");
-  } else {
-    updateAssetPanel(sym, z,"SCAN","active");
-  }
-  if(hasTrend||hasReversion) updateZDisplay(z);
-
-  if(!hasTrend && !hasReversion) return null;
-
-  // ── MODO TENDENCIA (prioridad — tendencia destruye la reversión) ──────
-  if(hasTrend){
-    return {
-      mode:    "TREND",
-      signal:  trendDir==="up" ? "PUT" : "CALL",
-      z:       z.toFixed(2),
-      ticks:   cfg.TICKS_TR,
-      inOptZone: false,
-      peakZ:   st.peakZ.toFixed(2),
-      tStr:    (trendStr*100).toFixed(0)+"%",
-    };
-  }
-
-  // ── MODO REVERSIÓN — solo sin tendencia ──────────────────────────────
-  return {
-    mode:      "REV",
-    signal:    z > 0 ? "CALL" : "PUT",
-    z:         z.toFixed(2),
-    ticks:     cfg.TICKS,
-    inOptZone: inOptZone,
-    peakZ:     st.peakZ.toFixed(2),
-    tStr:      null,
-  };
-}
-
-function updateZDisplay(z){
-  const absZ=Math.abs(z);
-  const fill=document.getElementById("zFill");
-  const val=document.getElementById("zVal");
-  if(z>=0){
-    fill.style.left="50%";
-    fill.style.width=Math.min(50,(absZ/3)*50)+"%";
-    fill.style.right="auto";
-  } else {
-    fill.style.right="50%";
-    fill.style.width=Math.min(50,(absZ/3)*50)+"%";
-    fill.style.left="auto";
-  }
-  // Color escalonado por zona: Gris→Cyan→Verde→Dorado→Rojo
-  const color = absZ>=3.5?"var(--red)":absZ>=3.0?"var(--gold)":absZ>=2.5?"var(--win)":absZ>=2.0?"var(--g1)":"var(--dim)";
-  fill.style.background=color;
-  val.style.color=color;
-  val.innerText=(z>=0?"+":"")+z.toFixed(2);
-}
-
-// ══════════════════════════════════════════════════════
-// TICK — POR ACTIVO CON FILTRO DE CONFIRMACIÓN
-// Lógica basada en investigación de Monte Carlo sobre CSPRNG de Deriv:
-// No entrar en el tick exacto del pico Z-Score, sino esperar
-// N ticks de confirmación (cfg.CONFIRM) para validar el fading
-// antes de ejecutar la orden. Aumenta winrate real vs backtest.
-// ══════════════════════════════════════════════════════
-function onTick(sym){
-  if(!running) return;
-  const now=Date.now();
-  const st=assetState[sym];
-  const cfg=ASSET_CFG[sym];
-
-  // Pausa global (3 pérdidas seguidas)
-  if(now<pauseUntil){
-    const s=Math.ceil((pauseUntil-now)/1000);
-    setState(`⏸ Pausa ${s}s`,"inv");
-    updateAssetPanel(sym, st.lastZ||0,"PAUSA","");
-    return;
-  }
-
-  if(total>=CFG.MAX_OPS){ setState("🔢 Máx ops","wait"); return; }
-
-  // Cooldown por activo
-  if(now - st.lastTrade < cfg.COOLDOWN) return;
-
-  // Contrato ya abierto en este activo
-  if(openContracts[sym] && openContracts[sym]!==false) return;
-
-  if(st.prices.length < CFG.MIN_BARS){
-    updateAssetPanel(sym, 0,"CARGANDO","");
-    return;
-  }
-
-  const res=getSignal(sym);
-
-  // ── FILTRO DE CONFIRMACIÓN DUAL MODE ──────────────────────────────────
-  // Fase 1: detectar señal → guardar como pendiente, NO ejecutar aún
-  if(res && !st.pendingSignal){
-    st.pendingSignal = res;
-    st.confirmTicks  = 0;
-    st.peakZ         = parseFloat(res.z);
-    const lbl = cfg.label;
-    const modeTag = res.mode==="TREND"
-      ? "📈 TREND "+res.tStr
-      : (res.inOptZone ? "🎯 ZONA ÓPT" : "⚡ SEÑAL");
-    log(`${modeTag} ${lbl} · z:${res.z} · modo:${res.mode} · esperando confirmación`,"x");
-    updateAssetPanel(sym, res.z,
-      res.mode==="TREND"
-        ? "TREND CONF..."
-        : "REV CONF...",
-      "trading");
-    return;
-  }
-
-  // Fase 2: contar confirmación mientras hay señal pendiente
-  if(st.pendingSignal){
-    st.confirmTicks++;
-    const currentZ = Math.abs(st.lastZ||0);
-    const peakAbs  = Math.abs(st.peakZ);
-    const lbl      = cfg.label;
-    const mode     = st.pendingSignal.mode;
-
-    if(mode === "REV"){
-      // ── REVERSIÓN: confirmar por caída de Z ≥ Z_DROP desde el pico ──
-      // Si el Z sigue subiendo → actualizar pico y esperar más
-      if(currentZ > peakAbs + 0.3){
-        st.peakZ = st.lastZ;
-        st.confirmTicks = 0;
-        st.pendingSignal.z = st.lastZ.toFixed(2);
-        st.pendingSignal.signal = st.lastZ>0 ? "PUT" : "CALL";
-        updateAssetPanel(sym, st.lastZ,"NUEVO PICO z:"+st.lastZ.toFixed(2),"trading");
-        return;
-      }
-      // Confirmar cuando el Z cayó al menos Z_DROP desde el pico
-      const zDrop = peakAbs - currentZ;
-      updateAssetPanel(sym, st.lastZ||0,
-        "REV CONF "+zDrop.toFixed(2)+"/"+CFG.Z_DROP,"trading");
-      if(zDrop < CFG.Z_DROP) return; // aún no cayó suficiente
-
-    } else {
-      // ── TENDENCIA: confirmar con ticks fijos (momentum no espera) ──
-      updateAssetPanel(sym, st.lastZ||0,
-        "TREND CONF ("+st.confirmTicks+"/"+cfg.CONFIRM+")","trading");
-      if(st.confirmTicks < cfg.CONFIRM) return;
-    }
-
-    // Fase 3: confirmación alcanzada → ejecutar
-    const {signal,ticks,z,peakZ,mode:m,tStr}=st.pendingSignal;
-    st.pendingSignal = null;
-    st.confirmTicks  = 0;
-    st.peakZ         = 0;
+  ws.onopen = () => {
+    log("🔌 Conectado a Deriv", "lg");
 
     ws.send(JSON.stringify({
-      buy:1, price:STAKE,
-      parameters:{
-        amount:STAKE, basis:"stake",
-        contract_type:signal, currency:"USD",
-        duration:ticks, duration_unit:"t",
-        symbol:sym
-      }
+      authorize: API_TOKEN
     }));
+  };
 
-    st.lastTrade = now;
-    st.lastMode  = m;
-    openContracts[sym] = "pending";
+  ws.onmessage = (msg) => {
+    let data = JSON.parse(msg.data);
 
-    const lbl2   = cfg.label;
-    const mIcon  = m==="TREND" ? "📈" : "🔄";
-    const mInfo  = m==="TREND" ? "TREND "+tStr : "REV pico:"+peakZ;
-    log(`${mIcon} ${lbl2} → ${signal} $${STAKE} · z:${z} · ${mInfo} · ${ticks}t`,"i");
-    setState(`${lbl2}: ${m} ${signal} z:${z}`,"act");
-    updateAssetPanel(sym, z, "OPERANDO ⚡","trading");
-    updateUI();
-    return;
-
-  } // ← cierre if(st.pendingSignal) Fase 2
-
-  // Sin señal y sin pendiente — escaneo normal
-  if(!res){
-    if(st.pendingSignal){
-      st.pendingSignal=null; st.confirmTicks=0; st.peakZ=0;
-    }
-    invC++;
-    document.getElementById("invEl").innerText=invC;
-  }
+    // 👉 aquí debes conectar tu feed real si ya lo tienes
+  };
 }
 
-// ══════════════════════════════════════════════════════
-// RESULTADO
-// ══════════════════════════════════════════════════════
-function onResult(sym, pnl){
-  const ts=new Date().toTimeString().slice(0,8);
-  const lbl=ASSET_CFG[sym]?.label||sym;
-  profit+=pnl; total++;
-  openContracts[sym]=null;
-  // Limpiar filtro de confirmación al recibir resultado
-  if(assetState[sym]){ assetState[sym].pendingSignal=null; assetState[sym].confirmTicks=0; assetState[sym].peakZ=0; }
+// ================== UTIL ==================
+function log(msg, type="li"){
+  console.log(msg);
+}
 
-  if(pnl>0){
-    wins++; lossStreak=0;
-    recent.push("w");
-    opLog.push({t:ts,sym:lbl,w:true,s:STAKE.toFixed(2),p:pnl.toFixed(2),mode:assetState[sym]?.lastMode||'?'});
-    log(`✅ ${lbl} WIN  +$${pnl.toFixed(2)}   acum: ${profit>=0?"+$":"−$"}${Math.abs(profit).toFixed(2)}`,"w");
-    updateAssetPanel(sym, assetState[sym]?.lastZ||0,"WIN ✅","won");
+// ================== FILTROS ==================
+function sniperTrendOK(trend){
+  return trend < 70;
+}
+
+function sniperReversal(ticks){
+  if (!ticks || ticks.length < 3) return false;
+
+  let a = ticks[ticks.length - 1];
+  let b = ticks[ticks.length - 2];
+  let c = ticks[ticks.length - 3];
+
+  return (c > b && b < a) || (c < b && b > a);
+}
+
+function sniperShouldEnter({ zScore, trend, ticks, symbol }){
+
+  let conf = SNIPER_CONFIG[symbol];
+  if (!conf) return false;
+
+  let zOk = Math.abs(zScore) >= conf.zEntry;
+  let trendOk = sniperTrendOK(trend);
+  let reversalOk = sniperReversal(ticks);
+
+  return zOk && trendOk && reversalOk;
+}
+
+// ================== DIRECCIÓN ==================
+function sniperDirection(zScore){
+  if (zScore > 0) return "PUT";
+  if (zScore < 0) return "CALL";
+  return null;
+}
+
+// ================== CONTROL RIESGO ==================
+function sniperOnResult(win){
+
+  if (win){
+    lossStreak = 0;
+    wins++;
   } else {
-    lossC++; lossStreak++; totalLoss+=Math.abs(pnl);
-    recent.push("l");
-    opLog.push({t:ts,sym:lbl,w:false,s:STAKE.toFixed(2),p:Math.abs(pnl).toFixed(2),mode:assetState[sym]?.lastMode||'?'});
-    log(`❌ ${lbl} LOSS  $${Math.abs(pnl).toFixed(2)}   acum: ${profit>=0?"+$":"−$"}${Math.abs(profit).toFixed(2)}`,"l");
-    updateAssetPanel(sym, assetState[sym]?.lastZ||0,"LOSS ❌","lost");
+    lossStreak++;
+    losses++;
   }
 
-  document.getElementById("totEl").innerText=total;
-  if(recent.length>15) recent.shift();
-  renderDots();
+  totalOps++;
+
+  if (lossStreak >= 2){
+    paused = true;
+    log("⛔ PAUSA 10 MIN", "ls");
+
+    setTimeout(()=>{
+      paused = false;
+      lossStreak = 0;
+      log("✅ REACTIVADO", "lg");
+    }, 600000);
+  }
+
   updateUI();
-
-  if(lossStreak>=3){
-    pauseUntil=Date.now()+CFG.PAUSE_MS;
-    log(`⏸ Pausa ${CFG.PAUSE_MS/1000}s — 3 pérdidas seguidas`,"x");
-    lossStreak=0;
-  }
-
-  if(profit>=TP)    { log(`🏆 TAKE PROFIT +$${profit.toFixed(2)}`,"g"); stopBot(true); return; }
-  if(profit<=-SL)   { log(`🛑 STOP LOSS −$${Math.abs(profit).toFixed(2)}`,"s"); stopBot(true); return; }
-  if(total>=CFG.MAX_OPS){ log(`🔢 Máx ${CFG.MAX_OPS} ops — cerrado`,"x"); stopBot(true); return; }
 }
 
-// ══════════════════════════════════════════════════════
-// UI
-// ══════════════════════════════════════════════════════
+// ================== EJECUCIÓN REAL ==================
+function ejecutarTrade(symbol, direction){
+
+  let conf = SNIPER_CONFIG[symbol];
+
+  log(`🎯 ${symbol} ${direction}`, "lx");
+
+  // ======================
+  // 🔥 AQUI VA TU COMPRA REAL
+  // ======================
+
+  /*
+  ws.send(JSON.stringify({
+    buy: 1,
+    price: 1,
+    parameters: {
+      amount: 1,
+      basis: "stake",
+      contract_type: direction === "CALL" ? "CALL" : "PUT",
+      currency: "USD",
+      duration: conf.ticks,
+      duration_unit: "t",
+      symbol: symbol
+    }
+  }));
+  */
+
+  // ======================
+  // 🔥 SIMULACIÓN (BORRAR CUANDO USES API)
+  let win = Math.random() > 0.35;
+
+  if (win){
+    profit += 0.95;
+    log("✅ WIN");
+  } else {
+    profit -= 1;
+    log("❌ LOSS");
+  }
+
+  sniperOnResult(win);
+}
+
+// ================== PROCESADOR ==================
+function processSignal(data){
+
+  if (!running || paused) return;
+
+  let { zScore, trend, ticks, symbol } = data;
+
+  if (!sniperShouldEnter({ zScore, trend, ticks, symbol })){
+    log(`🚫 ${symbol} filtrado`, "linv");
+    return;
+  }
+
+  let direction = sniperDirection(zScore);
+  if (!direction) return;
+
+  ejecutarTrade(symbol, direction);
+}
+
+// ================== UI ==================
 function updateUI(){
-  const wr=total?(wins/total*100).toFixed(1):0;
-  document.getElementById("bal").innerText=bal.toFixed(2);
 
-  const pe=document.getElementById("prof");
-  pe.innerText=(profit>=0?"+$":"−$")+Math.abs(profit).toFixed(2);
-  pe.className="sv"+(profit>0?" up":profit<0?" dn":"");
+  let wr = totalOps > 0 ? ((wins / totalOps) * 100).toFixed(1) : 0;
 
-  document.getElementById("wr").innerText=wr+"%";
-  document.getElementById("wr").className="sv"+(wr>=70?" up":wr>=52.6?" go":"");
-  document.getElementById("lossEl").innerText="$"+totalLoss.toFixed(2);
-
-  const mp=document.getElementById("mProg");
-  mp.innerText=(profit>=0?"+$":"−$")+Math.abs(profit).toFixed(2);
-  mp.className="mv"+(profit>=TP?" g":profit<=-SL?" r":"y");
-
-  document.getElementById("mOps").innerText=`${total}/${CFG.MAX_OPS}`;
-
-  const pct=Math.max(0,Math.min(100,(profit/TP)*100));
-  document.getElementById("pFill").style.width=pct+"%";
+  document.getElementById("wr").innerText = wr + "%";
+  document.getElementById("bal").innerText = profit.toFixed(2);
+  document.getElementById("prof").innerText = profit.toFixed(2);
+  document.getElementById("lossEl").innerText = losses;
 }
 
-function updateClock(){
-  const col=new Date(Date.now()-5*60*60*1000);
-  const h=col.getUTCHours(), mm=String(col.getUTCMinutes()).padStart(2,"0");
-  document.getElementById("clock").innerText=`${h%12||12}:${mm} ${h<12?"AM":"PM"}`;
-  const s=getSess();
-  const el=document.getElementById("sessEl");
-  el.className="sess-pill "+s.lv;
-  el.innerText=s.name;
+// ================== BOT ==================
+function toggle(){
+
+  running = !running;
+
+  let btn = document.getElementById("btnT");
+
+  if (running){
+    btn.innerText = "⛔ DETENER";
+    btn.classList.add("stop");
+
+    connectAPI();
+    fakeFeed();
+
+  } else {
+    btn.innerText = "▶ INICIAR";
+    btn.classList.remove("stop");
+  }
 }
 
-function setState(txt,type){
-  document.getElementById("stateInfo").innerHTML=(type==="act"?`<span class="spin"></span>`:"")+txt;
-  const c=document.getElementById("chip");
-  c.className="chip"+(type==="act"?" act":type==="inv"?" inv":type==="wait"?" wait":"");
-  c.innerText=type==="act"?"ACTIVO":type==="inv"?"FILTRADO":type==="wait"?"ESPERA":"SCAN";
+// ================== SIMULADOR ==================
+function fakeFeed(){
+
+  setInterval(()=>{
+
+    if (!running) return;
+
+    let symbols = ["R_10","R_25","R_50"];
+
+    let symbol = symbols[Math.floor(Math.random()*symbols.length)];
+
+    let data = {
+      symbol,
+      zScore: (Math.random()*6 - 3),
+      trend: Math.random()*100,
+      ticks: [
+        Math.random()*100,
+        Math.random()*100,
+        Math.random()*100
+      ]
+    };
+
+    processSignal(data);
+
+  }, 2000);
 }
 
-function renderDots(){
-  document.getElementById("dots").innerHTML=
-    recent.map(r=>`<div class="d ${r}"></div>`).join("");
-}
-
-setInterval(updateClock,1000);
-
-// ══════════════════════════════════════════════════════
-// WEBSOCKET — UN SOLO WS PARA TODOS LOS ACTIVOS
-// ══════════════════════════════════════════════════════
-function startBot(){
-  if(running) return;
-
-  // Reset global
-  wins=0;lossC=0;total=0;profit=0;totalLoss=0;
-  lossStreak=0;pauseUntil=0;
-  recent=[];invC=0;opLog=[];
-  openContracts={};
-  contractToSym={};
-  document.getElementById("invEl").innerText="0";
-  document.getElementById("totEl").innerText="0";
-  renderDots();updateUI();updateClock();
-  updateZDisplay(0);
-
-  // Inicializar estado por activo
-  assetState={};
-  activeSymbols.forEach(sym=>{
-    assetState[sym]={prices:[], lastTrade:0, lastZ:0, peakZ:0, confirmTicks:0, pendingSignal:null};
-    openContracts[sym]=null;
-  });
-
-  ws=new WebSocket("wss://ws.binaryws.com/websockets/v3?app_id=1089");
-  ws.onopen=()=>ws.send(JSON.stringify({authorize:TOKEN}));
-
-  ws.onmessage=(e)=>{
-    const d=JSON.parse(e.data);
-
-    // Autorización
-    if(d.authorize){
-      running=true; setBtnState(true);
-      initBal=d.authorize.balance; bal=initBal;
-      document.getElementById("badge").className="badge live";
-      document.getElementById("bTxt").innerText="ONLINE";
-      log(`🔐 Conectado · $${bal.toFixed(2)}`,"i");
-
-      log(`⚙ Stake $${STAKE} · TP +$${TP} · SL -$${SL}`,"i");
-      const _ops=Math.ceil(TP/(STAKE*0.87)), _mn=Math.ceil(_ops*18/60), _mx=Math.ceil(_ops*45/60);
-      log(`⏱ Est: ~${_ops} ops ganadoras → ${_mn} a ${_mx} min de sesión`,"x");
-      log(`📊 Activos: ${activeSymbols.map(s=>ASSET_CFG[s].label).join(" · ")}`,"i");
-      // Suscribir todos los activos seleccionados
-      activeSymbols.forEach(sym=>{
-        ws.send(JSON.stringify({ticks:sym, subscribe:1}));
-        log(`🔗 ${ASSET_CFG[sym].label} · Z≥${ASSET_CFG[sym].Z_MIN} · Ópt≥${ASSET_CFG[sym].Z_OPT} · ${ASSET_CFG[sym].TICKS}t · confirm:${ASSET_CFG[sym].CONFIRM}t`,"i");
-      });
-      ws.send(JSON.stringify({balance:1}));
-      updateUI();
-    }
-
-    // Balance
-    if(d.balance){ bal=d.balance.balance; updateUI(); }
-
-    // Tick de cualquier activo suscrito
-    if(d.tick){
-      const sym=d.tick.symbol;
-      if(assetState[sym]){
-        assetState[sym].prices.push(d.tick.quote);
-        if(assetState[sym].prices.length>CFG.HISTORY)
-          assetState[sym].prices.shift();
-        if(running) onTick(sym);
-      }
-    }
-
-    // Compra ejecutada — registrar contract_id por activo
-    // BUG FIX: usar poc.underlying para identificar activo con certeza
-    if(d.buy){
-      const cid = d.buy.contract_id;
-      // Buscar cuál activo tiene "pending" — el que acaba de enviar la orden
-      const pendingSym = activeSymbols.find(s=>openContracts[s]==="pending");
-      if(pendingSym){
-        openContracts[pendingSym]=cid; // guardar contract_id real
-        contractToSym[cid]=pendingSym; // mapa inverso contract_id → símbolo
-      }
-      ws.send(JSON.stringify({
-        proposal_open_contract:1,
-        contract_id:cid,
-        subscribe:1
-      }));
-    }
-
-    // Resultado del contrato
-    if(d.proposal_open_contract && d.proposal_open_contract.is_sold){
-      const poc=d.proposal_open_contract;
-      // BUG FIX: usar mapa inverso contract_id→sym, luego poc.underlying, nunca fallback a R_50
-      const sym = contractToSym[poc.contract_id]
-               || activeSymbols.find(s=>poc.underlying===s)
-               || activeSymbols.find(s=>openContracts[s]===poc.contract_id);
-      if(!sym){ log("⚠ Sin activo para contrato: "+poc.contract_id,"x"); return; }
-      delete contractToSym[poc.contract_id];
-      openContracts[sym]=null;
-      onResult(sym, parseFloat(poc.profit));
-    }
-
-    if(d.error) log(`⚠ ${d.error.message}`,"x");
-  };
-
-  ws.onerror=()=>log("❌ Error WebSocket","s");
-  ws.onclose=()=>{
-    if(running){
-      running=false; setBtnState(false);
-      document.getElementById("badge").className="badge";
-      document.getElementById("bTxt").innerText="OFFLINE";
-      log("🔌 Desconectado","x");
-    }
-  };
-}
-
-function stopBot(auto=false){
-  if(ws) ws.close();
-  running=false; setBtnState(false);
-  document.getElementById("badge").className="badge";
-  document.getElementById("bTxt").innerText="OFFLINE";
-  setState("Sesión finalizada","");
-  updateZDisplay(0);
-  updateUI();
-  if(!auto) log("⏹ Detenido manualmente","x");
-  setTimeout(showRep,400);
-}
 </script>
-</body>
-</html>
