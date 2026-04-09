@@ -455,7 +455,7 @@ const ASSET_CFG = {
     Z_MIN:    2.70,
     Z_OPT:    3.50,
     TICKS:    3,
-    TICKS_TR: 2,
+    TICKS_TR: 4,
     COOLDOWN: 45000,
     CONFIRM:  2,
   },
@@ -465,7 +465,7 @@ const ASSET_CFG = {
     Z_MIN:    3.00,
     Z_OPT:    3.50,
     TICKS:    3,
-    TICKS_TR: 1,
+    TICKS_TR: 5,
     COOLDOWN: 45000,
     CONFIRM:  2,
   },
@@ -474,12 +474,12 @@ const ASSET_CFG = {
 // Parámetros globales de sesión
 const CFG = {
   MIN_BARS:   20,
-  HISTORY:    80,
+  HISTORY:    30,
   PAUSE_MS:   30000,
   MAX_OPS:    100,
   // Dual Mode config
-  TREND_BARS: 5,     // últimas N barras para detectar tendencia
-  TREND_MIN:  0.70,  // % mínimo de barras en misma dirección = tendencia (70%)
+  TREND_BARS: 3,     // últimas N barras para detectar tendencia
+  TREND_MIN:  0.80,  // % mínimo de barras en misma dirección = tendencia (70%)
   Z_DROP:     0.50,  // caída mínima del Z desde el pico para confirmar reversión
 };
 
@@ -698,7 +698,7 @@ function getSignal(sym){
   if(hasTrend){
     return {
       mode:    "TREND",
-      signal:  trendDir==="up" ? "PUT" : "PUT",
+      signal:  trendDir==="up" ? "PUT" : "CALL",
       z:       z.toFixed(2),
       ticks:   cfg.TICKS_TR,
       inOptZone: false,
@@ -710,7 +710,7 @@ function getSignal(sym){
   // ── MODO REVERSIÓN — solo sin tendencia ──────────────────────────────
   return {
     mode:      "REV",
-    signal:    z > 0 ? "PUT" : "PUT",
+    signal:    z > 0 ? "CALL" : "PUT",
     z:         z.toFixed(2),
     ticks:     cfg.TICKS,
     inOptZone: inOptZone,
