@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>APEX v21</title>
+<title>APEX v21.1</title>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Rajdhani:wght@400;600;700&display=swap');
 
@@ -496,7 +496,7 @@ body {
 <!-- MODAL CONFIG -->
 <div class="overlay" id="mOverlay">
   <div class="modal">
-    <div class="m-title">APEX v21</div>
+    <div class="m-title">APEX v21.1</div>
     <div class="m-sub">Z-SCORE · REVERSIÓN CONFIRMADA</div>
 
     <div class="m-row">
@@ -581,7 +581,7 @@ body {
     <div class="top-row">
       <div>
         <div class="brand">APE<span>X</span></div>
-        <div class="ver">v21 · Z-SCORE · REVERSIÓN · 3T</div>
+        <div class="ver">v21.1 · Z-SCORE · REVERSIÓN · 5/4/3T</div>
       </div>
       <div class="badge" id="badge"><span class="dot"></span><span id="bTxt">OFFLINE</span></div>
     </div>
@@ -664,7 +664,7 @@ body {
 
 <script>
 // ════════════════════════════════════════════════════════
-// APEX v21 — Z-SCORE PURO · REVERSIÓN CONFIRMADA
+// APEX v21.1 — Z-SCORE PURO · REVERSIÓN CONFIRMADA
 //
 // FILOSOFÍA:
 // Pocas operaciones, alta calidad. El bot NO entra a menos
@@ -692,8 +692,11 @@ const TOKEN = "e1lRgxNoxWwBkzx";
 // Z_DROP   : caída requerida del Z desde el pico para confirmar reversión
 // COOLDOWN : tiempo mínimo entre ops por activo (ms)
 const ASSETS = {
-  R_10: { label:"V_10", Z_MIN:2.8, Z_DROP:0.6, TICKS:3, COOLDOWN:45000 },
-  R_25: { label:"V_25", Z_MIN:3.0, Z_DROP:0.6, TICKS:3, COOLDOWN:45000 },
+  // V_10: reversión lenta y gradual → 5 ticks para capturar el recorrido completo
+  R_10: { label:"V_10", Z_MIN:2.8, Z_DROP:0.6, TICKS:5, COOLDOWN:45000 },
+  // V_25: reversión media → 4 ticks, un tick extra marca diferencia
+  R_25: { label:"V_25", Z_MIN:3.0, Z_DROP:0.6, TICKS:4, COOLDOWN:45000 },
+  // V_50: validado empíricamente → 3 ticks es el punto dulce
   R_50: { label:"V_50", Z_MIN:3.2, Z_DROP:0.7, TICKS:3, COOLDOWN:50000 },
 };
 
