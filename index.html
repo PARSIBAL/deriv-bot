@@ -537,15 +537,15 @@ body {
     <div class="assets-grid">
       <div class="atog on" data-sym="R_10" onclick="this.classList.toggle('on')">
         <div class="atog-sym">V_10</div>
-        <div class="atog-z">Z ≥ 2.2</div>
+        <div class="atog-z">Z ≥ 1.8</div>
       </div>
       <div class="atog on" data-sym="R_25" onclick="this.classList.toggle('on')">
         <div class="atog-sym">V_25</div>
-        <div class="atog-z">Z ≥ 2.4</div>
+        <div class="atog-z">Z ≥ 1.9</div>
       </div>
       <div class="atog on" data-sym="R_50" onclick="this.classList.toggle('on')">
         <div class="atog-sym">V_50</div>
-        <div class="atog-z">Z ≥ 2.6</div>
+        <div class="atog-z">Z ≥ 2.0</div>
       </div>
     </div>
 
@@ -692,9 +692,9 @@ const TOKEN = "e1lRgxNoxWwBkzx";
 // Z_DROP   : caída requerida del Z desde el pico para confirmar reversión
 // COOLDOWN : tiempo mínimo entre ops por activo (ms)
 const ASSETS = {
-  R_10: { label:"V_10", Z_MIN:2.2, Z_DROP:0.4, TICKS:5, COOLDOWN:35000 },
-  R_25: { label:"V_25", Z_MIN:2.4, Z_DROP:0.4, TICKS:4, COOLDOWN:35000 },
-  R_50: { label:"V_50", Z_MIN:2.6, Z_DROP:0.5, TICKS:3, COOLDOWN:40000 },
+  R_10: { label:"V_10", Z_MIN:1.8, Z_DROP:0.3, TICKS:5, COOLDOWN:30000 },
+  R_25: { label:"V_25", Z_MIN:1.9, Z_DROP:0.3, TICKS:4, COOLDOWN:30000 },
+  R_50: { label:"V_50", Z_MIN:2.0, Z_DROP:0.3, TICKS:3, COOLDOWN:30000 },
 };
 
 // ── CONFIG GLOBAL ────────────────────────────────────────
@@ -878,7 +878,6 @@ function analyze(sym){
   const cfg = ASSETS[sym];
   if(!st || st.prices.length < CFG.MIN_BARS) return null;
 
-  // ── Estadística ───────────────────────────────────────
   const rets=[];
   for(let i=1;i<st.prices.length;i++)
     rets.push(st.prices[i]-st.prices[i-1]);
@@ -893,50 +892,35 @@ function analyze(sym){
   const absZ = Math.abs(z);
   st.lastZ   = z;
 
-  // ── Fase 1: DETECTAR PICO ─────────────────────────────
-  // Si el Z supera el umbral y es mayor que el pico guardado
-  // → actualizar pico y esperar la caída
+  // ── CONDICIÓN 1: Z supera umbral → guardar pico ──────
   if(absZ >= cfg.Z_MIN){
     if(absZ >= Math.abs(st.peakZ)){
-      st.peakZ = z; // guardar nuevo pico
+      st.peakZ = z;
       setZA(sym, z, 'PICO z:'+z.toFixed(2), 'signal');
       showZ(z);
       return null;
     }
 
-    // ── Fase 2: CONFIRMAR CAÍDA DEL Z ────────────────────
-    // El pico ya fue registrado, ahora verificar que cayó Z_DROP
+    // ── CONDICIÓN 2: Z cayó Z_DROP desde el pico → ENTRAR
     if(st.peakZ !== 0){
       const drop = Math.abs(st.peakZ) - absZ;
-
       if(drop < cfg.Z_DROP){
-        // Aún cayendo — mostrar progreso
         setZA(sym, z, 'CONF '+drop.toFixed(2)+'/'+cfg.Z_DROP, 'signal');
         showZ(st.peakZ);
         return null;
       }
-
-      // ── Fase 3: VELA CONFIRMATORIA ───────────────────────
-      // El último tick debe ir en dirección OPUESTA al pico
-      const confirms = st.peakZ > 0 ? (last < 0) : (last > 0);
-      if(!confirms){
-        setZA(sym, z, 'VELA...', 'signal');
-        return null;
-      }
-
-      // ── LAS 3 FASES OK → EJECUTAR ────────────────────────
+      // ✅ Las 2 condiciones se cumplen → señal
       const signal = st.peakZ > 0 ? 'PUT' : 'CALL';
       const snap   = { signal, z:z.toFixed(2), peakZ:st.peakZ.toFixed(2), drop:drop.toFixed(2) };
-      st.peakZ = 0; // limpiar para próxima señal
-      setZA(sym, z, '⚡ SEÑAL', 'trading');
+      st.peakZ = 0;
+      setZA(sym, z, '⚡ ENTRANDO', 'trading');
       showZ(parseFloat(snap.peakZ));
       return snap;
     }
   }
 
-  // ── Sin señal — limpiar pico si el Z cayó muy lejos ──
-  // Solo limpiar si el Z está muy por debajo del umbral (no oscilando cerca)
-  if(st.peakZ !== 0 && absZ < cfg.Z_MIN * 0.4){
+  // Limpiar pico si Z cayó muy lejos del umbral
+  if(st.peakZ !== 0 && absZ < cfg.Z_MIN * 0.3){
     st.peakZ = 0;
   }
   setZA(sym, z, 'SCAN', 'active');
