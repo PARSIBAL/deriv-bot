@@ -3,293 +3,175 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>SPIKE HUNTER — Boom & Crash</title>
+<title>TREND HUNTER — Boom & Crash</title>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Barlow+Condensed:wght@300;400;600;700;800&display=swap');
 
 :root {
-  --bg0:   #07080d;
-  --bg1:   #0c0e16;
-  --bg2:   #11141f;
-  --bg3:   #161a27;
-  --gold:  #f0a500;
-  --gold2: #ffd166;
-  --red:   #ef233c;
-  --green: #06d6a0;
-  --blue:  #4cc9f0;
-  --dim:   #2a3555;
-  --txt:   #7a90c0;
-  --brd:   rgba(240,165,0,0.1);
-  --spike: #ff6b35;
+  --bg0:#07080d; --bg1:#0c0e16; --bg2:#11141f; --bg3:#161a27;
+  --blue:#4cc9f0; --blue2:#0096c7; --green:#06d6a0; --red:#ef233c;
+  --gold:#f0a500; --dim:#2a3555; --txt:#7a90c0; --brd:rgba(76,201,240,0.1);
+  --warn:#ffd166;
 }
-
-*{ box-sizing:border-box; margin:0; padding:0; }
-
-body {
-  background: var(--bg0);
-  font-family: 'Barlow Condensed', sans-serif;
-  min-height: 100vh;
-  display: flex; align-items: center; justify-content: center;
-  padding: 12px;
+*{box-sizing:border-box;margin:0;padding:0;}
+body{
+  background:var(--bg0); font-family:'Barlow Condensed',sans-serif;
+  min-height:100vh; display:flex; align-items:center; justify-content:center;
+  padding:12px;
   background-image:
-    radial-gradient(ellipse at 10% 50%, rgba(240,165,0,0.04) 0%, transparent 50%),
-    radial-gradient(ellipse at 90% 20%, rgba(255,107,53,0.03) 0%, transparent 50%);
+    radial-gradient(ellipse at 15% 40%,rgba(76,201,240,0.04) 0%,transparent 55%),
+    radial-gradient(ellipse at 85% 70%,rgba(6,214,160,0.03) 0%,transparent 55%);
 }
+.wrap{width:100%;max-width:420px;}
 
-.wrap { width:100%; max-width:420px; }
+/* MODAL */
+.overlay{position:fixed;inset:0;background:rgba(7,8,13,.97);display:flex;align-items:center;justify-content:center;z-index:999;backdrop-filter:blur(16px);transition:opacity .3s;}
+.overlay.hidden{opacity:0;pointer-events:none;}
+.modal{background:var(--bg1);border:1px solid var(--brd);border-radius:20px;padding:26px 22px;max-width:360px;width:95%;position:relative;overflow:hidden;max-height:92vh;overflow-y:auto;}
+.modal::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,transparent,var(--blue),var(--green),transparent);}
+.m-title{font-family:'Share Tech Mono',monospace;font-size:13px;color:var(--blue);letter-spacing:5px;text-align:center;margin-bottom:3px;}
+.m-sub{font-size:11px;color:var(--dim);text-align:center;letter-spacing:2px;margin-bottom:20px;}
+.m-lbl{font-size:10px;color:var(--txt);letter-spacing:2px;margin-bottom:6px;text-transform:uppercase;}
+.m-inp{width:100%;background:var(--bg3);border:1px solid var(--dim);border-radius:10px;color:#fff;font-family:'Share Tech Mono',monospace;font-size:15px;padding:11px;outline:none;text-align:center;transition:border .2s;margin-bottom:12px;}
+.m-inp:focus{border-color:var(--blue);}
+.m-inp[type="password"]{font-size:18px;letter-spacing:4px;}
+.m-row{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:4px;}
+.presets{display:flex;gap:5px;margin-bottom:12px;flex-wrap:wrap;}
+.pr{font-size:9px;padding:4px 8px;border:1px solid var(--dim);border-radius:6px;color:var(--dim);background:var(--bg3);cursor:pointer;transition:all .2s;font-family:'Share Tech Mono',monospace;}
+.pr:hover{border-color:var(--blue);color:var(--blue);}
+.pr.on{border-color:var(--blue);color:#000;background:var(--blue);}
+.sym-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:7px;margin-bottom:18px;}
+.sym-btn{background:var(--bg3);border:1px solid var(--dim);border-radius:10px;padding:10px 6px;text-align:center;cursor:pointer;transition:all .2s;}
+.sym-btn.on.boom{border-color:var(--green);background:rgba(6,214,160,.08);}
+.sym-btn.on.crash{border-color:var(--red);background:rgba(239,35,60,.08);}
+.sym-name{font-size:11px;font-weight:700;color:var(--txt);font-family:'Share Tech Mono',monospace;}
+.sym-btn.on.boom .sym-name{color:var(--green);}
+.sym-btn.on.crash .sym-name{color:var(--red);}
+.sym-freq{font-size:8px;color:var(--dim);margin-top:3px;}
+.sym-btn.on .sym-freq{color:var(--txt);}
+.divider{height:1px;background:var(--brd);margin:14px 0;}
+.m-btn{width:100%;font-family:'Share Tech Mono',monospace;font-size:13px;letter-spacing:3px;padding:15px;border:none;border-radius:12px;background:linear-gradient(135deg,var(--blue2),var(--blue));color:#000;cursor:pointer;transition:all .2s;}
+.m-btn:hover{box-shadow:0 4px 24px rgba(76,201,240,.35);}
 
-/* ── MODAL ── */
-.overlay {
-  position:fixed; inset:0;
-  background:rgba(7,8,13,0.97);
-  display:flex; align-items:center; justify-content:center;
-  z-index:999; backdrop-filter:blur(16px);
-  transition:opacity .3s;
-}
-.overlay.hidden { opacity:0; pointer-events:none; }
-.modal {
-  background:var(--bg1);
-  border:1px solid var(--brd);
-  border-radius:20px; padding:26px 22px;
-  max-width:360px; width:95%;
-  position:relative; overflow:hidden;
-  max-height:92vh; overflow-y:auto;
-}
-.modal::before {
-  content:''; position:absolute; top:0; left:0; right:0; height:2px;
-  background:linear-gradient(90deg,transparent,var(--gold),var(--spike),transparent);
-}
-.m-title {
-  font-family:'Share Tech Mono',monospace;
-  font-size:14px; color:var(--gold);
-  letter-spacing:5px; text-align:center; margin-bottom:3px;
-}
-.m-sub { font-size:12px; color:var(--dim); text-align:center; letter-spacing:2px; margin-bottom:20px; }
+/* REPORTE */
+.rep-overlay{position:fixed;inset:0;background:rgba(7,8,13,.97);display:flex;align-items:center;justify-content:center;z-index:998;backdrop-filter:blur(16px);transition:opacity .3s;}
+.rep-overlay.hidden{opacity:0;pointer-events:none;}
+.rep{background:var(--bg1);border:1px solid var(--brd);border-radius:20px;padding:22px 20px;max-width:360px;width:95%;max-height:88vh;overflow-y:auto;}
+.rep-title{font-family:'Share Tech Mono',monospace;font-size:11px;color:var(--blue);letter-spacing:3px;text-align:center;margin-bottom:16px;}
+.rep-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px;}
+.rbox{background:var(--bg3);border:1px solid var(--brd);border-radius:10px;padding:12px 8px;text-align:center;}
+.rbox-l{font-size:8px;color:var(--dim);letter-spacing:1px;margin-bottom:4px;}
+.rbox-v{font-size:20px;font-weight:700;color:#fff;font-family:'Share Tech Mono',monospace;}
+.rbox-v.up{color:var(--green);}.rbox-v.dn{color:var(--red);}
+.rbox-v.go{color:var(--gold);}.rbox-v.cy{color:var(--blue);}
+.rep-ops{background:var(--bg3);border:1px solid var(--brd);border-radius:10px;padding:10px;margin-bottom:12px;max-height:180px;overflow-y:auto;}
+.rep-ops-lbl{font-size:8px;color:var(--dim);letter-spacing:1px;margin-bottom:8px;}
+.op{display:flex;justify-content:space-between;font-size:10px;padding:4px 0;border-bottom:1px solid rgba(255,255,255,.03);font-family:'Share Tech Mono',monospace;}
+.op:last-child{border:none;}
+.op-w{color:var(--green);}.op-l{color:var(--red);}
+.rep-close{width:100%;padding:11px;border:1px solid var(--dim);border-radius:10px;background:transparent;color:var(--txt);font-family:'Share Tech Mono',monospace;font-size:10px;letter-spacing:2px;cursor:pointer;transition:all .2s;}
+.rep-close:hover{border-color:var(--blue);color:var(--blue);}
 
-.m-lbl { font-size:10px; color:var(--txt); letter-spacing:2px; margin-bottom:6px; text-transform:uppercase; }
-.m-inp {
-  width:100%; background:var(--bg3);
-  border:1px solid var(--dim); border-radius:10px;
-  color:#fff; font-family:'Share Tech Mono',monospace;
-  font-size:15px; font-weight:400;
-  padding:11px; outline:none; text-align:center;
-  transition:border .2s; margin-bottom:12px;
-}
-.m-inp:focus { border-color:var(--gold); }
-.m-inp[type="password"] { font-size:18px; letter-spacing:4px; }
-
-.m-row { display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:4px; }
-.presets { display:flex; gap:5px; margin-bottom:12px; flex-wrap:wrap; }
-.pr {
-  font-size:9px; padding:4px 8px;
-  border:1px solid var(--dim); border-radius:6px;
-  color:var(--dim); background:var(--bg3);
-  cursor:pointer; transition:all .2s;
-  font-family:'Share Tech Mono',monospace;
-}
-.pr:hover { border-color:var(--gold); color:var(--gold); }
-.pr.on { border-color:var(--gold); color:#000; background:var(--gold); }
-
-/* SELECTOR DE ACTIVOS */
-.sym-grid { display:grid; grid-template-columns:1fr 1fr 1fr; gap:7px; margin-bottom:18px; }
-.sym-btn {
-  background:var(--bg3); border:1px solid var(--dim);
-  border-radius:10px; padding:10px 6px; text-align:center;
-  cursor:pointer; transition:all .2s;
-}
-.sym-btn:hover { border-color:var(--gold); }
-.sym-btn.on.boom  { border-color:var(--green); background:rgba(6,214,160,0.08); }
-.sym-btn.on.crash { border-color:var(--red); background:rgba(239,35,60,0.08); }
-.sym-name { font-size:11px; font-weight:700; color:var(--txt); font-family:'Share Tech Mono',monospace; }
-.sym-btn.on.boom  .sym-name { color:var(--green); }
-.sym-btn.on.crash .sym-name { color:var(--red); }
-.sym-freq { font-size:8px; color:var(--dim); margin-top:3px; }
-.sym-btn.on .sym-freq { color:var(--txt); }
-
-.divider { height:1px; background:var(--brd); margin:14px 0; }
-
-.m-btn {
-  width:100%; font-family:'Share Tech Mono',monospace;
-  font-size:13px; letter-spacing:3px; padding:15px;
-  border:none; border-radius:12px;
-  background:linear-gradient(135deg,#c77a00,var(--gold));
-  color:#000; cursor:pointer; transition:all .2s;
-  font-weight:400;
-}
-.m-btn:hover { box-shadow:0 4px 24px rgba(240,165,0,0.35); }
-
-/* ── REPORTE ── */
-.rep-overlay {
-  position:fixed; inset:0; background:rgba(7,8,13,0.97);
-  display:flex; align-items:center; justify-content:center;
-  z-index:998; backdrop-filter:blur(16px);
-  transition:opacity .3s;
-}
-.rep-overlay.hidden { opacity:0; pointer-events:none; }
-.rep {
-  background:var(--bg1); border:1px solid var(--brd);
-  border-radius:20px; padding:22px 20px;
-  max-width:360px; width:95%; max-height:88vh; overflow-y:auto;
-}
-.rep-title {
-  font-family:'Share Tech Mono',monospace;
-  font-size:11px; color:var(--gold);
-  letter-spacing:3px; text-align:center; margin-bottom:16px;
-}
-.rep-grid { display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-bottom:14px; }
-.rbox { background:var(--bg3); border:1px solid var(--brd); border-radius:10px; padding:12px 8px; text-align:center; }
-.rbox-l { font-size:8px; color:var(--dim); letter-spacing:1px; margin-bottom:4px; }
-.rbox-v { font-size:20px; font-weight:700; color:#fff; font-family:'Share Tech Mono',monospace; }
-.rbox-v.up{color:var(--green);} .rbox-v.dn{color:var(--red);}
-.rbox-v.go{color:var(--gold);} .rbox-v.cy{color:var(--blue);}
-.rep-ops {
-  background:var(--bg3); border:1px solid var(--brd);
-  border-radius:10px; padding:10px; margin-bottom:12px; max-height:180px; overflow-y:auto;
-}
-.rep-ops-lbl { font-size:8px; color:var(--dim); letter-spacing:1px; margin-bottom:8px; }
-.op {
-  display:flex; justify-content:space-between;
-  font-size:10px; padding:4px 0;
-  border-bottom:1px solid rgba(255,255,255,.03);
-  font-family:'Share Tech Mono',monospace;
-}
-.op:last-child { border:none; }
-.op-w{color:var(--green);} .op-l{color:var(--red);}
-.rep-close {
-  width:100%; padding:11px; border:1px solid var(--dim);
-  border-radius:10px; background:transparent; color:var(--txt);
-  font-family:'Share Tech Mono',monospace; font-size:10px;
-  letter-spacing:2px; cursor:pointer; transition:all .2s;
-}
-.rep-close:hover { border-color:var(--gold); color:var(--gold); }
-
-/* ── CARD PRINCIPAL ── */
-.card {
-  background:var(--bg1); border:1px solid var(--brd);
-  border-radius:20px; overflow:hidden;
-  box-shadow:0 24px 64px rgba(0,0,0,0.6);
-}
-
-/* TOP */
-.top { padding:16px 18px 14px; border-bottom:1px solid var(--brd); position:relative; }
-.top::before {
-  content:''; position:absolute; top:0; left:0; right:0; height:2px;
-  background:linear-gradient(90deg,transparent,var(--gold) 40%,var(--spike) 60%,transparent);
-}
-.top-row { display:flex; justify-content:space-between; align-items:flex-start; }
-.brand { font-family:'Share Tech Mono',monospace; font-size:11px; color:var(--gold); letter-spacing:4px; }
-.brand-sub { font-size:22px; font-weight:800; color:#fff; letter-spacing:2px; margin-top:1px; }
-.brand-sub span { color:var(--spike); }
-.badge {
-  font-family:'Share Tech Mono',monospace; font-size:8px;
-  letter-spacing:2px; padding:4px 10px; border-radius:20px;
-  border:1px solid var(--dim); color:var(--dim); transition:all .4s;
-}
-.badge.live { border-color:var(--green); color:var(--green); animation:glw 2s infinite; }
-@keyframes glw { 0%,100%{box-shadow:0 0 6px rgba(6,214,160,.2);}50%{box-shadow:0 0 16px rgba(6,214,160,.5);} }
-.dot { display:inline-block; width:5px; height:5px; border-radius:50%; background:currentColor; margin-right:4px; vertical-align:middle; animation:blk 1s infinite; }
-@keyframes blk { 0%,100%{opacity:1;}50%{opacity:.2;} }
-
-/* INFO */
-.info-row { display:flex; gap:6px; margin-top:12px; }
-.ibox { flex:1; background:var(--bg3); border:1px solid var(--brd); border-radius:8px; padding:7px 10px; }
-.il { font-size:8px; color:var(--dim); letter-spacing:1px; }
-.iv { font-size:12px; color:var(--gold2); margin-top:2px; font-weight:700; font-family:'Share Tech Mono',monospace; }
-.sess-pill { font-size:8px; padding:2px 8px; border-radius:10px; border:1px solid var(--dim); color:var(--dim); display:inline-block; margin-top:3px; }
+/* CARD */
+.card{background:var(--bg1);border:1px solid var(--brd);border-radius:20px;overflow:hidden;box-shadow:0 24px 64px rgba(0,0,0,.6);}
+.top{padding:16px 18px 14px;border-bottom:1px solid var(--brd);position:relative;}
+.top::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,transparent,var(--blue2) 40%,var(--green) 60%,transparent);}
+.top-row{display:flex;justify-content:space-between;align-items:flex-start;}
+.brand{font-family:'Share Tech Mono',monospace;font-size:11px;color:var(--blue);letter-spacing:4px;}
+.brand-sub{font-size:22px;font-weight:800;color:#fff;letter-spacing:2px;margin-top:1px;}
+.brand-sub span{color:var(--green);}
+.badge{font-family:'Share Tech Mono',monospace;font-size:8px;letter-spacing:2px;padding:4px 10px;border-radius:20px;border:1px solid var(--dim);color:var(--dim);transition:all .4s;}
+.badge.live{border-color:var(--green);color:var(--green);animation:glw 2s infinite;}
+@keyframes glw{0%,100%{box-shadow:0 0 6px rgba(6,214,160,.2);}50%{box-shadow:0 0 16px rgba(6,214,160,.5);}}
+.dot{display:inline-block;width:5px;height:5px;border-radius:50%;background:currentColor;margin-right:4px;vertical-align:middle;animation:blk 1s infinite;}
+@keyframes blk{0%,100%{opacity:1;}50%{opacity:.2;}}
+.info-row{display:flex;gap:6px;margin-top:12px;}
+.ibox{flex:1;background:var(--bg3);border:1px solid var(--brd);border-radius:8px;padding:7px 10px;}
+.il{font-size:8px;color:var(--dim);letter-spacing:1px;}
+.iv{font-size:12px;color:var(--warn);margin-top:2px;font-weight:700;font-family:'Share Tech Mono',monospace;}
+.sess-pill{font-size:8px;padding:2px 8px;border-radius:10px;border:1px solid var(--dim);color:var(--dim);display:inline-block;margin-top:3px;}
 .sess-pill.hot{border-color:var(--green);color:var(--green);}
 .sess-pill.warm{border-color:var(--gold);color:var(--gold);}
 .sess-pill.cold{border-color:var(--red);color:var(--red);}
-
-/* META */
-.meta { display:flex; margin-top:10px; background:var(--bg3); border:1px solid var(--brd); border-radius:8px; overflow:hidden; }
-.mi { flex:1; padding:7px 6px; text-align:center; border-right:1px solid var(--brd); }
+.meta{display:flex;margin-top:10px;background:var(--bg3);border:1px solid var(--brd);border-radius:8px;overflow:hidden;}
+.mi{flex:1;padding:7px 6px;text-align:center;border-right:1px solid var(--brd);}
 .mi:last-child{border-right:none;}
 .ml{font-size:8px;color:var(--dim);}
 .mv{font-size:13px;font-weight:700;color:#fff;margin-top:1px;font-family:'Share Tech Mono',monospace;}
 .mv.g{color:var(--green);}.mv.r{color:var(--red);}.mv.y{color:var(--gold);}
 .prog{height:2px;background:var(--brd);margin-top:10px;overflow:hidden;}
-.prog-fill{height:100%;width:0%;background:linear-gradient(90deg,var(--gold),var(--spike));transition:width .5s;}
+.prog-fill{height:100%;width:0%;background:linear-gradient(90deg,var(--blue2),var(--green));transition:width .5s;}
 
 /* PANEL ACTIVOS */
-.active-panel { margin-top:10px; display:grid; grid-template-columns:repeat(3,1fr); gap:5px; }
-.ap {
-  background:var(--bg3); border:1px solid var(--dim);
-  border-radius:8px; padding:7px 4px; text-align:center; transition:all .3s;
-}
-.ap.boom-ready  { border-color:var(--green); background:rgba(6,214,160,0.06); }
-.ap.crash-ready { border-color:var(--red);   background:rgba(239,35,60,0.06); }
-.ap.hunting     { border-color:var(--gold);  background:rgba(240,165,0,0.08); animation:hunt .7s infinite; }
-.ap.fired       { border-color:var(--spike); background:rgba(255,107,53,0.1); animation:hunt .4s infinite; }
-.ap.won         { border-color:var(--green); background:rgba(6,214,160,0.1); }
-.ap.lost        { border-color:var(--red);   background:rgba(239,35,60,0.1); }
-@keyframes hunt { 0%,100%{opacity:1;}50%{opacity:.6;} }
-.ap-name { font-size:9px; font-weight:700; color:var(--txt); font-family:'Share Tech Mono',monospace; }
-.ap.boom-ready .ap-name,.ap.hunting .ap-name,.ap.won .ap-name { color:var(--green); }
-.ap.crash-ready .ap-name,.ap.lost .ap-name { color:var(--red); }
-.ap.fired .ap-name { color:var(--spike); }
-.ap-st { font-size:7px; color:var(--dim); margin-top:2px; }
+.active-panel{margin-top:10px;display:grid;grid-template-columns:repeat(3,1fr);gap:5px;}
+.ap{background:var(--bg3);border:1px solid var(--dim);border-radius:8px;padding:7px 4px;text-align:center;transition:all .3s;}
+.ap.boom-s{border-color:var(--green);background:rgba(6,214,160,.06);}
+.ap.crash-s{border-color:var(--red);background:rgba(239,35,60,.06);}
+.ap.confirming{border-color:var(--blue);background:rgba(76,201,240,.06);animation:pulse .8s infinite;}
+.ap.trading{border-color:var(--gold);background:rgba(240,165,0,.08);animation:pulse .5s infinite;}
+.ap.won{border-color:var(--green);background:rgba(6,214,160,.1);}
+.ap.lost{border-color:var(--red);background:rgba(239,35,60,.1);}
+@keyframes pulse{0%,100%{opacity:1;}50%{opacity:.6;}}
+.ap-name{font-size:9px;font-weight:700;color:var(--txt);font-family:'Share Tech Mono',monospace;}
+.ap.boom-s .ap-name,.ap.confirming .ap-name{color:var(--green);}
+.ap.crash-s .ap-name{color:var(--red);}
+.ap.trading .ap-name{color:var(--gold);}
+.ap.won .ap-name{color:var(--green);}
+.ap.lost .ap-name{color:var(--red);}
+.ap-st{font-size:7px;color:var(--dim);margin-top:2px;}
 
-/* SPIKE DETECTOR VISUAL */
-.spike-panel {
-  margin-top:10px; background:var(--bg3);
-  border:1px solid var(--brd); border-radius:10px; padding:10px 14px;
-}
-.spike-title { font-size:8px; color:var(--dim); letter-spacing:2px; margin-bottom:8px; text-transform:uppercase; }
-.spike-meters { display:grid; grid-template-columns:1fr 1fr; gap:8px; }
-.smeter { background:var(--bg0); border:1px solid var(--brd); border-radius:8px; padding:8px 10px; }
-.smeter-lbl { font-size:8px; color:var(--dim); letter-spacing:1px; margin-bottom:5px; }
-.smeter-bar { height:5px; background:rgba(255,255,255,.05); border-radius:3px; overflow:hidden; }
-.smeter-fill { height:100%; border-radius:3px; transition:width .4s; }
-.smeter-val { font-size:11px; font-weight:700; margin-top:4px; font-family:'Share Tech Mono',monospace; color:var(--txt); }
+/* INDICADORES */
+.ind-panel{margin-top:10px;background:var(--bg3);border:1px solid var(--brd);border-radius:10px;padding:10px 14px;}
+.ind-title{font-size:8px;color:var(--dim);letter-spacing:2px;margin-bottom:8px;text-transform:uppercase;}
+.ind-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;}
+.ind-box{background:var(--bg0);border:1px solid var(--brd);border-radius:8px;padding:7px 8px;}
+.ind-lbl{font-size:7px;color:var(--dim);letter-spacing:1px;margin-bottom:4px;}
+.ind-val{font-size:11px;font-weight:700;font-family:'Share Tech Mono',monospace;color:var(--txt);}
+.ind-val.ok{color:var(--green);}
+.ind-val.warn{color:var(--red);}
+.ind-val.neutral{color:var(--warn);}
+.ind-chk{font-size:8px;margin-top:3px;color:var(--dim);}
+.ind-chk.ok{color:var(--green);}
+.ind-chk.no{color:var(--red);}
 
 /* BOTÓN */
-.btn-wrap { padding:12px 14px; background:var(--bg1); border-top:1px solid var(--brd); }
-.btn-toggle {
-  width:100%; font-family:'Share Tech Mono',monospace;
-  font-size:12px; letter-spacing:4px; padding:15px;
-  border:none; border-radius:12px; cursor:pointer; transition:all .3s;
-}
-.btn-toggle.go { background:linear-gradient(135deg,#c77a00,var(--gold)); color:#000; }
-.btn-toggle.go:hover { box-shadow:0 4px 24px rgba(240,165,0,.4); }
-.btn-toggle.stop { background:linear-gradient(135deg,#8b0000,var(--red)); color:#fff; }
-.btn-toggle.stop:hover { box-shadow:0 4px 24px rgba(239,35,60,.4); }
-.btn-toggle:active { transform:scale(.98); }
+.btn-wrap{padding:12px 14px;background:var(--bg1);border-top:1px solid var(--brd);}
+.btn-toggle{width:100%;font-family:'Share Tech Mono',monospace;font-size:12px;letter-spacing:4px;padding:15px;border:none;border-radius:12px;cursor:pointer;transition:all .3s;}
+.btn-toggle.go{background:linear-gradient(135deg,var(--blue2),var(--blue));color:#000;}
+.btn-toggle.go:hover{box-shadow:0 4px 24px rgba(76,201,240,.4);}
+.btn-toggle.stop{background:linear-gradient(135deg,#8b0000,var(--red));color:#fff;}
+.btn-toggle.stop:hover{box-shadow:0 4px 24px rgba(239,35,60,.4);}
+.btn-toggle:active{transform:scale(.98);}
 
 /* STATS */
-.stats { display:grid; grid-template-columns:1fr 1fr; gap:1px; background:var(--brd); border-top:1px solid var(--brd); }
-.st { background:var(--bg1); padding:12px 15px; }
-.sl { font-size:8px; color:var(--dim); letter-spacing:2px; text-transform:uppercase; margin-bottom:3px; }
-.sv { font-size:20px; font-weight:700; color:#fff; transition:color .3s; font-family:'Share Tech Mono',monospace; }
+.stats{display:grid;grid-template-columns:1fr 1fr;gap:1px;background:var(--brd);border-top:1px solid var(--brd);}
+.st{background:var(--bg1);padding:12px 15px;}
+.sl{font-size:8px;color:var(--dim);letter-spacing:2px;text-transform:uppercase;margin-bottom:3px;}
+.sv{font-size:20px;font-weight:700;color:#fff;transition:color .3s;font-family:'Share Tech Mono',monospace;}
 .sv.up{color:var(--green);}.sv.dn{color:var(--red);}
 .sv.cy{color:var(--blue);}.sv.go{color:var(--gold);}
 
 /* HISTORIAL */
-.dots-row { background:var(--bg1); border-top:1px solid var(--brd); padding:8px 15px; display:flex; gap:4px; align-items:center; flex-wrap:wrap; }
-.dl { font-size:8px; color:var(--dim); letter-spacing:1px; margin-right:4px; }
-.d { width:8px; height:8px; border-radius:2px; background:var(--bg3); border:1px solid var(--dim); transition:all .3s; }
-.d.w { background:var(--green); border-color:var(--green); box-shadow:0 0 4px var(--green); }
-.d.l { background:var(--red); border-color:var(--red); }
+.dots-row{background:var(--bg1);border-top:1px solid var(--brd);padding:8px 15px;display:flex;gap:4px;align-items:center;flex-wrap:wrap;}
+.dl{font-size:8px;color:var(--dim);letter-spacing:1px;margin-right:4px;}
+.d{width:8px;height:8px;border-radius:2px;background:var(--bg3);border:1px solid var(--dim);transition:all .3s;}
+.d.w{background:var(--green);border-color:var(--green);box-shadow:0 0 4px var(--green);}
+.d.l{background:var(--red);border-color:var(--red);}
 
 /* ESTADO */
-.state-row { background:var(--bg1); border-top:1px solid var(--brd); padding:7px 15px; display:flex; justify-content:space-between; align-items:center; font-size:10px; color:var(--txt); }
-.chip { font-family:'Share Tech Mono',monospace; font-size:8px; letter-spacing:1px; padding:3px 8px; border-radius:4px; background:rgba(76,201,240,.1); color:var(--blue); border:1px solid rgba(76,201,240,.2); transition:all .3s; }
-.chip.act  { background:rgba(240,165,0,.1);  color:var(--gold);  border-color:rgba(240,165,0,.3); }
-.chip.inv  { background:rgba(239,35,60,.08); color:var(--red);   border-color:rgba(239,35,60,.2); }
-.chip.wait { background:rgba(255,107,53,.08);color:var(--spike); border-color:rgba(255,107,53,.2); }
+.state-row{background:var(--bg1);border-top:1px solid var(--brd);padding:7px 15px;display:flex;justify-content:space-between;align-items:center;font-size:10px;color:var(--txt);}
+.chip{font-family:'Share Tech Mono',monospace;font-size:8px;letter-spacing:1px;padding:3px 8px;border-radius:4px;background:rgba(76,201,240,.1);color:var(--blue);border:1px solid rgba(76,201,240,.2);transition:all .3s;}
+.chip.act{background:rgba(6,214,160,.1);color:var(--green);border-color:rgba(6,214,160,.3);}
+.chip.inv{background:rgba(239,35,60,.08);color:var(--red);border-color:rgba(239,35,60,.2);}
+.chip.wait{background:rgba(240,165,0,.08);color:var(--gold);border-color:rgba(240,165,0,.2);}
 
 /* CONTADORES */
-.count-row { background:var(--bg3); border-top:1px solid var(--brd); padding:7px 15px; display:flex; justify-content:space-between; font-size:9px; color:var(--dim); letter-spacing:1px; }
-.cnt { font-family:'Share Tech Mono',monospace; font-size:12px; color:var(--gold); }
+.count-row{background:var(--bg3);border-top:1px solid var(--brd);padding:7px 15px;display:flex;justify-content:space-between;font-size:9px;color:var(--dim);letter-spacing:1px;}
+.cnt{font-family:'Share Tech Mono',monospace;font-size:12px;color:var(--gold);}
 
 /* LOG */
-.log-wrap { background:var(--bg1); border-top:1px solid var(--brd); padding:10px 12px; }
-.log {
-  background:#03040a; border:1px solid rgba(240,165,0,.05);
-  border-radius:10px; height:140px; overflow-y:auto;
-  padding:8px 10px; font-size:10px; line-height:1.9;
-  scrollbar-width:thin; scrollbar-color:var(--brd) transparent;
-  font-family:'Share Tech Mono',monospace;
-}
+.log-wrap{background:var(--bg1);border-top:1px solid var(--brd);padding:10px 12px;}
+.log{background:#03040a;border:1px solid rgba(76,201,240,.05);border-radius:10px;height:140px;overflow-y:auto;padding:8px 10px;font-size:10px;line-height:1.9;scrollbar-width:thin;scrollbar-color:var(--brd) transparent;font-family:'Share Tech Mono',monospace;}
 .log::-webkit-scrollbar{width:2px;}
 .log::-webkit-scrollbar-thumb{background:var(--brd);}
 .le{display:flex;gap:6px;}
@@ -298,23 +180,23 @@ body {
 .li{color:var(--blue);}.lx{color:var(--gold);}
 .ls{color:var(--red);font-weight:700;}
 .lg{color:var(--green);font-weight:700;}
-.lk{color:var(--spike);}
+.lc{color:var(--blue);font-weight:700;}
 
 /* FOOTER */
-.ftr { background:var(--bg1); border-top:1px solid var(--brd); padding:8px 15px 12px; display:flex; justify-content:space-between; align-items:center; font-size:9px; color:var(--dim); letter-spacing:1px; }
-.rep-btn { font-size:9px; padding:4px 10px; border:1px solid var(--dim); border-radius:6px; background:transparent; color:var(--dim); cursor:pointer; transition:all .2s; font-family:'Share Tech Mono',monospace; }
-.rep-btn:hover { border-color:var(--gold); color:var(--gold); }
-.spin { display:inline-block; width:7px; height:7px; border:1.5px solid transparent; border-top-color:var(--gold); border-radius:50%; animation:sp 1s linear infinite; margin-right:4px; vertical-align:middle; }
+.ftr{background:var(--bg1);border-top:1px solid var(--brd);padding:8px 15px 12px;display:flex;justify-content:space-between;align-items:center;font-size:9px;color:var(--dim);letter-spacing:1px;}
+.rep-btn{font-size:9px;padding:4px 10px;border:1px solid var(--dim);border-radius:6px;background:transparent;color:var(--dim);cursor:pointer;transition:all .2s;font-family:'Share Tech Mono',monospace;}
+.rep-btn:hover{border-color:var(--gold);color:var(--gold);}
+.spin{display:inline-block;width:7px;height:7px;border:1.5px solid transparent;border-top-color:var(--blue);border-radius:50%;animation:sp 1s linear infinite;margin-right:4px;vertical-align:middle;}
 @keyframes sp{to{transform:rotate(360deg);}}
 </style>
 </head>
 <body>
 
-<!-- MODAL CONFIG -->
+<!-- MODAL -->
 <div class="overlay" id="mOverlay">
   <div class="modal">
-    <div class="m-title">SPIKE HUNTER</div>
-    <div class="m-sub">BOOM & CRASH · CAZADOR DE SPIKES</div>
+    <div class="m-title">TREND HUNTER</div>
+    <div class="m-sub">BOOM & CRASH · EMA + RSI + MACD</div>
 
     <div class="m-lbl">TOKEN API DERIV</div>
     <input class="m-inp" type="password" id="iToken" placeholder="Tu token aquí">
@@ -353,47 +235,41 @@ body {
     </div>
 
     <div class="divider"></div>
-    <div class="m-lbl">ÍNDICES — selecciona los que deseas cazar</div>
+    <div class="m-lbl">ÍNDICES — selecciona los que deseas seguir</div>
     <div class="sym-grid">
       <div class="sym-btn boom on" data-sym="BOOM1000" onclick="this.classList.toggle('on')">
-        <div class="sym-name">B1000</div>
-        <div class="sym-freq">1/1000t</div>
+        <div class="sym-name">B1000</div><div class="sym-freq">Drift lento</div>
       </div>
       <div class="sym-btn boom on" data-sym="BOOM500" onclick="this.classList.toggle('on')">
-        <div class="sym-name">B500</div>
-        <div class="sym-freq">1/500t</div>
+        <div class="sym-name">B500</div><div class="sym-freq">Drift medio</div>
       </div>
       <div class="sym-btn boom" data-sym="BOOM300" onclick="this.classList.toggle('on')">
-        <div class="sym-name">B300</div>
-        <div class="sym-freq">1/300t</div>
+        <div class="sym-name">B300</div><div class="sym-freq">Drift rápido</div>
       </div>
       <div class="sym-btn crash on" data-sym="CRASH1000" onclick="this.classList.toggle('on')">
-        <div class="sym-name">C1000</div>
-        <div class="sym-freq">1/1000t</div>
+        <div class="sym-name">C1000</div><div class="sym-freq">Drift lento</div>
       </div>
       <div class="sym-btn crash on" data-sym="CRASH500" onclick="this.classList.toggle('on')">
-        <div class="sym-name">C500</div>
-        <div class="sym-freq">1/500t</div>
+        <div class="sym-name">C500</div><div class="sym-freq">Drift medio</div>
       </div>
       <div class="sym-btn crash" data-sym="CRASH300" onclick="this.classList.toggle('on')">
-        <div class="sym-name">C300</div>
-        <div class="sym-freq">1/300t</div>
+        <div class="sym-name">C300</div><div class="sym-freq">Drift rápido</div>
       </div>
     </div>
 
-    <button class="m-btn" onclick="launch()">⚡ INICIAR CAZA</button>
+    <button class="m-btn" onclick="launch()">📈 INICIAR SEGUIMIENTO</button>
   </div>
 </div>
 
 <!-- REPORTE -->
 <div class="rep-overlay hidden" id="rOverlay">
   <div class="rep">
-    <div class="rep-title">REPORTE DE CAZA</div>
+    <div class="rep-title">REPORTE DE SESIÓN</div>
     <div class="rep-grid">
       <div class="rbox"><div class="rbox-l">RESULTADO</div><div class="rbox-v" id="rRes">$0.00</div></div>
       <div class="rbox"><div class="rbox-l">WINRATE</div><div class="rbox-v go" id="rWR">0%</div></div>
-      <div class="rbox"><div class="rbox-l">SPIKES CAZADOS</div><div class="rbox-v up" id="rW">0</div></div>
-      <div class="rbox"><div class="rbox-l">PERDIDOS</div><div class="rbox-v dn" id="rL">0</div></div>
+      <div class="rbox"><div class="rbox-l">WINS</div><div class="rbox-v up" id="rW">0</div></div>
+      <div class="rbox"><div class="rbox-l">LOSSES</div><div class="rbox-v dn" id="rL">0</div></div>
       <div class="rbox"><div class="rbox-l">TOTAL OPS</div><div class="rbox-v cy" id="rT">0</div></div>
       <div class="rbox"><div class="rbox-l">ACTIVOS</div><div class="rbox-v go" id="rA">0</div></div>
     </div>
@@ -406,33 +282,20 @@ body {
 </div>
 
 <!-- MAIN -->
-<div class="wrap">
-<div class="card">
-
+<div class="wrap"><div class="card">
   <div class="top">
     <div class="top-row">
       <div>
-        <div class="brand">SPIKE HUNTER</div>
+        <div class="brand">TREND HUNTER</div>
         <div class="brand-sub">BOOM & <span>CRASH</span></div>
       </div>
       <div class="badge" id="badge"><span class="dot"></span><span id="bTxt">OFFLINE</span></div>
     </div>
-
     <div class="info-row">
-      <div class="ibox">
-        <div class="il">COLOMBIA</div>
-        <div class="iv" id="clock">--:--</div>
-      </div>
-      <div class="ibox">
-        <div class="il">SESIÓN</div>
-        <div class="sess-pill" id="sessEl">--</div>
-      </div>
-      <div class="ibox">
-        <div class="il">STAKE</div>
-        <div class="iv" id="stakeEl">$1.00</div>
-      </div>
+      <div class="ibox"><div class="il">COLOMBIA</div><div class="iv" id="clock">--:--</div></div>
+      <div class="ibox"><div class="il">SESIÓN</div><div class="sess-pill" id="sessEl">--</div></div>
+      <div class="ibox"><div class="il">STAKE</div><div class="iv" id="stakeEl">$1.00</div></div>
     </div>
-
     <div class="meta">
       <div class="mi"><div class="ml">PROFIT</div><div class="mv g" id="mGoal">+$5</div></div>
       <div class="mi"><div class="ml">HOY</div><div class="mv" id="mProg">$0.00</div></div>
@@ -444,587 +307,19 @@ body {
     <!-- PANEL ACTIVOS -->
     <div class="active-panel" id="activePanel"></div>
 
-    <!-- SPIKE METERS -->
-    <div class="spike-panel">
-      <div class="spike-title">DETECTORES DE SPIKE</div>
-      <div class="spike-meters">
-        <div class="smeter">
-          <div class="smeter-lbl">VELOCIDAD</div>
-          <div class="smeter-bar"><div class="smeter-fill" id="mSpeed" style="width:0%;background:var(--gold)"></div></div>
-          <div class="smeter-val" id="vSpeed">0.000</div>
+    <!-- INDICADORES EN VIVO -->
+    <div class="ind-panel">
+      <div class="ind-title">CONFIRMACIONES EN VIVO</div>
+      <div class="ind-grid">
+        <div class="ind-box">
+          <div class="ind-lbl">EMA 50</div>
+          <div class="ind-val" id="iEMA">--</div>
+          <div class="ind-chk" id="cEMA">--</div>
         </div>
-        <div class="smeter">
-          <div class="smeter-lbl">MAGNITUD</div>
-          <div class="smeter-bar"><div class="smeter-fill" id="mMag" style="width:0%;background:var(--spike)"></div></div>
-          <div class="smeter-val" id="vMag">0.000</div>
+        <div class="ind-box">
+          <div class="ind-lbl">RSI 14</div>
+          <div class="ind-val" id="iRSI">--</div>
+          <div class="ind-chk" id="cRSI">--</div>
         </div>
-        <div class="smeter">
-          <div class="smeter-lbl">TENDENCIA</div>
-          <div class="smeter-bar"><div class="smeter-fill" id="mTrend" style="width:0%;background:var(--blue)"></div></div>
-          <div class="smeter-val" id="vTrend">FLAT</div>
-        </div>
-        <div class="smeter">
-          <div class="smeter-lbl">POST-SPIKE</div>
-          <div class="smeter-bar"><div class="smeter-fill" id="mPost" style="width:0%;background:var(--green)"></div></div>
-          <div class="smeter-val" id="vPost">--</div>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <div class="btn-wrap">
-    <button class="btn-toggle go" id="btnT" onclick="toggle()">⚡ INICIAR CAZA</button>
-  </div>
-
-  <div class="stats">
-    <div class="st"><div class="sl">Balance</div><div class="sv cy" id="bal">0.00</div></div>
-    <div class="st"><div class="sl">Ganancia</div><div class="sv" id="prof">+$0.00</div></div>
-    <div class="st"><div class="sl">Winrate</div><div class="sv" id="wr">0%</div></div>
-    <div class="st"><div class="sl">Pérdidas</div><div class="sv dn" id="lossEl">$0.00</div></div>
-  </div>
-
-  <div class="dots-row">
-    <span class="dl">ÚLTIMAS</span>
-    <div id="dots"></div>
-  </div>
-
-  <div class="state-row">
-    <span id="stateInfo">Presiona INICIAR</span>
-    <span class="chip" id="chip">IDLE</span>
-  </div>
-
-  <div class="count-row">
-    <span>SPIKES PERDIDOS <span class="cnt" id="invEl">0</span></span>
-    <span>CAZADOS <span class="cnt" id="totEl">0</span></span>
-  </div>
-
-  <div class="log-wrap">
-    <div class="log" id="logEl"></div>
-  </div>
-
-  <div class="ftr">
-    <span id="ftrTxt">$1.00 · TP $5 · SL $3</span>
-    <button class="rep-btn" onclick="showRep()">📊 REPORTE</button>
-  </div>
-
-</div>
-</div>
-
-<script>
-// ════════════════════════════════════════════════════════
-// SPIKE HUNTER — BOOM & CRASH
-//
-// ESTRATEGIA: Cazar el POST-SPIKE
-//
-// Los índices Boom/Crash tienen una probabilidad fija de
-// generar un spike cada N ticks. Después del spike:
-//
-//  BOOM: el precio sube violentamente (spike alcista)
-//        → después del spike el precio RETROCEDE gradualmente
-//        → entrar PUT post-spike para capturar el retroceso
-//
-//  CRASH: el precio baja violentamente (spike bajista)
-//         → después del spike el precio REBOTA gradualmente
-//         → entrar CALL post-spike para capturar el rebote
-//
-// LÓGICA DE DETECCIÓN:
-//  1. DETECCIÓN: el precio se mueve X veces el ATR en 1 tick
-//     → spike confirmado
-//  2. DIRECCIÓN: verificar que es el tipo correcto
-//     (Boom = spike alcista, Crash = spike bajista)
-//  3. ENTRADA: en el tick SIGUIENTE al spike
-//     → el precio ya revirtió parcialmente → más seguro
-//  4. CONTRATO: 3-5 ticks según el índice
-//
-// SÍMBOLOS CORRECTOS DE DERIV API:
-//  BOOM1000  → "BOOM1000"
-//  BOOM500   → "BOOM500"
-//  BOOM300   → "BOOM300"
-//  CRASH1000 → "CRASH1000"
-//  CRASH500  → "CRASH500"
-//  CRASH300  → "CRASH300"
-// ════════════════════════════════════════════════════════
-
-// ── CONFIG POR ÍNDICE ────────────────────────────────────
-// spike_mult : el movimiento debe ser N veces el ATR promedio
-// post_ticks : ticks del contrato post-spike
-// cooldown   : tiempo entre ops (ms)
-// type       : "boom" o "crash"
-const INDICES = {
-  BOOM1000:  { label:'B1000', type:'boom',  spike_mult:4.0, post_ticks:3, cooldown:8000  },
-  BOOM500:   { label:'B500',  type:'boom',  spike_mult:3.5, post_ticks:3, cooldown:6000  },
-  BOOM300:   { label:'B300',  type:'boom',  spike_mult:3.0, post_ticks:3, cooldown:5000  },
-  CRASH1000: { label:'C1000', type:'crash', spike_mult:4.0, post_ticks:3, cooldown:8000  },
-  CRASH500:  { label:'C500',  type:'crash', spike_mult:3.5, post_ticks:3, cooldown:6000  },
-  CRASH300:  { label:'C300',  type:'crash', spike_mult:3.0, post_ticks:3, cooldown:5000  },
-};
-
-// ── CONFIG GLOBAL ────────────────────────────────────────
-const CFG = {
-  ATR_PERIOD : 20,   // ticks para calcular el movimiento promedio (ATR)
-  MIN_BARS   : 25,   // mínimo para empezar a analizar
-  HISTORY    : 120,  // historial de precios
-  MAX_OPS    : 20,   // máximo de ops por sesión
-  PAUSE_MS   : 30000,// pausa tras 3 pérdidas seguidas
-  // Post-spike: esperar N ticks después del spike antes de entrar
-  // para confirmar que la reversión empezó
-  POST_WAIT  : 1,
-};
-
-// ── ESTADO GLOBAL ────────────────────────────────────────
-let ws, running=false;
-let bal=0, profit=0, wins=0, lossC=0, total=0, totalLoss=0;
-let lossStreak=0, pauseUntil=0;
-let recent=[], missedSpikes=0, opLog=[];
-let STAKE=1.00, TP=5, SL=3;
-let activeSymbols=[];
-let symState={};      // estado por símbolo
-let openContracts={}; // sym → contract_id | "pending" | null
-let contractToSym={}; // contract_id → sym
-
-// ── MODAL ────────────────────────────────────────────────
-function sp2(t,v){
-  if(t==='s')  document.getElementById('iStake').value=v;
-  else if(t==='tp') document.getElementById('iTP').value=v;
-  else document.getElementById('iSL').value=v;
-}
-
-function launch(){
-  const token=document.getElementById('iToken').value.trim();
-  if(!token){ alert('Ingresa tu token API'); return; }
-
-  const sel=[];
-  document.querySelectorAll('.sym-btn.on').forEach(el=>sel.push(el.dataset.sym));
-  if(sel.length===0){ alert('Selecciona al menos 1 índice'); return; }
-  activeSymbols=sel;
-
-  STAKE=Math.max(0.35,parseFloat(document.getElementById('iStake').value)||1);
-  TP   =parseFloat(document.getElementById('iTP').value)||5;
-  SL   =parseFloat(document.getElementById('iSL').value)||3;
-
-  document.getElementById('mOverlay').className='overlay hidden';
-  document.getElementById('stakeEl').innerText='$'+STAKE.toFixed(2);
-  document.getElementById('mGoal').innerText='+$'+TP;
-  document.getElementById('mStop').innerText='-$'+SL;
-  document.getElementById('ftrTxt').innerText=`$${STAKE.toFixed(2)} · TP $${TP} · SL $${SL}`;
-  document.getElementById('mOps').innerText=`0/${CFG.MAX_OPS}`;
-
-  buildPanel();
-  startBot(token);
-}
-
-function toggle(){
-  if(!running) document.getElementById('mOverlay').className='overlay';
-  else stopBot(false);
-}
-
-function setBtnState(on){
-  const b=document.getElementById('btnT');
-  if(on){ b.className='btn-toggle stop'; b.innerText='■ DETENER CAZA'; }
-  else  { b.className='btn-toggle go';   b.innerText='⚡ INICIAR CAZA'; }
-}
-
-// ── PANEL DE ACTIVOS ─────────────────────────────────────
-function buildPanel(){
-  document.getElementById('activePanel').innerHTML=
-    activeSymbols.map(s=>`
-      <div class="ap" id="ap_${s}">
-        <div class="ap-name">${INDICES[s].label}</div>
-        <div class="ap-st" id="apst_${s}">SCAN</div>
-      </div>`).join('');
-}
-
-function setAP(sym,st,cls){
-  const el=document.getElementById('ap_'+sym);
-  const se=document.getElementById('apst_'+sym);
-  if(!el) return;
-  const base=INDICES[sym].type==='boom'?'boom-ready':'crash-ready';
-  el.className='ap '+(cls||base);
-  se.innerText=st;
-}
-
-// ── SPIKE METERS ─────────────────────────────────────────
-function updateMeters(sym, speed, mag, trend, post){
-  const maxSpeed=0.5, maxMag=1.0;
-  document.getElementById('mSpeed').style.width=Math.min(100,(speed/maxSpeed)*100)+'%';
-  document.getElementById('vSpeed').innerText=speed.toFixed(4);
-  document.getElementById('mMag').style.width=Math.min(100,(mag/maxMag)*100)+'%';
-  document.getElementById('vMag').innerText=mag.toFixed(4);
-  const tPct=Math.abs(trend)*100;
-  document.getElementById('mTrend').style.width=Math.min(100,tPct)+'%';
-  document.getElementById('vTrend').innerText=trend>0.1?'↑ ALCISTA':trend<-0.1?'↓ BAJISTA':'→ FLAT';
-  document.getElementById('mPost').style.width=(post||0)+'%';
-  document.getElementById('vPost').innerText=post?`POST ${post}%`:'--';
-}
-
-// ── SESIÓN ────────────────────────────────────────────────
-function getSess(){
-  const col=new Date(Date.now()-5*3600000);
-  const h=col.getUTCHours()+col.getUTCMinutes()/60;
-  if((h>=1&&h<7)||(h>=13&&h<19)) return {name:'🟢 ÓPTIMA',lv:'hot'};
-  if((h>=7&&h<10)||(h>=20&&h<24)||h<1) return {name:'🟡 NORMAL',lv:'warm'};
-  return {name:'🔴 BAJA',lv:'cold'};
-}
-
-// ── LOG ──────────────────────────────────────────────────
-function log(msg,t='i'){
-  const el=document.getElementById('logEl');
-  const ts=new Date().toTimeString().slice(0,8);
-  const cls={w:'lw',l:'ll',i:'li',x:'lx',s:'ls',g:'lg',k:'lk'}[t]||'li';
-  el.innerHTML+=`<div class="le"><span class="lt">${ts}</span><span class="${cls}">${msg}</span></div>`;
-  el.scrollTop=el.scrollHeight;
-}
-
-function setState(txt,type){
-  document.getElementById('stateInfo').innerHTML=
-    (type==='act'?'<span class="spin"></span>':'')+txt;
-  const c=document.getElementById('chip');
-  c.className='chip'+(type==='act'?' act':type==='inv'?' inv':type==='wait'?' wait':'');
-  c.innerText=type==='act'?'CAZANDO':type==='inv'?'SPIKE!':type==='wait'?'ESPERA':'SCAN';
-}
-
-function updateClock(){
-  const col=new Date(Date.now()-5*3600000);
-  const h=col.getUTCHours(), m=String(col.getUTCMinutes()).padStart(2,'0');
-  document.getElementById('clock').innerText=`${h%12||12}:${m} ${h<12?'AM':'PM'}`;
-  const s=getSess();
-  const el=document.getElementById('sessEl');
-  el.className='sess-pill '+s.lv;
-  el.innerText=s.name;
-}
-
-function updateUI(){
-  const wr=total?(wins/total*100).toFixed(1):0;
-  document.getElementById('bal').innerText=bal.toFixed(2);
-  const pe=document.getElementById('prof');
-  pe.innerText=(profit>=0?'+$':'-$')+Math.abs(profit).toFixed(2);
-  pe.className='sv'+(profit>0?' up':profit<0?' dn':'');
-  document.getElementById('wr').innerText=wr+'%';
-  document.getElementById('wr').className='sv'+(parseFloat(wr)>=65?' up':parseFloat(wr)>=52?' go':'');
-  document.getElementById('lossEl').innerText='$'+totalLoss.toFixed(2);
-  const mp=document.getElementById('mProg');
-  mp.innerText=(profit>=0?'+$':'-$')+Math.abs(profit).toFixed(2);
-  mp.className='mv'+(profit>=TP?' g':profit<=-SL?' r':'y');
-  document.getElementById('mOps').innerText=`${total}/${CFG.MAX_OPS}`;
-  const pct=Math.max(0,Math.min(100,(profit/TP)*100));
-  document.getElementById('pFill').style.width=pct+'%';
-}
-
-function renderDots(){
-  document.getElementById('dots').innerHTML=
-    recent.map(r=>`<div class="d ${r}"></div>`).join('');
-}
-
-setInterval(updateClock,1000);
-
-// ════════════════════════════════════════════════════════
-// NÚCLEO: DETECTOR DE SPIKES
-//
-// ¿Cómo funciona un spike en Boom/Crash?
-//
-// BOOM: el algoritmo de Deriv inserta un tick que es
-//   MUCHO mayor que el tick anterior (sube violentamente)
-//   → el retorno de ese tick = precio[i] - precio[i-1]
-//   → ese retorno es N veces mayor que el ATR promedio
-//
-// CRASH: igual pero hacia abajo (baja violentamente)
-//
-// DETECCIÓN:
-//   ATR_promedio = promedio de |retornos| de los últimos 20 ticks
-//   retorno_actual = precio_actual - precio_anterior
-//   si |retorno_actual| > ATR_promedio * spike_mult → SPIKE
-//   si es BOOM verificar que el retorno es positivo (subida)
-//   si es CRASH verificar que el retorno es negativo (bajada)
-//
-// ENTRADA POST-SPIKE:
-//   Después del spike, el bot espera POST_WAIT ticks
-//   para confirmar que el precio empezó a revertir,
-//   luego entra en dirección CONTRARIA al spike
-//   con un contrato de post_ticks duración
-// ════════════════════════════════════════════════════════
-function analyzeTick(sym, price){
-  const st  = symState[sym];
-  const cfg = INDICES[sym];
-  if(!st) return;
-
-  st.prices.push(price);
-  if(st.prices.length > CFG.HISTORY) st.prices.shift();
-
-  const prices = st.prices;
-  if(prices.length < CFG.MIN_BARS) return;
-
-  // ── Calcular retornos ─────────────────────────────────
-  const rets=[];
-  for(let i=1;i<prices.length;i++)
-    rets.push(prices[i]-prices[i-1]);
-
-  const lastRet = rets[rets.length-1];
-
-  // ── ATR real: promedio de |retornos| excluyendo outliers ─
-  // Excluimos el último retorno para no contaminar el baseline
-  const baseRets = rets.slice(-CFG.ATR_PERIOD-1, -1);
-  const atr = baseRets.reduce((a,b)=>a+Math.abs(b),0) / baseRets.length;
-
-  // ── Tendencia reciente (últimos 10 retornos) ──────────
-  const trendRets = rets.slice(-10);
-  const trendMean = trendRets.reduce((a,b)=>a+b,0)/trendRets.length;
-  const trendNorm = atr>0 ? trendMean/atr : 0;
-
-  // ── Actualizar medidores ──────────────────────────────
-  const speed = Math.abs(lastRet);
-  const mag   = atr>0 ? Math.abs(lastRet)/atr : 0;
-  updateMeters(sym, speed, mag, trendNorm, st.postSpikeCount>0?Math.min(100,st.postSpikeCount*33):0);
-
-  // ── FASE POST-SPIKE: si detectamos spike en tick anterior ─
-  if(st.spikeDetected){
-    st.postSpikeCount++;
-
-    // Esperar POST_WAIT ticks antes de entrar
-    if(st.postSpikeCount <= CFG.POST_WAIT){
-      setAP(sym,'POST '+st.postSpikeCount+'/'+CFG.POST_WAIT,'hunting');
-      return;
-    }
-
-    // Verificar que el precio ya empezó a revertir
-    // BOOM spike (subida) → esperamos que el precio baje un poco
-    // CRASH spike (bajada) → esperamos que el precio suba un poco
-    const revertStarted = cfg.type==='boom' ? (lastRet < 0) : (lastRet > 0);
-
-    if(!revertStarted && st.postSpikeCount < 4){
-      // Precio aún no revierte — esperar 1 tick más (máximo 3 esperas)
-      setAP(sym,'WAIT REV...','hunting');
-      return;
-    }
-
-    // ── ENTRAR ───────────────────────────────────────────
-    // BOOM spike → precio subió → entrar PUT (va a bajar)
-    // CRASH spike → precio bajó → entrar CALL (va a subir)
-    const signal = cfg.type==='boom' ? 'PUT' : 'CALL';
-
-    st.spikeDetected  = false;
-    st.postSpikeCount = 0;
-    st.lastTrade      = Date.now();
-
-    ws.send(JSON.stringify({
-      buy:1, price:STAKE,
-      parameters:{
-        amount:STAKE, basis:'stake',
-        contract_type:signal, currency:'USD',
-        duration:cfg.post_ticks, duration_unit:'t',
-        symbol:sym
-      }
-    }));
-
-    openContracts[sym]='pending';
-    log(`⚡ ${cfg.label} SPIKE→${signal} $${STAKE} · atr:${atr.toFixed(4)} · ret:${st.spikeRet.toFixed(4)} · ${cfg.post_ticks}t`,'k');
-    setState(cfg.label+': POST-SPIKE '+signal,'act');
-    setAP(sym,'OPERANDO ⚡','fired');
-    updateUI();
-    return;
-  }
-
-  // ── DETECCIÓN DE SPIKE ────────────────────────────────
-  if(atr===0) return;
-  const ratio = Math.abs(lastRet) / atr;
-
-  // Verificar que es el tipo correcto de spike
-  const isBoomSpike  = cfg.type==='boom'  && lastRet > 0; // subida para BOOM
-  const isCrashSpike = cfg.type==='crash' && lastRet < 0; // bajada para CRASH
-  const isCorrectDir = isBoomSpike || isCrashSpike;
-
-  if(ratio >= cfg.spike_mult && isCorrectDir){
-    // ¡SPIKE DETECTADO!
-    st.spikeDetected  = true;
-    st.spikeRet       = lastRet;
-    st.postSpikeCount = 0;
-
-    const direction = cfg.type==='boom' ? '🚀 BOOM' : '💥 CRASH';
-    log(`${direction} SPIKE en ${cfg.label}! ret:${lastRet.toFixed(4)} / atr:${atr.toFixed(4)} = ${ratio.toFixed(1)}x`,'k');
-    setState(cfg.label+': SPIKE! Entrando...','inv');
-    setAP(sym,'SPIKE! ⚡','fired');
-
-    // Cooldown: no entrar si operó recientemente
-    const now=Date.now();
-    if(now-st.lastTrade < cfg.cooldown){
-      log(`⏳ ${cfg.label} cooldown — spike ignorado`,'x');
-      st.spikeDetected=false;
-      missedSpikes++;
-      document.getElementById('invEl').innerText=missedSpikes;
-      setAP(sym,'COOLDOWN','');
-    }
-
-    // Verificar límites globales
-    if(now<pauseUntil || total>=CFG.MAX_OPS || openContracts[sym]){
-      st.spikeDetected=false;
-      missedSpikes++;
-      document.getElementById('invEl').innerText=missedSpikes;
-    }
-  } else {
-    // Sin spike — escaneo normal
-    const typeClass = cfg.type==='boom' ? 'boom-ready' : 'crash-ready';
-    setAP(sym,'SCAN',typeClass);
-  }
-}
-
-// ── REPORTE ──────────────────────────────────────────────
-function showRep(){
-  const wr=total?(wins/total*100).toFixed(1):0;
-  const rv=document.getElementById('rRes');
-  rv.innerText=(profit>=0?'+$':'-$')+Math.abs(profit).toFixed(2);
-  rv.className='rbox-v'+(profit>=0?' up':' dn');
-  document.getElementById('rWR').innerText=wr+'%';
-  document.getElementById('rW').innerText=wins;
-  document.getElementById('rL').innerText=lossC;
-  document.getElementById('rT').innerText=total;
-  document.getElementById('rA').innerText=activeSymbols.length||'-';
-  const c=document.getElementById('rOps');
-  c.innerHTML=opLog.length===0
-    ?'<div style="font-size:10px;color:var(--dim);text-align:center;padding:8px">Sin operaciones</div>'
-    :opLog.slice(-12).reverse().map(o=>`
-      <div class="op">
-        <span style="color:var(--dim)">${o.t}</span>
-        <span style="color:var(--spike)">${o.sym}</span>
-        <span class="${o.w?'op-w':'op-l'}">${o.w?'WIN':'LOSS'}</span>
-        <span class="${o.w?'op-w':'op-l'}">${o.w?'+':'-'}$${o.p}</span>
-      </div>`).join('');
-  document.getElementById('rOverlay').className='rep-overlay';
-}
-
-// ── RESULTADO ────────────────────────────────────────────
-function onResult(sym, pnl){
-  const ts =new Date().toTimeString().slice(0,8);
-  const lbl=INDICES[sym]?.label||sym;
-  profit+=pnl; total++;
-  openContracts[sym]=null;
-
-  if(pnl>0){
-    wins++; lossStreak=0;
-    recent.push('w');
-    opLog.push({t:ts,sym:lbl,w:true,p:pnl.toFixed(2)});
-    log(`✅ ${lbl} WIN +$${pnl.toFixed(2)}  acum:${profit>=0?'+$':'-$'}${Math.abs(profit).toFixed(2)}`,'w');
-    setAP(sym,'WIN ✅','won');
-  } else {
-    lossC++; lossStreak++; totalLoss+=Math.abs(pnl);
-    recent.push('l');
-    opLog.push({t:ts,sym:lbl,w:false,p:Math.abs(pnl).toFixed(2)});
-    log(`❌ ${lbl} LOSS -$${Math.abs(pnl).toFixed(2)}  acum:${profit>=0?'+$':'-$'}${Math.abs(profit).toFixed(2)}`,'l');
-    setAP(sym,'LOSS ❌','lost');
-  }
-
-  document.getElementById('totEl').innerText=total;
-  if(recent.length>15) recent.shift();
-  renderDots(); updateUI();
-
-  if(lossStreak>=3){
-    pauseUntil=Date.now()+CFG.PAUSE_MS;
-    log('⏸ Pausa '+CFG.PAUSE_MS/1000+'s — 3 pérdidas seguidas','x');
-    lossStreak=0;
-  }
-
-  if(profit>=TP)       { log('🏆 TAKE PROFIT +$'+profit.toFixed(2),'g'); stopBot(true); return; }
-  if(profit<=-SL)      { log('🛑 STOP LOSS -$'+Math.abs(profit).toFixed(2),'s'); stopBot(true); return; }
-  if(total>=CFG.MAX_OPS){ log('Máx ops — sesión cerrada','x'); stopBot(true); return; }
-}
-
-// ════════════════════════════════════════════════════════
-// WEBSOCKET
-// ════════════════════════════════════════════════════════
-function startBot(token){
-  if(running) return;
-
-  wins=0;lossC=0;total=0;profit=0;totalLoss=0;
-  lossStreak=0;pauseUntil=0;
-  recent=[];missedSpikes=0;opLog=[];
-  openContracts={};contractToSym={};
-  document.getElementById('invEl').innerText='0';
-  document.getElementById('totEl').innerText='0';
-  renderDots();updateUI();updateClock();
-
-  symState={};
-  activeSymbols.forEach(s=>{
-    symState[s]={
-      prices:[], lastTrade:0,
-      spikeDetected:false, spikeRet:0,
-      postSpikeCount:0
-    };
-    openContracts[s]=null;
-  });
-
-  ws=new WebSocket('wss://ws.binaryws.com/websockets/v3?app_id=1089');
-  ws.onopen=()=>ws.send(JSON.stringify({authorize:token}));
-
-  ws.onmessage=(e)=>{
-    const d=JSON.parse(e.data);
-
-    if(d.authorize){
-      running=true; setBtnState(true);
-      bal=d.authorize.balance;
-      document.getElementById('badge').className='badge live';
-      document.getElementById('bTxt').innerText='ONLINE';
-      log('🔐 Conectado · $'+bal.toFixed(2),'i');
-      log('⚙ Stake $'+STAKE+' · TP +$'+TP+' · SL -$'+SL,'i');
-      log('🎯 Buscando spikes en: '+activeSymbols.map(s=>INDICES[s].label).join(', '),'i');
-      // Suscribir todos los índices seleccionados
-      activeSymbols.forEach(s=>{
-        ws.send(JSON.stringify({ticks:s,subscribe:1}));
-        log('🔗 '+INDICES[s].label+' ('+INDICES[s].type+') · x'+INDICES[s].spike_mult+' ATR · '+INDICES[s].post_ticks+'t post-spike','i');
-      });
-      ws.send(JSON.stringify({balance:1}));
-      updateUI();
-    }
-
-    if(d.balance){ bal=d.balance.balance; updateUI(); }
-
-    if(d.tick){
-      const sym=d.tick.symbol;
-      if(symState[sym] && running)
-        analyzeTick(sym, parseFloat(d.tick.quote));
-    }
-
-    if(d.buy){
-      const cid=d.buy.contract_id;
-      const pending=activeSymbols.find(s=>openContracts[s]==='pending');
-      if(pending){
-        openContracts[pending]=cid;
-        contractToSym[cid]=pending;
-      }
-      ws.send(JSON.stringify({proposal_open_contract:1,contract_id:cid,subscribe:1}));
-    }
-
-    if(d.proposal_open_contract && d.proposal_open_contract.is_sold){
-      const poc=d.proposal_open_contract;
-      const sym=contractToSym[poc.contract_id]
-             || activeSymbols.find(s=>poc.underlying===s);
-      if(!sym){ log('⚠ Contrato sin activo identificado','x'); return; }
-      delete contractToSym[poc.contract_id];
-      openContracts[sym]=null;
-      onResult(sym, parseFloat(poc.profit));
-    }
-
-    if(d.error) log('⚠ '+d.error.message,'x');
-  };
-
-  ws.onerror=()=>log('❌ Error WebSocket','s');
-  ws.onclose=()=>{
-    if(running){
-      running=false; setBtnState(false);
-      document.getElementById('badge').className='badge';
-      document.getElementById('bTxt').innerText='OFFLINE';
-      log('🔌 Desconectado','x');
-    }
-  };
-}
-
-function stopBot(auto=false){
-  if(ws) ws.close();
-  running=false; setBtnState(false);
-  document.getElementById('badge').className='badge';
-  document.getElementById('bTxt').innerText='OFFLINE';
-  setState('Caza finalizada','');
-  updateUI();
-  if(!auto) log('⏹ Detenido manualmente','x');
-  setTimeout(showRep,400);
-}
-</script>
-</body>
-</html>
+        <div class="ind-box">
+          <div 
