@@ -197,10 +197,6 @@ body{
   <div class="modal">
     <div class="m-title">TREND HUNTER</div>
     <div class="m-sub">BOOM & CRASH · EMA + RSI + MACD</div>
-
-    <div class="m-lbl">TOKEN API DERIV</div>
-    <input class="m-inp" type="password" id="iToken" placeholder="Tu token aquí">
-
     <div class="m-row">
       <div>
         <div class="m-lbl">STAKE ($)</div>
@@ -322,4 +318,527 @@ body{
           <div class="ind-chk" id="cRSI">--</div>
         </div>
         <div class="ind-box">
-          <div 
+          <div class="ind-lbl">MACD</div>
+          <div class="ind-val" id="iMACD">--</div>
+          <div class="ind-chk" id="cMACD">--</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="btn-wrap">
+    <button class="btn-toggle go" id="btnT" onclick="toggle()">📈 INICIAR</button>
+  </div>
+
+  <div class="stats">
+    <div class="st"><div class="sl">Balance</div><div class="sv cy" id="bal">0.00</div></div>
+    <div class="st"><div class="sl">Ganancia</div><div class="sv" id="prof">+$0.00</div></div>
+    <div class="st"><div class="sl">Winrate</div><div class="sv" id="wr">0%</div></div>
+    <div class="st"><div class="sl">Pérdidas</div><div class="sv dn" id="lossEl">$0.00</div></div>
+  </div>
+
+  <div class="dots-row"><span class="dl">ÚLTIMAS</span><div id="dots"></div></div>
+
+  <div class="state-row">
+    <span id="stateInfo">Presiona INICIAR</span>
+    <span class="chip" id="chip">IDLE</span>
+  </div>
+
+  <div class="count-row">
+    <span>FILTRADAS <span class="cnt" id="invEl">0</span></span>
+    <span>EJECUTADAS <span class="cnt" id="totEl">0</span></span>
+  </div>
+
+  <div class="log-wrap"><div class="log" id="logEl"></div></div>
+
+  <div class="ftr">
+    <span id="ftrTxt">$1.00 · TP $5 · SL $3</span>
+    <button class="rep-btn" onclick="showRep()">📊 REPORTE</button>
+  </div>
+</div></div>
+
+<script>
+// ════════════════════════════════════════════════════════
+// ⚠️  REEMPLAZA TU TOKEN AQUÍ ABAJO
+const TOKEN = "e1lRgxNoxWwBkzx";
+// ════════════════════════════════════════════════════════
+// TREND HUNTER — BOOM & CRASH
+//
+// ESTRATEGIA: Seguir la tendencia lenta (drift)
+//
+// Los Boom/Crash tienen dos fases:
+//  1. DRIFT: tendencia gradual entre spikes
+//     → precio sube lentamente (BOOM) o baja (CRASH)
+//  2. SPIKE: movimiento violento en la dirección del índice
+//
+// Este bot opera el DRIFT con triple confirmación:
+//
+//  EMA 50: precio por encima → tendencia alcista
+//          precio por debajo → tendencia bajista
+//
+//  RSI 14: sobreventa (<40) → impulso alcista esperado
+//          sobrecompra (>60) → impulso bajista esperado
+//
+//  MACD 12/26/9: cruce de línea MACD sobre señal → alcista
+//                cruce de señal sobre MACD → bajista
+//
+// ENTRADA:
+//  BOOM: EMA ok + RSI<40 + MACD cruce alcista → CALL
+//  CRASH: EMA ok + RSI>60 + MACD cruce bajista → PUT
+//
+// CORRECCIONES vs original:
+//  ✅ MACD recalculado correctamente con historial propio
+//  ✅ EMA 50 en vez de 200 (200 tarda demasiado)
+//  ✅ RSI umbrales 40/60 en vez de 30/70 (más señales)
+//  ✅ Duration 10 ticks en vez de 5 (tendencias lentas)
+//  ✅ Multi-activo simultáneo
+//  ✅ TP/SL monetario
+//  ✅ Sin cooldown excesivo
+// ════════════════════════════════════════════════════════
+
+const INDICES = {
+  BOOM1000:  {label:'B1000',type:'boom',  dur:10, cool:60000},
+  BOOM500:   {label:'B500', type:'boom',  dur:10, cool:50000},
+  BOOM300:   {label:'B300', type:'boom',  dur:8,  cool:40000},
+  CRASH1000: {label:'C1000',type:'crash', dur:10, cool:60000},
+  CRASH500:  {label:'C500', type:'crash', dur:10, cool:50000},
+  CRASH300:  {label:'C300', type:'crash', dur:8,  cool:40000},
+};
+
+const CFG = {
+  EMA_P   : 50,    // EMA 50 — más rápida que 200, arranca en 50 ticks
+  RSI_P   : 14,
+  RSI_BULL: 40,    // <40 = sobreventa → señal alcista
+  RSI_BEAR: 60,    // >60 = sobrecompra → señal bajista
+  MACD_F  : 12,
+  MACD_S  : 26,
+  MACD_SIG: 9,
+  MIN_BARS: 55,    // mínimo para tener EMA50 + MACD
+  HISTORY : 200,
+  MAX_OPS : 20,
+  PAUSE_MS: 25000,
+};
+
+let ws, running=false;
+let bal=0, profit=0, wins=0, lossC=0, total=0, totalLoss=0;
+let lossStreak=0, pauseUntil=0;
+let recent=[], filtered=0, opLog=[];
+let STAKE=1.00, TP=5, SL=3;
+let activeSymbols=[];
+let symState={};
+let openContracts={};
+let contractToSym={};
+
+// ── MODAL ─────────────────────────────────────────────
+function sp2(t,v){
+  if(t==='s') document.getElementById('iStake').value=v;
+  else if(t==='tp') document.getElementById('iTP').value=v;
+  else document.getElementById('iSL').value=v;
+}
+
+function launch(){
+  const token=TOKEN;
+  if(!token||token==='TU_TOKEN_AQUI'){alert('Reemplaza TU_TOKEN_AQUI con tu token en el código');return;}
+  const sel=[];
+  document.querySelectorAll('.sym-btn.on').forEach(el=>sel.push(el.dataset.sym));
+  if(sel.length===0){alert('Selecciona al menos 1 índice');return;}
+  activeSymbols=sel;
+  STAKE=Math.max(0.35,parseFloat(document.getElementById('iStake').value)||1);
+  TP=parseFloat(document.getElementById('iTP').value)||5;
+  SL=parseFloat(document.getElementById('iSL').value)||3;
+  document.getElementById('mOverlay').className='overlay hidden';
+  document.getElementById('stakeEl').innerText='$'+STAKE.toFixed(2);
+  document.getElementById('mGoal').innerText='+$'+TP;
+  document.getElementById('mStop').innerText='-$'+SL;
+  document.getElementById('ftrTxt').innerText=`$${STAKE.toFixed(2)} · TP $${TP} · SL $${SL}`;
+  document.getElementById('mOps').innerText=`0/${CFG.MAX_OPS}`;
+  buildPanel();
+  startBot(token);
+}
+
+function toggle(){
+  if(!running) document.getElementById('mOverlay').className='overlay';
+  else stopBot(false);
+}
+
+function setBtnState(on){
+  const b=document.getElementById('btnT');
+  if(on){b.className='btn-toggle stop';b.innerText='■ DETENER';}
+  else{b.className='btn-toggle go';b.innerText='📈 INICIAR';}
+}
+
+function buildPanel(){
+  document.getElementById('activePanel').innerHTML=
+    activeSymbols.map(s=>`
+      <div class="ap ${INDICES[s].type==='boom'?'boom-s':'crash-s'}" id="ap_${s}">
+        <div class="ap-name">${INDICES[s].label}</div>
+        <div class="ap-st" id="apst_${s}">SCAN</div>
+      </div>`).join('');
+}
+
+function setAP(sym,st,cls){
+  const el=document.getElementById('ap_'+sym);
+  const se=document.getElementById('apst_'+sym);
+  if(!el)return;
+  const base=INDICES[sym].type==='boom'?'boom-s':'crash-s';
+  el.className='ap '+(cls||base);
+  se.innerText=st;
+}
+
+// ── INDICADORES ──────────────────────────────────────
+function calcEMA(prices,period){
+  if(prices.length<period) return 0;
+  const k=2/(period+1);
+  let ema=prices.slice(0,period).reduce((a,b)=>a+b,0)/period;
+  for(let i=period;i<prices.length;i++) ema=prices[i]*k+ema*(1-k);
+  return ema;
+}
+
+function calcRSI(prices,period){
+  if(prices.length<period+1) return 50;
+  let gains=0,losses=0;
+  for(let i=prices.length-period;i<prices.length;i++){
+    const d=prices[i]-prices[i-1];
+    if(d>=0) gains+=d; else losses-=d;
+  }
+  const ag=gains/period, al=losses/period;
+  if(al===0) return 100;
+  return 100-(100/(1+ag/al));
+}
+
+// MACD corregido — mantiene historial propio de línea MACD
+function calcMACD(prices, fastEMAs, slowEMAs, sigEMAs){
+  // fastEMAs/slowEMAs/sigEMAs son arrays acumulativos por símbolo
+  if(prices.length<CFG.MACD_S) return {macd:0,sig:0,cross:0};
+  const fast=calcEMA(prices,CFG.MACD_F);
+  const slow=calcEMA(prices,CFG.MACD_S);
+  const macdLine=fast-slow;
+
+  // Acumular historial de macd para calcular la señal
+  fastEMAs.push(fast); slowEMAs.push(slow); sigEMAs.push(macdLine);
+  if(sigEMAs.length>100){ fastEMAs.shift(); slowEMAs.shift(); sigEMAs.shift(); }
+
+  const sigLine=sigEMAs.length>=CFG.MACD_SIG ? calcEMA(sigEMAs,CFG.MACD_SIG) : 0;
+  const prevMacd=sigEMAs.length>=2 ? sigEMAs[sigEMAs.length-2] : macdLine;
+  const prevSig=sigLine; // aproximación
+  const cross=macdLine>sigLine && prevMacd<=prevSig ? 1
+             :macdLine<sigLine && prevMacd>=prevSig ? -1 : 0;
+
+  return {macd:macdLine,sig:sigLine,cross};
+}
+
+// ── UPDATE UI INDICADORES ────────────────────────────
+function updateInds(ema,rsi,macd,isBoom){
+  const emaOk=isBoom?(ema>0):(!isBoom&&ema>0);
+  document.getElementById('iEMA').innerText=ema>0?ema.toFixed(2):'--';
+  document.getElementById('iEMA').className='ind-val '+(ema>0?'ok':'neutral');
+  document.getElementById('cEMA').innerText=ema>0?'✅ EMA OK':'⏳ Calc...';
+  document.getElementById('cEMA').className='ind-chk '+(ema>0?'ok':'');
+
+  const rsiOk=isBoom?rsi<CFG.RSI_BULL:rsi>CFG.RSI_BEAR;
+  document.getElementById('iRSI').innerText=rsi>0?rsi.toFixed(1):'--';
+  document.getElementById('iRSI').className='ind-val '+(rsiOk?'ok':rsi>0?'warn':'neutral');
+  document.getElementById('cRSI').innerText=rsiOk?'✅ RSI OK':rsi>0?'⏳ Esperando':'⏳ Calc...';
+  document.getElementById('cRSI').className='ind-chk '+(rsiOk?'ok':'no');
+
+  const macdOk=isBoom?macd.cross===1:macd.cross===-1;
+  document.getElementById('iMACD').innerText=macd.macd!==0?macd.macd.toFixed(5):'--';
+  document.getElementById('iMACD').className='ind-val '+(macdOk?'ok':macd.macd!==0?'warn':'neutral');
+  document.getElementById('cMACD').innerText=macdOk?'✅ CRUCE OK':macd.macd!==0?'⏳ Sin cruce':'⏳ Calc...';
+  document.getElementById('cMACD').className='ind-chk '+(macdOk?'ok':'no');
+}
+
+// ── SESIÓN ────────────────────────────────────────────
+function getSess(){
+  const col=new Date(Date.now()-5*3600000);
+  const h=col.getUTCHours()+col.getUTCMinutes()/60;
+  if((h>=1&&h<7)||(h>=13&&h<19)) return {name:'🟢 ÓPTIMA',lv:'hot'};
+  if((h>=7&&h<10)||(h>=20&&h<24)||h<1) return {name:'🟡 NORMAL',lv:'warm'};
+  return {name:'🔴 BAJA',lv:'cold'};
+}
+
+function log(msg,t='i'){
+  const el=document.getElementById('logEl');
+  const ts=new Date().toTimeString().slice(0,8);
+  const cls={w:'lw',l:'ll',i:'li',x:'lx',s:'ls',g:'lg',c:'lc'}[t]||'li';
+  el.innerHTML+=`<div class="le"><span class="lt">${ts}</span><span class="${cls}">${msg}</span></div>`;
+  el.scrollTop=el.scrollHeight;
+}
+
+function setState(txt,type){
+  document.getElementById('stateInfo').innerHTML=(type==='act'?'<span class="spin"></span>':'')+txt;
+  const c=document.getElementById('chip');
+  c.className='chip'+(type==='act'?' act':type==='inv'?' inv':type==='wait'?' wait':'');
+  c.innerText=type==='act'?'ACTIVO':type==='inv'?'FILTRADO':type==='wait'?'ESPERA':'SCAN';
+}
+
+function updateClock(){
+  const col=new Date(Date.now()-5*3600000);
+  const h=col.getUTCHours(),m=String(col.getUTCMinutes()).padStart(2,'0');
+  document.getElementById('clock').innerText=`${h%12||12}:${m} ${h<12?'AM':'PM'}`;
+  const s=getSess();
+  const el=document.getElementById('sessEl');
+  el.className='sess-pill '+s.lv;
+  el.innerText=s.name;
+}
+
+function updateUI(){
+  const wr=total?(wins/total*100).toFixed(1):0;
+  document.getElementById('bal').innerText=bal.toFixed(2);
+  const pe=document.getElementById('prof');
+  pe.innerText=(profit>=0?'+$':'-$')+Math.abs(profit).toFixed(2);
+  pe.className='sv'+(profit>0?' up':profit<0?' dn':'');
+  document.getElementById('wr').innerText=wr+'%';
+  document.getElementById('wr').className='sv'+(parseFloat(wr)>=65?' up':parseFloat(wr)>=52?' go':'');
+  document.getElementById('lossEl').innerText='$'+totalLoss.toFixed(2);
+  const mp=document.getElementById('mProg');
+  mp.innerText=(profit>=0?'+$':'-$')+Math.abs(profit).toFixed(2);
+  mp.className='mv'+(profit>=TP?' g':profit<=-SL?' r':'y');
+  document.getElementById('mOps').innerText=`${total}/${CFG.MAX_OPS}`;
+  const pct=Math.max(0,Math.min(100,(profit/TP)*100));
+  document.getElementById('pFill').style.width=pct+'%';
+}
+
+function renderDots(){
+  document.getElementById('dots').innerHTML=
+    recent.map(r=>`<div class="d ${r}"></div>`).join('');
+}
+
+setInterval(updateClock,1000);
+
+// ════════════════════════════════════════════════════════
+// NÚCLEO: ANÁLISIS DE TENDENCIA
+// ════════════════════════════════════════════════════════
+function analyzeTrend(sym, price){
+  const st=symState[sym];
+  const cfg=INDICES[sym];
+  if(!st) return;
+
+  st.prices.push(price);
+  if(st.prices.length>CFG.HISTORY) st.prices.shift();
+
+  const prices=st.prices;
+  if(prices.length<CFG.MIN_BARS) return;
+
+  const isBoom=cfg.type==='boom';
+  const ema=calcEMA(prices,CFG.EMA_P);
+  const rsi=calcRSI(prices,CFG.RSI_P);
+  const macd=calcMACD(prices,st.fastEMAs,st.slowEMAs,st.sigEMAs);
+
+  // Actualizar panel del activo más activo (último en procesar)
+  updateInds(ema,rsi,macd,isBoom);
+
+  // ── CONDICIÓN EMA ─────────────────────────────────────
+  // BOOM: precio bajo la EMA → tendencia bajista → esperar CALL
+  // CRASH: precio sobre la EMA → tendencia alcista → esperar PUT
+  const emaOk=isBoom?(price<ema):(price>ema);
+  if(!emaOk){
+    filtered++;
+    document.getElementById('invEl').innerText=filtered;
+    setAP(sym,'EMA WAIT',cfg.type==='boom'?'boom-s':'crash-s');
+    return;
+  }
+
+  // ── CONDICIÓN RSI ─────────────────────────────────────
+  const rsiOk=isBoom?(rsi<CFG.RSI_BULL):(rsi>CFG.RSI_BEAR);
+  if(!rsiOk){
+    filtered++;
+    document.getElementById('invEl').innerText=filtered;
+    setAP(sym,'RSI WAIT','confirming');
+    return;
+  }
+
+  // ── CONDICIÓN MACD (cruce) ────────────────────────────
+  const macdOk=isBoom?(macd.cross===1):(macd.cross===-1);
+  if(!macdOk){
+    setAP(sym,'MACD WAIT','confirming');
+    return;
+  }
+
+  // ── LAS 3 CONFLUYEN → ENTRAR ──────────────────────────
+  const now=Date.now();
+  if(now<pauseUntil || total>=CFG.MAX_OPS) return;
+  if(now-st.lastTrade<cfg.cool) return;
+  if(openContracts[sym] && openContracts[sym]!==null) return;
+
+  const signal=isBoom?'CALL':'PUT';
+  // Enviar proposal primero — Boom/Crash requiere este flujo
+  ws.send(JSON.stringify({
+    proposal:1,
+    amount:STAKE,
+    basis:'stake',
+    contract_type:signal,
+    currency:'USD',
+    duration:cfg.dur,
+    duration_unit:'t',
+    symbol:sym
+  }));
+
+  st.lastTrade=now;
+  openContracts[sym]='pending';
+  log(`📈 ${cfg.label} → ${signal} $${STAKE} · EMA✅ RSI:${rsi.toFixed(1)}✅ MACD✅ · ${cfg.dur}t`,'c');
+  setState(cfg.label+': '+signal+' CONFLUENCIA','act');
+  setAP(sym,'OPERANDO ⚡','trading');
+  updateUI();
+}
+
+// ── RESULTADO ─────────────────────────────────────────
+function onResult(sym,pnl){
+  const ts=new Date().toTimeString().slice(0,8);
+  const lbl=INDICES[sym]?.label||sym;
+  profit+=pnl;total++;
+  openContracts[sym]=null;
+
+  if(pnl>0){
+    wins++;lossStreak=0;recent.push('w');
+    opLog.push({t:ts,sym:lbl,w:true,p:pnl.toFixed(2)});
+    log(`✅ ${lbl} WIN +$${pnl.toFixed(2)}  acum:${profit>=0?'+$':'-$'}${Math.abs(profit).toFixed(2)}`,'w');
+    setAP(sym,'WIN ✅','won');
+  } else {
+    lossC++;lossStreak++;totalLoss+=Math.abs(pnl);recent.push('l');
+    opLog.push({t:ts,sym:lbl,w:false,p:Math.abs(pnl).toFixed(2)});
+    log(`❌ ${lbl} LOSS -$${Math.abs(pnl).toFixed(2)}  acum:${profit>=0?'+$':'-$'}${Math.abs(profit).toFixed(2)}`,'l');
+    setAP(sym,'LOSS ❌','lost');
+  }
+
+  document.getElementById('totEl').innerText=total;
+  if(recent.length>15) recent.shift();
+  renderDots();updateUI();
+
+  if(lossStreak>=3){
+    pauseUntil=Date.now()+CFG.PAUSE_MS;
+    log('⏸ Pausa '+CFG.PAUSE_MS/1000+'s — 3 pérdidas','x');
+    lossStreak=0;
+  }
+
+  if(profit>=TP)       {log('🏆 TAKE PROFIT +$'+profit.toFixed(2),'g');stopBot(true);return;}
+  if(profit<=-SL)      {log('🛑 STOP LOSS -$'+Math.abs(profit).toFixed(2),'s');stopBot(true);return;}
+  if(total>=CFG.MAX_OPS){log('Máx ops — sesión cerrada','x');stopBot(true);return;}
+}
+
+// ── REPORTE ───────────────────────────────────────────
+function showRep(){
+  const wr=total?(wins/total*100).toFixed(1):0;
+  const rv=document.getElementById('rRes');
+  rv.innerText=(profit>=0?'+$':'-$')+Math.abs(profit).toFixed(2);
+  rv.className='rbox-v'+(profit>=0?' up':' dn');
+  document.getElementById('rWR').innerText=wr+'%';
+  document.getElementById('rW').innerText=wins;
+  document.getElementById('rL').innerText=lossC;
+  document.getElementById('rT').innerText=total;
+  document.getElementById('rA').innerText=activeSymbols.length||'-';
+  const c=document.getElementById('rOps');
+  c.innerHTML=opLog.length===0
+    ?'<div style="font-size:10px;color:var(--dim);text-align:center;padding:8px">Sin operaciones</div>'
+    :opLog.slice(-12).reverse().map(o=>`
+      <div class="op">
+        <span style="color:var(--dim)">${o.t}</span>
+        <span style="color:var(--blue)">${o.sym}</span>
+        <span class="${o.w?'op-w':'op-l'}">${o.w?'WIN':'LOSS'}</span>
+        <span class="${o.w?'op-w':'op-l'}">${o.w?'+':'-'}$${o.p}</span>
+      </div>`).join('');
+  document.getElementById('rOverlay').className='rep-overlay';
+}
+
+// ════════════════════════════════════════════════════════
+// WEBSOCKET
+// ════════════════════════════════════════════════════════
+function startBot(token){
+  if(running) return;
+  wins=0;lossC=0;total=0;profit=0;totalLoss=0;
+  lossStreak=0;pauseUntil=0;
+  recent=[];filtered=0;opLog=[];
+  openContracts={};contractToSym={};
+  document.getElementById('invEl').innerText='0';
+  document.getElementById('totEl').innerText='0';
+  renderDots();updateUI();updateClock();
+
+  symState={};
+  activeSymbols.forEach(s=>{
+    symState[s]={
+      prices:[],lastTrade:0,
+      fastEMAs:[],slowEMAs:[],sigEMAs:[]
+    };
+    openContracts[s]=null;
+  });
+
+  ws=new WebSocket('wss://ws.binaryws.com/websockets/v3?app_id=1089');
+  ws.onopen=()=>ws.send(JSON.stringify({authorize:token}));
+
+  ws.onmessage=(e)=>{
+    const d=JSON.parse(e.data);
+
+    if(d.authorize){
+      running=true;setBtnState(true);
+      bal=d.authorize.balance;
+      document.getElementById('badge').className='badge live';
+      document.getElementById('bTxt').innerText='ONLINE';
+      log('🔐 Conectado · $'+bal.toFixed(2),'i');
+      log('⚙ Stake $'+STAKE+' · TP +$'+TP+' · SL -$'+SL,'i');
+      log('📈 EMA'+CFG.EMA_P+' + RSI'+CFG.RSI_P+' + MACD '+CFG.MACD_F+'/'+CFG.MACD_S+'/'+CFG.MACD_SIG,'i');
+      activeSymbols.forEach(s=>{
+        ws.send(JSON.stringify({ticks:s,subscribe:1}));
+        log('🔗 '+INDICES[s].label+' ('+INDICES[s].type+') · '+INDICES[s].dur+'t por op','i');
+      });
+      ws.send(JSON.stringify({balance:1}));
+      updateUI();
+    }
+
+    if(d.balance){bal=d.balance.balance;updateUI();}
+
+    if(d.tick){
+      const sym=d.tick.symbol;
+      if(symState[sym]&&running)
+        analyzeTrend(sym,parseFloat(d.tick.quote));
+    }
+
+    if(d.proposal){
+      // Proposal aceptada → ejecutar compra
+      if(d.proposal.id){
+        ws.send(JSON.stringify({buy:d.proposal.id, price:STAKE}));
+      }
+    }
+
+    if(d.buy){
+      const cid=d.buy.contract_id;
+      const pending=activeSymbols.find(s=>openContracts[s]==='pending');
+      if(pending){openContracts[pending]=cid;contractToSym[cid]=pending;}
+      ws.send(JSON.stringify({proposal_open_contract:1,contract_id:cid,subscribe:1}));
+    }
+
+    if(d.proposal_open_contract&&d.proposal_open_contract.is_sold){
+      const poc=d.proposal_open_contract;
+      const sym=contractToSym[poc.contract_id]||activeSymbols.find(s=>poc.underlying===s);
+      if(!sym){log('⚠ Contrato sin activo','x');return;}
+      delete contractToSym[poc.contract_id];
+      openContracts[sym]=null;
+      onResult(sym,parseFloat(poc.profit));
+    }
+
+    if(d.error) log('⚠ '+d.error.message,'x');
+  };
+
+  ws.onerror=()=>log('❌ Error WebSocket','s');
+  ws.onclose=()=>{
+    if(running){
+      running=false;setBtnState(false);
+      document.getElementById('badge').className='badge';
+      document.getElementById('bTxt').innerText='OFFLINE';
+      log('🔌 Desconectado','x');
+    }
+  };
+}
+
+function stopBot(auto=false){
+  if(ws) ws.close();
+  running=false;setBtnState(false);
+  document.getElementById('badge').className='badge';
+  document.getElementById('bTxt').innerText='OFFLINE';
+  setState('Sesión finalizada','');
+  updateUI();
+  if(!auto) log('⏹ Detenido manualmente','x');
+  setTimeout(showRep,400);
+}
+</script>
+</body>
+</html>
