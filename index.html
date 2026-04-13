@@ -27,12 +27,12 @@ body{
 /* MODAL */
 .overlay{position:fixed;inset:0;background:rgba(7,8,13,.97);display:flex;align-items:center;justify-content:center;z-index:999;backdrop-filter:blur(16px);transition:opacity .3s;}
 .overlay.hidden{opacity:0;pointer-events:none;}
-.modal{background:var(--bg1);border:1px solid var(--brd);border-radius:20px;padding:26px 22px;max-width:360px;width:95%;position:relative;overflow:hidden;max-height:92vh;overflow-y:auto;}
+.modal{background:var(--bg1);border:1px solid var(--brd);border-radius:20px;padding:22px 20px 20px;max-width:360px;width:95%;position:relative;max-height:88vh;overflow-y:auto;-webkit-overflow-scrolling:touch;}
 .modal::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,transparent,var(--blue),var(--green),transparent);}
 .m-title{font-family:'Share Tech Mono',monospace;font-size:13px;color:var(--blue);letter-spacing:5px;text-align:center;margin-bottom:3px;}
 .m-sub{font-size:11px;color:var(--dim);text-align:center;letter-spacing:2px;margin-bottom:20px;}
 .m-lbl{font-size:10px;color:var(--txt);letter-spacing:2px;margin-bottom:6px;text-transform:uppercase;}
-.m-inp{width:100%;background:var(--bg3);border:1px solid var(--dim);border-radius:10px;color:#fff;font-family:'Share Tech Mono',monospace;font-size:15px;padding:11px;outline:none;text-align:center;transition:border .2s;margin-bottom:12px;}
+.m-inp{width:100%;background:var(--bg3);border:1px solid var(--dim);border-radius:10px;color:#fff;font-family:'Share Tech Mono',monospace;font-size:15px;padding:9px;outline:none;text-align:center;transition:border .2s;margin-bottom:10px;}
 .m-inp:focus{border-color:var(--blue);}
 .m-inp[type="password"]{font-size:18px;letter-spacing:4px;}
 .m-row{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:4px;}
@@ -41,7 +41,7 @@ body{
 .pr:hover{border-color:var(--blue);color:var(--blue);}
 .pr.on{border-color:var(--blue);color:#000;background:var(--blue);}
 .sym-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:7px;margin-bottom:18px;}
-.sym-btn{background:var(--bg3);border:1px solid var(--dim);border-radius:10px;padding:10px 6px;text-align:center;cursor:pointer;transition:all .2s;}
+.sym-btn{background:var(--bg3);border:1px solid var(--dim);border-radius:10px;padding:8px 4px;text-align:center;cursor:pointer;transition:all .2s;}
 .sym-btn.on.boom{border-color:var(--green);background:rgba(6,214,160,.08);}
 .sym-btn.on.crash{border-color:var(--red);background:rgba(239,35,60,.08);}
 .sym-name{font-size:11px;font-weight:700;color:var(--txt);font-family:'Share Tech Mono',monospace;}
@@ -50,7 +50,7 @@ body{
 .sym-freq{font-size:8px;color:var(--dim);margin-top:3px;}
 .sym-btn.on .sym-freq{color:var(--txt);}
 .divider{height:1px;background:var(--brd);margin:14px 0;}
-.m-btn{width:100%;font-family:'Share Tech Mono',monospace;font-size:13px;letter-spacing:3px;padding:15px;border:none;border-radius:12px;background:linear-gradient(135deg,var(--blue2),var(--blue));color:#000;cursor:pointer;transition:all .2s;}
+.m-btn{width:100%;font-family:'Share Tech Mono',monospace;font-size:13px;letter-spacing:3px;padding:13px;border:none;border-radius:12px;background:linear-gradient(135deg,var(--blue2),var(--blue));color:#000;cursor:pointer;transition:all .2s;}
 .m-btn:hover{box-shadow:0 4px 24px rgba(76,201,240,.35);}
 
 /* REPORTE */
@@ -238,16 +238,12 @@ body{
       </div>
       <div class="sym-btn boom on" data-sym="BOOM500" onclick="this.classList.toggle('on')">
         <div class="sym-name">B500</div><div class="sym-freq">Drift medio</div>
-      </div><div class="sym-freq">Drift rápido</div>
-      </div>
-      <div class="sym-btn crash on" data-sym="CRASH1000" onclick="this.classList.toggle('on')">
+      </div><div class="sym-btn crash on" data-sym="CRASH1000" onclick="this.classList.toggle('on')">
         <div class="sym-name">C1000</div><div class="sym-freq">Drift lento</div>
       </div>
       <div class="sym-btn crash on" data-sym="CRASH500" onclick="this.classList.toggle('on')">
         <div class="sym-name">C500</div><div class="sym-freq">Drift medio</div>
-      </div><div class="sym-freq">Drift rápido</div>
-      </div>
-    </div>
+      </div></div>
 
     <button class="m-btn" onclick="launch()">📈 INICIAR SEGUIMIENTO</button>
   </div>
