@@ -238,18 +238,14 @@ body{
       </div>
       <div class="sym-btn boom on" data-sym="BOOM500" onclick="this.classList.toggle('on')">
         <div class="sym-name">B500</div><div class="sym-freq">Drift medio</div>
-      </div>
-      <div class="sym-btn boom" data-sym="BOOM300" onclick="this.classList.toggle('on')">
-        <div class="sym-name">B300</div><div class="sym-freq">Drift rápido</div>
+      </div><div class="sym-freq">Drift rápido</div>
       </div>
       <div class="sym-btn crash on" data-sym="CRASH1000" onclick="this.classList.toggle('on')">
         <div class="sym-name">C1000</div><div class="sym-freq">Drift lento</div>
       </div>
       <div class="sym-btn crash on" data-sym="CRASH500" onclick="this.classList.toggle('on')">
         <div class="sym-name">C500</div><div class="sym-freq">Drift medio</div>
-      </div>
-      <div class="sym-btn crash" data-sym="CRASH300" onclick="this.classList.toggle('on')">
-        <div class="sym-name">C300</div><div class="sym-freq">Drift rápido</div>
+      </div><div class="sym-freq">Drift rápido</div>
       </div>
     </div>
 
@@ -397,12 +393,10 @@ const TOKEN = "e1lRgxNoxWwBkzx";
 // ════════════════════════════════════════════════════════
 
 const INDICES = {
-  BOOM1000:  {label:'B1000',type:'boom',  dur:10, cool:60000},
-  BOOM500:   {label:'B500', type:'boom',  dur:10, cool:50000},
-  BOOM300:   {label:'B300', type:'boom',  dur:8,  cool:40000},
-  CRASH1000: {label:'C1000',type:'crash', dur:10, cool:60000},
-  CRASH500:  {label:'C500', type:'crash', dur:10, cool:50000},
-  CRASH300:  {label:'C300', type:'crash', dur:8,  cool:40000},
+  BOOM1000:  {label:'B1000',type:'boom',  dur:60, cool:60000},
+  BOOM500:   {label:'B500', type:'boom',  dur:45, cool:50000},
+  CRASH1000: {label:'C1000',type:'crash', dur:60, cool:60000},
+  CRASH500:  {label:'C500', type:'crash', dur:45, cool:50000},
 };
 
 const CFG = {
@@ -670,7 +664,7 @@ function analyzeTrend(sym, price){
     contract_type:signal,
     currency:'USD',
     duration:cfg.dur,
-    duration_unit:'t',
+    duration_unit:'s',
     symbol:sym
   }));
 
