@@ -3,54 +3,47 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>AI SNIPER V58 | 3 ACTIVOS × 3 LOOKBACKS = ENTRADA ÓPTIMA</title>
+<title>PICO Z-SCORE PRO | CONSERVADOR + ATR + LÍMITE DIARIO</title>
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <style>
 *{margin:0;padding:0;box-sizing:border-box;}
-body{background:radial-gradient(circle at 20% 30%,#0a0f1a,#02060d);min-height:100vh;display:flex;justify-content:center;align-items:center;font-family:'Segoe UI','Courier New',monospace;padding:20px;}
-.container{max-width:1000px;width:100%;background:rgba(5,10,20,0.75);backdrop-filter:blur(10px);border-radius:32px;border:1px solid rgba(0,255,200,0.25);padding:24px;box-shadow:0 20px 40px rgba(0,0,0,0.5);}
-h2{font-size:1.5rem;font-weight:600;background:linear-gradient(135deg,#00ffcc,#00b8ff);-webkit-background-clip:text;background-clip:text;color:transparent;letter-spacing:-0.5px;margin-bottom:20px;display:flex;align-items:center;justify-content:space-between;}
-.badge{background:rgba(0,255,200,0.15);padding:4px 10px;border-radius:40px;font-size:0.7rem;color:#00ffcc;}
-.stats-row{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:24px;}
-.stat-card{background:rgba(0,10,20,0.6);border-radius:20px;padding:12px;text-align:center;border:1px solid rgba(0,255,200,0.2);}
-.stat-label{font-size:10px;text-transform:uppercase;letter-spacing:1px;color:#8a94a8;margin-bottom:6px;}
-.stat-value{font-size:22px;font-weight:800;color:#00ffcc;font-family:monospace;}
-.stat-value.positive{color:#2ed573;}
-.stat-value.negative{color:#ff4757;}
-.stat-value.winrate{color:#ffaa44;}
-.input-group{margin-bottom:14px;}
-.input-group label{display:block;font-size:11px;color:#8a94a8;margin-bottom:6px;}
-.input-group input{width:100%;background:#01050c;border:1px solid #1e2a3a;padding:10px 12px;border-radius:20px;color:#00ffcc;font-family:monospace;font-size:13px;outline:none;}
-.triple-row{display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;margin-bottom:16px;}
-.time-box{background:#01050c;padding:14px;border-radius:20px;border:1px solid #1e2a3a;margin-bottom:20px;}
-.time-title{font-size:12px;color:#00ffcc;margin-bottom:10px;font-weight:bold;}
-.time-status{text-align:center;margin-top:8px;font-size:13px;font-weight:bold;padding:6px;border-radius:20px;}
-.time-status.good{background:rgba(46,213,115,0.2);color:#2ed573;}
-.time-status.bad{background:rgba(255,71,87,0.2);color:#ff4757;}
-.time-status.warning{background:rgba(255,159,67,0.2);color:#ff9f43;}
-.strategy-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:20px;}
-.asset-card{background:#01050c;border-radius:20px;padding:12px;border:1px solid #1e2a3a;}
-.asset-title{font-size:14px;font-weight:bold;color:#00ffcc;text-align:center;margin-bottom:8px;}
-.lb-row{display:flex;justify-content:space-between;font-size:10px;padding:4px 0;border-bottom:1px solid #1a2533;}
-.lb-label{color:#8a94a8;}
-.lb-signal{font-weight:bold;}
-.lb-score{color:#ffaa44;}
-.btn{width:100%;background:linear-gradient(90deg,#00ffcc,#00b8ff);border:none;padding:12px;border-radius:40px;font-weight:bold;font-size:14px;color:#01050c;cursor:pointer;margin:12px 0;}
-.status{text-align:center;background:rgba(0,255,200,0.05);padding:8px;border-radius:40px;font-size:12px;margin-bottom:14px;font-family:monospace;}
-.signal-box{text-align:center;background:#01050c;padding:10px;border-radius:24px;margin:12px 0;font-size:14px;font-weight:bold;border:1px solid #1e2a3a;}
-.signal-value{color:#ffaa44;}
-.indicator-panel{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin:12px 0;}
-.indicator{background:#01050c;padding:8px;text-align:center;border-radius:14px;}
-.indicator-label{font-size:8px;color:#6c7a8e;}
-.indicator-value{font-size:16px;font-weight:bold;color:#00ffcc;}
-canvas{margin:12px 0;background:#01050c;border-radius:16px;padding:6px;}
-.log{background:#01050c;border-radius:20px;height:130px;overflow-y:auto;padding:10px;font-size:10px;font-family:monospace;color:#8a94a8;border:1px solid #1e2a3a;}
-.log div{padding:3px 0;border-bottom:1px solid #1a2533;}
+body{background:radial-gradient(circle at 20% 30%,#0a0f1a,#02060d);font-family:'Segoe UI','Courier New',monospace;padding:20px;min-height:100vh;display:flex;justify-content:center;align-items:center;}
+.container{max-width:1400px;width:100%;background:rgba(5,10,20,0.75);backdrop-filter:blur(10px);border-radius:32px;border:1px solid rgba(0,255,200,0.3);padding:24px;box-shadow:0 20px 40px rgba(0,0,0,0.5);}
+h1{font-size:1.8rem;background:linear-gradient(135deg,#00ffcc,#00b8ff);-webkit-background-clip:text;background-clip:text;color:transparent;margin-bottom:20px;display:flex;justify-content:space-between;}
+.badge{background:rgba(0,255,200,0.2);padding:4px 12px;border-radius:40px;font-size:0.7rem;color:#00ffcc;}
+.stats-row{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:24px;}
+.stat-card{background:#01050c;border:1px solid #1e2a3a;border-radius:24px;padding:12px;text-align:center;}
+.stat-label{font-size:11px;color:#8a94a8;text-transform:uppercase;}
+.stat-value{font-size:26px;font-weight:800;color:#00ffcc;font-family:monospace;}
+.positive{color:#2ed573;}.negative{color:#ff4757;}.winrate{color:#ffaa44;}
+.input-group{margin-bottom:16px;}
+.input-group label{font-size:11px;color:#8a94a8;display:block;margin-bottom:6px;}
+.input-group input{width:100%;background:#01050c;border:1px solid #1e2a3a;padding:10px 12px;border-radius:20px;color:#00ffcc;font-family:monospace;font-size:13px;}
+.double-row{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px;}
+.triple-row{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-bottom:24px;}
+.asset-panel{background:#01050c;border:1px solid #1e2a3a;border-radius:24px;padding:16px;}
+.asset-title{font-size:1.2rem;font-weight:bold;color:#00ffcc;text-align:center;margin-bottom:12px;}
+.lookback-row{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;background:#0a1020;padding:8px 12px;border-radius:16px;flex-wrap:wrap;gap:8px;}
+.lb-name{font-size:12px;font-weight:bold;width:50px;}
+.z-value{font-family:monospace;font-size:14px;font-weight:bold;color:#ffaa44;}
+.signal{font-size:13px;font-weight:bold;width:60px;text-align:center;}
+.ticks-input{width:70px;background:#01050c;border:1px solid #1e2a3a;border-radius:12px;padding:4px 6px;color:#00ffcc;text-align:center;}
+.btn{background:linear-gradient(90deg,#00ffcc,#00b8ff);border:none;padding:12px;border-radius:40px;font-weight:bold;font-size:14px;color:#01050c;cursor:pointer;width:100%;margin:16px 0;}
+.status{text-align:center;background:rgba(0,255,200,0.05);padding:8px;border-radius:40px;font-size:12px;margin-bottom:16px;}
+.signal-box{background:#01050c;border:1px solid #1e2a3a;border-radius:24px;padding:12px;text-align:center;font-size:14px;margin-bottom:20px;}
+.signal-value{color:#ffaa44;font-weight:bold;}
+.indicator-panel{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:20px;}
+.indicator{background:#01050c;padding:10px;text-align:center;border-radius:20px;}
+.indicator-label{font-size:10px;color:#8a94a8;}
+.indicator-value{font-size:18px;font-weight:bold;color:#00ffcc;}
+canvas{background:#01050c;border-radius:20px;padding:8px;margin-bottom:20px;}
+.log{background:#01050c;border-radius:20px;height:150px;overflow-y:auto;padding:12px;font-size:11px;font-family:monospace;color:#8a94a8;border:1px solid #1e2a3a;}
+.log div{border-bottom:1px solid #1a2533;padding:4px 0;}
 </style>
 </head>
 <body>
 <div class="container">
-  <h2>🔫 AI SNIPER V58 <span class="badge">3 ACTIVOS × 3 LOOKBACKS</span></h2>
+  <h1>📈 PICO Z-SCORE PRO <span class="badge">CONSERVADOR + ATR</span></h1>
 
   <div class="stats-row">
     <div class="stat-card"><div class="stat-label">WINS</div><div id="statWins" class="stat-value positive">0</div></div>
@@ -59,407 +52,475 @@ canvas{margin:12px 0;background:#01050c;border-radius:16px;padding:6px;}
     <div class="stat-card"><div class="stat-label">WINRATE (50)</div><div id="statWR50" class="stat-value winrate">0%</div></div>
   </div>
 
-  <div class="triple-row">
-    <div class="input-group"><label>💰 STAKE ($)</label><input type="number" id="stake" value="0.50" step="0.05" min="0.35"></div>
-    <div class="input-group"><label>🎯 TAKE PROFIT ($)</label><input type="number" id="tp" value="5.00" step="0.5"></div>
-    <div class="input-group"><label>🛡 STOP LOSS ($)</label><input type="number" id="sl" value="3.00" step="0.5"></div>
+  <div class="double-row">
+    <div class="input-group"><label>🔑 API TOKEN (DERIV)</label><input type="text" id="token" placeholder="Ingresa tu token"></div>
+    <div class="input-group"><label>💰 STAKE ($) - recomendado 0.50</label><input type="number" id="stake" value="0.50" step="0.05" min="0.35"></div>
+  </div>
+  <div class="double-row">
+    <div class="input-group"><label>🎯 TAKE PROFIT ($)</label><input type="number" id="tp" value="0.80" step="0.1" min="0.5"></div>
+    <div class="input-group"><label>🛡 STOP LOSS ($)</label><input type="number" id="sl" value="0.50" step="0.1" min="0.5"></div>
+  </div>
+  <div class="double-row">
+    <div class="input-group"><label>📉 LÍMITE DIARIO PÉRDIDA ($)</label><input type="number" id="dailyLossLimit" value="5.00" step="0.5" min="1"></div>
+    <div class="input-group"><label>⏱️ COOLDOWN (segundos)</label><input type="number" id="cooldownSec" value="150" step="10" min="60"></div>
   </div>
 
-  <div class="time-box">
-    <div class="time-title">🕒 HORARIO ÓPTIMO (COLOMBIA)</div>
-    <div id="colombiaTime" style="font-family:monospace; font-size:14px;">--:--:--</div>
-    <div id="timeStatus" class="time-status">--</div>
-  </div>
-
-  <!-- Grid de 3 activos, cada uno con sus 3 lookbacks -->
-  <div class="strategy-grid" id="signalsGrid"></div>
+  <div id="assetsContainer" class="triple-row"></div>
 
   <button class="btn" id="toggle">▶ INICIAR BOT</button>
-  <div id="mode" class="status">⚙️ STATUS: OFFLINE</div>
-  <div class="signal-box">🧠 MEJOR SEÑAL: <span id="bestSignal" class="signal-value">---</span></div>
+  <div id="statusMsg" class="status">⚙️ OFFLINE</div>
+  <div class="signal-box">🎯 MEJOR SEÑAL: <span id="bestSignal" class="signal-value">---</span></div>
 
   <div class="indicator-panel">
     <div class="indicator"><div class="indicator-label">ACTIVO ELEGIDO</div><div id="chosenAsset" class="indicator-value">---</div></div>
     <div class="indicator"><div class="indicator-label">LOOKBACK</div><div id="chosenLb" class="indicator-value">---</div></div>
-    <div class="indicator"><div class="indicator-label">SCORE</div><div id="chosenScore" class="indicator-value">0.00</div></div>
-    <div class="indicator"><div class="indicator-label">VOLAT</div><div id="volv" class="indicator-value">0.00</div></div>
+    <div class="indicator"><div class="indicator-label">PÉRDIDA DIARIA</div><div id="dailyLoss" class="indicator-value">$0.00</div></div>
+    <div class="indicator"><div class="indicator-label">CONFIANZA</div><div id="confidence" class="indicator-value">0%</div></div>
   </div>
 
-  <canvas id="chart" height="100"></canvas>
-  <div class="log" id="log"></div>
+  <canvas id="balanceChart" height="100"></canvas>
+  <div class="log" id="logPanel"></div>
 </div>
 
 <script>
-// ==================== CONFIGURACIÓN ====================
-const API_TOKEN = "TU_TOKEN_AQUI";   // <-- REEMPLAZA CON TU TOKEN REAL
+// ==================== CONFIGURACIÓN CONSERVADORA ====================
 const ASSETS = ["R_50", "R_75", "R_100"];
+const LOOKBACKS = [10, 25, 50];
+// Umbrales de Z-score más altos (conservadores)
+const Z_THRESHOLDS = { 10: 1.2, 25: 1.5, 50: 2.0 };
+const MIN_VOLATILITY = 0.12;      // volatilidad mínima (0.12)
+const ATR_PERIOD = 14;
+const ATR_MULTIPLIER_MOVE = 1.5;   // movimiento mínimo > 1.5 * ATR
 
-// Estrategias por lookback (rangos, modo, duración)
-const STRATEGIES = {
-  10: { name: "V10", mode: "scalp", zMin: 0.6, zMax: 1.2, duration: 1, unit: "t", desc: "Scalp" },
-  25: { name: "V25", mode: "pullback", zMin: 1.3, zMax: 2.0, duration: 3, unit: "m", desc: "Pullback" },
-  50: { name: "V50", mode: "reversal", zMin: 1.8, zMax: 2.5, duration: 2, unit: "t", desc: "Rebote" }
-};
+let candlesMap = { "R_50": [], "R_75": [], "R_100": [] };
+let zHistoryMap = {}; // "R_50_10" -> array
+let atrMap = { "R_50": 0, "R_75": 0, "R_100": 0 };
+let volatilityMap = { "R_50": 0, "R_75": 0, "R_100": 0 };
 
 let ws, running = false, interval;
-let candlesMap = { "R_50": [], "R_75": [], "R_100": [] };
 let balance = 0, profit = 0;
+let tradeHistory = [];
 let lastTradeTime = 0;
-let tradeHistory = []; // 1=win, 0=loss
+let dailyLoss = 0;           // pérdida neta del día (resetea a medianoche Colombia)
+let lastResetDate = null;
 
 // Elementos DOM
-const statWins = document.getElementById('statWins');
-const statLosses = document.getElementById('statLosses');
-const statWR20 = document.getElementById('statWR20');
-const statWR50 = document.getElementById('statWR50');
-const bestSignalSpan = document.getElementById('bestSignal');
-const chosenAssetSpan = document.getElementById('chosenAsset');
-const chosenLbSpan = document.getElementById('chosenLb');
-const chosenScoreSpan = document.getElementById('chosenScore');
-const volv = document.getElementById('volv');
-const modeStatusEl = document.getElementById('mode');
+const tokenInput = document.getElementById('token');
 const stakeInput = document.getElementById('stake');
 const tpInput = document.getElementById('tp');
 const slInput = document.getElementById('sl');
+const dailyLossLimitInput = document.getElementById('dailyLossLimit');
+const cooldownInput = document.getElementById('cooldownSec');
 const toggleBtn = document.getElementById('toggle');
-const colombiaTimeSpan = document.getElementById('colombiaTime');
-const timeStatusDiv = document.getElementById('timeStatus');
-const signalsGrid = document.getElementById('signalsGrid');
+const statusMsgDiv = document.getElementById('statusMsg');
+const bestSignalSpan = document.getElementById('bestSignal');
+const chosenAssetSpan = document.getElementById('chosenAsset');
+const chosenLbSpan = document.getElementById('chosenLb');
+const dailyLossSpan = document.getElementById('dailyLoss');
+const confidenceSpan = document.getElementById('confidence');
+const logPanel = document.getElementById('logPanel');
+const assetsContainer = document.getElementById('assetsContainer');
 
-// Gráfico
-let chart = new Chart(document.getElementById('chart'), {
+let balanceChart = new Chart(document.getElementById('balanceChart'), {
   type: 'line',
-  data: { labels: [], datasets: [{ label: 'Balance USD', data: [], borderColor: '#00ffcc', borderWidth: 2, fill: false, tension: 0.2 }] },
+  data: { labels: [], datasets: [{ label: 'Balance', data: [], borderColor: '#00ffcc', borderWidth: 2, fill: false }] },
   options: { responsive: true, maintainAspectRatio: true }
 });
 
-// ========== LOCALSTORAGE ==========
-function saveConfig() {
-  const config = { stake: stakeInput.value, tp: tpInput.value, sl: slInput.value };
-  localStorage.setItem('aiSniperV58', JSON.stringify(config));
-}
-function loadConfig() {
-  const saved = localStorage.getItem('aiSniperV58');
-  if(saved){
-    try{
-      const c = JSON.parse(saved);
-      if(c.stake) stakeInput.value = c.stake;
-      if(c.tp) tpInput.value = c.tp;
-      if(c.sl) slInput.value = c.sl;
-    }catch(e){}
-  }
+// ========== FUNCIONES AUXILIARES ==========
+function addLog(msg) {
+  const time = new Date().toLocaleTimeString();
+  logPanel.innerHTML += `<div>[${time}] ${msg}</div>`;
+  logPanel.scrollTop = logPanel.scrollHeight;
 }
 
-// ========== WINRATE ==========
-function updateWinrateDisplay() {
+function updateWinrateUI() {
   const total = tradeHistory.length;
-  if(total === 0){ statWins.innerText = '0'; statLosses.innerText = '0'; statWR20.innerText = '0%'; statWR50.innerText = '0%'; return; }
-  const winsCount = tradeHistory.filter(v=>v===1).length;
-  statWins.innerText = winsCount;
-  statLosses.innerText = total - winsCount;
-  const last20 = tradeHistory.slice(-20);
-  const wr20 = last20.length ? (last20.filter(v=>v===1).length / last20.length * 100).toFixed(0) : 0;
-  const last50 = tradeHistory.slice(-50);
-  const wr50 = last50.length ? (last50.filter(v=>v===1).length / last50.length * 100).toFixed(0) : 0;
-  statWR20.innerText = `${wr20}%`;
-  statWR50.innerText = `${wr50}%`;
+  if(total === 0) {
+    document.getElementById('statWins').innerText = '0';
+    document.getElementById('statLosses').innerText = '0';
+    document.getElementById('statWR20').innerText = '0%';
+    document.getElementById('statWR50').innerText = '0%';
+    return;
+  }
+  const wins = tradeHistory.filter(v=>v===1).length;
+  document.getElementById('statWins').innerText = wins;
+  document.getElementById('statLosses').innerText = total - wins;
+  const wr20 = (tradeHistory.slice(-20).filter(v=>v===1).length / Math.min(20, tradeHistory.length) * 100).toFixed(0);
+  const wr50 = (tradeHistory.slice(-50).filter(v=>v===1).length / Math.min(50, tradeHistory.length) * 100).toFixed(0);
+  document.getElementById('statWR20').innerText = `${wr20}%`;
+  document.getElementById('statWR50').innerText = `${wr50}%`;
 }
 
-// ========== HORARIO COLOMBIA ==========
-function updateClockAndTimeStatus() {
+function updateBalanceUI() {
+  let balElem = document.getElementById('balanceBig');
+  let profElem = document.getElementById('profitBig');
+  if(!balElem) {
+    const statsRow = document.querySelector('.stats-row');
+    const balCard = document.createElement('div'); balCard.className = 'stat-card'; balCard.innerHTML = '<div class="stat-label">BALANCE</div><div id="balanceBig" class="stat-value">$0.00</div>';
+    const profCard = document.createElement('div'); profCard.className = 'stat-card'; profCard.innerHTML = '<div class="stat-label">GANANCIA</div><div id="profitBig" class="stat-value">$0.00</div>';
+    statsRow.insertBefore(balCard, statsRow.children[0]);
+    statsRow.insertBefore(profCard, statsRow.children[1]);
+    balElem = document.getElementById('balanceBig');
+    profElem = document.getElementById('profitBig');
+  }
+  balElem.innerText = `$${balance.toFixed(2)}`;
+  profElem.innerText = profit >= 0 ? `+$${profit.toFixed(2)}` : `-$${Math.abs(profit).toFixed(2)}`;
+  profElem.className = `stat-value ${profit >= 0 ? 'positive' : 'negative'}`;
+}
+
+// Reset diario de pérdidas (medianoche Colombia)
+function resetDailyLossIfNeeded() {
   const now = new Date();
   const colombiaOffset = -5 * 60;
   const localOffset = now.getTimezoneOffset();
   const diffMinutes = colombiaOffset - localOffset;
-  const colombiaTime = new Date(now.getTime() + diffMinutes * 60000);
-  const hours = colombiaTime.getHours();
-  const minutes = colombiaTime.getMinutes().toString().padStart(2,'0');
-  const seconds = colombiaTime.getSeconds().toString().padStart(2,'0');
-  colombiaTimeSpan.innerText = `${hours}:${minutes}:${seconds}`;
-  let status = '', statusClass = '';
-  if(hours >= 8 && hours <= 11){ status = '🟢 OPTIMO (Londres abierta)'; statusClass = 'good'; }
-  else if(hours >= 13 && hours <= 17){ status = '🟢 OPTIMO (Nueva York abierta)'; statusClass = 'good'; }
-  else if((hours >= 1 && hours <= 4) || (hours >= 22 && hours <= 23)){ status = '🟡 BAJA LIQUIDEZ (evitar)'; statusClass = 'warning'; }
-  else if(hours >= 18 && hours <= 21){ status = '🔴 MUY BAJA (solo scalping)'; statusClass = 'bad'; }
-  else { status = '⚪ HORARIO NEUTRO'; statusClass = 'warning'; }
-  timeStatusDiv.innerText = status;
-  timeStatusDiv.className = `time-status ${statusClass}`;
+  const colombiaNow = new Date(now.getTime() + diffMinutes * 60000);
+  const todayDate = colombiaNow.toDateString();
+  if(lastResetDate !== todayDate) {
+    dailyLoss = 0;
+    lastResetDate = todayDate;
+    dailyLossSpan.innerText = `$${dailyLoss.toFixed(2)}`;
+    addLog("🔄 Reinicio diario: pérdida diaria reseteada a 0");
+  }
 }
-setInterval(updateClockAndTimeStatus, 1000);
-updateClockAndTimeStatus();
 
-// ========== INDICADORES ==========
-function ema(period, data){
-  const k = 2/(period+1);
-  let res = [data[0]];
-  for(let i=1;i<data.length;i++) res.push(data[i]*k + res[i-1]*(1-k));
-  return res;
-}
-function zScore(data){
+// ========== INDICADORES TÉCNICOS ==========
+function zScore(data) {
   const mean = data.reduce((a,b)=>a+b,0)/data.length;
   const variance = data.map(x=>Math.pow(x-mean,2)).reduce((a,b)=>a+b,0)/data.length;
   const std = Math.sqrt(variance);
-  if(std===0) return 0;
+  if(std === 0) return 0;
   return (data[data.length-1] - mean)/std;
 }
-function volatility(data){
-  let changes = [];
-  for(let i=1;i<data.length;i++) changes.push(Math.abs(data[i]-data[i-1]));
-  return changes.reduce((a,b)=>a+b,0)/changes.length;
+
+// ATR (Average True Range) para velas de 1 minuto (aproximado con close)
+function calculateATR(candles, period) {
+  if(candles.length < period+1) return 0;
+  let trSum = 0;
+  for(let i=1; i<=period; i++) {
+    const high = candles[candles.length - i];
+    const low = candles[candles.length - i - 1];
+    const tr = Math.abs(high - low);
+    trSum += tr;
+  }
+  return trSum / period;
 }
 
-// ========== EVALUAR UN ACTIVO CON UN LOOKBACK ==========
-function evaluate(asset, lookback, candles) {
-  if(candles.length < lookback + 5) return null;
-  const slice = candles.slice(-lookback);
-  const z = zScore(slice);
-  const zAbs = Math.abs(z);
-  const strat = STRATEGIES[lookback];
-  if(!strat) return null;
-  
-  const ema3 = ema(3, candles).pop();
-  const ema9 = ema(9, candles).pop();
-  const last = candles[candles.length-1];
-  const prev = candles[candles.length-2];
-  const vol = volatility(candles.slice(-20));
-  
-  let action = null;
-  let score = 0;
-  
-  if(lookback === 10) { // Scalp
-    if(zAbs >= strat.zMin && zAbs <= strat.zMax) {
-      if(last > prev) action = "CALL";
-      else if(last < prev) action = "PUT";
-      if(action) score = 1 - (zAbs - strat.zMin)/(strat.zMax - strat.zMin);
-    }
+// Volatilidad histórica (desviación estándar de retornos)
+function historicalVolatility(candles, period=20) {
+  if(candles.length < period+1) return 0;
+  let returns = [];
+  for(let i=1; i<=period; i++) {
+    let ret = (candles[candles.length-i] - candles[candles.length-i-1]) / candles[candles.length-i-1];
+    returns.push(ret);
   }
-  else if(lookback === 25) { // Pullback
-    if(zAbs >= strat.zMin && zAbs <= strat.zMax) {
-      const trendUp = (ema3 > ema9 && last > prev && z > 0);
-      const trendDown = (ema3 < ema9 && last < prev && z < 0);
-      if(trendUp) action = "CALL";
-      else if(trendDown) action = "PUT";
-      if(action) {
-        let center = (strat.zMin + strat.zMax)/2;
-        let proximity = 1 - Math.abs(zAbs - center) / (strat.zMax - strat.zMin);
-        let trendStrength = Math.min(1, Math.abs(ema3-ema9)/0.8);
-        score = proximity * 0.6 + trendStrength * 0.4;
-      }
-    }
-  }
-  else if(lookback === 50) { // Reversal
-    if(zAbs >= strat.zMin) {
-      if(z > strat.zMin && last < prev) action = "PUT";
-      else if(z < -strat.zMin && last > prev) action = "CALL";
-      if(action) {
-        let excess = Math.min(1, (zAbs - strat.zMin) / 1.0);
-        score = 0.5 + excess * 0.5;
-      }
-    }
-  }
-  
-  if(action && vol >= 0.08) {
-    return { asset, lookback, action, mode: strat.mode, z, score, duration: strat.duration, unit: strat.unit, vol };
-  }
-  return null;
+  const mean = returns.reduce((a,b)=>a+b,0)/returns.length;
+  const variance = returns.map(r=>Math.pow(r-mean,2)).reduce((a,b)=>a+b,0)/returns.length;
+  return Math.sqrt(variance);
 }
 
-// ========== ANALIZAR TODOS (3 activos × 3 lookbacks) Y ELEGIR MEJOR ==========
-function analyzeAll() {
+// Detección de pico y pendiente negativa (para PUT)
+function isPeakWithDecline(zHistory, currentZ, threshold) {
+  if(zHistory.length < 5) return false;
+  const recent = zHistory.slice(-5);
+  // Buscar máximo local en la ventana (pico)
+  let peakIndex = -1;
+  for(let i=1; i<recent.length-1; i++) {
+    if(recent[i] > recent[i-1] && recent[i] > recent[i+1] && recent[i] > threshold) {
+      peakIndex = i;
+      break;
+    }
+  }
+  if(peakIndex === -1) return false;
+  // Pendiente actual (últimos 2 valores) debe ser negativa
+  const slope = recent[recent.length-1] - recent[recent.length-2];
+  const isDeclining = slope < -0.02;
+  // Además, el Z actual debe ser positivo pero menor que el pico
+  return isDeclining && currentZ < recent[peakIndex] && currentZ > threshold;
+}
+
+// Detección de valle y pendiente positiva (para CALL)
+function isValleyWithRise(zHistory, currentZ, threshold) {
+  if(zHistory.length < 5) return false;
+  const recent = zHistory.slice(-5);
+  let valleyIndex = -1;
+  for(let i=1; i<recent.length-1; i++) {
+    if(recent[i] < recent[i-1] && recent[i] < recent[i+1] && recent[i] < -threshold) {
+      valleyIndex = i;
+      break;
+    }
+  }
+  if(valleyIndex === -1) return false;
+  const slope = recent[recent.length-1] - recent[recent.length-2];
+  const isRising = slope > 0.02;
+  return isRising && currentZ > recent[valleyIndex] && currentZ < -threshold;
+}
+
+// ========== EVALUAR CADA ACTIVO Y LOOKBACK ==========
+function evaluateAll() {
+  resetDailyLossIfNeeded();
+  if(dailyLoss <= -parseFloat(dailyLossLimitInput.value)) {
+    if(running) {
+      addLog("🚨 Límite diario de pérdidas alcanzado. Bot detenido.");
+      stopBot();
+    }
+    return;
+  }
+
   let allSignals = [];
   for(let asset of ASSETS) {
     let candles = candlesMap[asset];
-    if(!candles.length) continue;
-    for(let lb of [10,25,50]) {
-      let signal = evaluate(asset, lb, candles);
-      if(signal) allSignals.push(signal);
+    if(!candles.length || candles.length < 50) continue;
+    
+    // Calcular ATR y volatilidad para el filtro
+    const atr = calculateATR(candles, ATR_PERIOD);
+    const vol = historicalVolatility(candles, 20);
+    atrMap[asset] = atr;
+    volatilityMap[asset] = vol;
+    
+    // Filtro de mercado: volatilidad mínima y ATR significativo
+    if(vol < MIN_VOLATILITY || atr < 0.0005) {
+      continue; // mercado muerto o sin movimiento, no evaluar
+    }
+    
+    for(let lb of LOOKBACKS) {
+      if(candles.length < lb+10) continue;
+      const slice = candles.slice(-lb);
+      const z = zScore(slice);
+      const key = `${asset}_${lb}`;
+      if(!zHistoryMap[key]) zHistoryMap[key] = [];
+      zHistoryMap[key].push(z);
+      if(zHistoryMap[key].length > 50) zHistoryMap[key].shift();
+      
+      const threshold = Z_THRESHOLDS[lb];
+      const isPeak = isPeakWithDecline(zHistoryMap[key], z, threshold);
+      const isValley = isValleyWithRise(zHistoryMap[key], z, threshold);
+      
+      // Filtro de movimiento mínimo: la última vela debe tener rango > 1.5 * ATR
+      const lastClose = candles[candles.length-1];
+      const prevClose = candles[candles.length-2];
+      const move = Math.abs(lastClose - prevClose);
+      const sufficientMove = move > ATR_MULTIPLIER_MOVE * atr;
+      
+      if(!sufficientMove) continue;
+      
+      let action = null;
+      let confidence = 0;
+      
+      if(isPeak) {
+        action = "PUT";
+        // Confianza: basada en qué tan alto fue el pico y la pendiente negativa
+        const peakValue = Math.max(...zHistoryMap[key].slice(-10));
+        confidence = Math.min(100, (peakValue / threshold) * 50 + 30);
+      } else if(isValley) {
+        action = "CALL";
+        const valleyValue = Math.min(...zHistoryMap[key].slice(-10));
+        confidence = Math.min(100, (Math.abs(valleyValue) / threshold) * 50 + 30);
+      }
+      
+      if(action) {
+        const ticksInput = document.getElementById(`ticks_${asset}_${lb}`);
+        const duration = ticksInput ? parseInt(ticksInput.value) : 2;
+        allSignals.push({
+          asset, lookback: lb, action, z, confidence,
+          duration: duration, unit: "t",
+          atr, vol
+        });
+      }
     }
   }
   
-  // Actualizar UI de la grid (mostrar señales por activo)
-  updateSignalsUI(allSignals);
+  updateAssetsUI(allSignals);
   
   if(allSignals.length === 0) {
     bestSignalSpan.innerText = "---";
     chosenAssetSpan.innerText = "---";
     chosenLbSpan.innerText = "---";
-    chosenScoreSpan.innerText = "0.00";
+    confidenceSpan.innerText = "0%";
     return;
   }
   
-  // Elegir la de mayor score
-  allSignals.sort((a,b) => b.score - a.score);
+  allSignals.sort((a,b) => b.confidence - a.confidence);
   const best = allSignals[0];
-  bestSignalSpan.innerText = `${best.action} en ${best.asset} (${best.mode}) | Score: ${best.score.toFixed(2)}`;
+  bestSignalSpan.innerText = `${best.action} en ${best.asset} (V${best.lookback}) | Conf: ${best.confidence.toFixed(0)}%`;
   chosenAssetSpan.innerText = best.asset;
   chosenLbSpan.innerText = `V_${best.lookback}`;
-  chosenScoreSpan.innerText = best.score.toFixed(2);
-  volv.innerText = best.vol.toFixed(3);
+  confidenceSpan.innerText = `${best.confidence.toFixed(0)}%`;
   
-  // Ejecutar trade si cooldown superado
   const now = Date.now();
-  if(now - lastTradeTime >= 60000) {
+  const cooldownMs = parseInt(cooldownInput.value) * 1000;
+  if(now - lastTradeTime >= cooldownMs && running) {
     executeTrade(best);
     lastTradeTime = now;
-    addLog(`🎯 MEJOR SEÑAL: ${best.action} en ${best.asset} | V_${best.lookback} (${best.mode}) | Z=${best.z.toFixed(2)} | Score=${best.score.toFixed(2)}`);
-  } else {
-    addLog(`⏳ Señal óptima detectada pero en cooldown (${Math.ceil((60000 - (now-lastTradeTime))/1000)}s restantes)`);
+    addLog(`🎯 SEÑAL: ${best.action} en ${best.asset} | V_${best.lookback} | Z=${best.z.toFixed(2)} | ATR=$${best.atr.toFixed(4)} | Confianza=${best.confidence.toFixed(0)}%`);
   }
-}
-
-function updateSignalsUI(signals) {
-  // Crear estructura por activo
-  let html = '';
-  for(let asset of ASSETS) {
-    let assetSignals = signals.filter(s => s.asset === asset);
-    html += `<div class="asset-card"><div class="asset-title">${asset}</div>`;
-    for(let lb of [10,25,50]) {
-      let sig = assetSignals.find(s => s.lookback === lb);
-      let signalText = sig ? `${sig.action} (${sig.score.toFixed(2)})` : "---";
-      let scoreText = sig ? `Score: ${sig.score.toFixed(2)}` : "";
-      html += `<div class="lb-row">
-        <span class="lb-label">V_${lb} (${STRATEGIES[lb].desc})</span>
-        <span class="lb-signal" style="color:${sig ? '#00ffcc' : '#6c7a8e'}">${signalText}</span>
-        <span class="lb-score">${scoreText}</span>
-      </div>`;
-    }
-    html += `</div>`;
-  }
-  signalsGrid.innerHTML = html;
 }
 
 // ========== EJECUTAR TRADE ==========
-function executeTrade(best) {
-  const stakeVal = parseFloat(stakeInput.value);
-  addLog(`📡 ${best.action} en ${best.asset} | $${stakeVal} | ${best.duration}${best.unit} | Modo: ${best.mode}`);
+function executeTrade(signal) {
+  const stake = parseFloat(stakeInput.value);
+  addLog(`📡 ${signal.action} en ${signal.asset} | $${stake} | ${signal.duration} ticks`);
   ws.send(JSON.stringify({
     buy: 1,
-    price: stakeVal,
+    price: stake,
     parameters: {
-      amount: stakeVal,
+      amount: stake,
       basis: "stake",
-      contract_type: best.action,
+      contract_type: signal.action,
       currency: "USD",
-      duration: best.duration,
-      duration_unit: best.unit,
-      symbol: best.asset
+      duration: signal.duration,
+      duration_unit: "t",
+      symbol: signal.asset
     }
   }));
 }
 
-// ========== WEBSOCKET ==========
-function startBot(){
-  if(running) return;
-  if(!API_TOKEN || API_TOKEN === "e1lRgxNoxWwBkzx"){
-    addLog("❌ ERROR: Configura tu API_TOKEN en el código.");
-    return;
+// ========== UI DINÁMICA ==========
+function updateAssetsUI(signals) {
+  if(assetsContainer.children.length === 0) {
+    for(let asset of ASSETS) {
+      const panel = document.createElement('div');
+      panel.className = 'asset-panel';
+      panel.innerHTML = `<div class="asset-title">${asset}</div>`;
+      for(let lb of LOOKBACKS) {
+        panel.innerHTML += `
+          <div class="lookback-row">
+            <span class="lb-name">V_${lb}</span>
+            <span class="z-value" id="z_${asset}_${lb}">Z: 0.00</span>
+            <span class="signal" id="sig_${asset}_${lb}">---</span>
+            <input type="number" id="ticks_${asset}_${lb}" class="ticks-input" value="${lb === 10 ? 2 : (lb === 25 ? 3 : 2)}" min="1" max="10" step="1">
+          </div>
+        `;
+      }
+      // Mostrar ATR y volatilidad
+      const atrSpan = document.createElement('div');
+      atrSpan.style.fontSize = "10px";
+      atrSpan.style.color = "#6c7a8e";
+      atrSpan.style.marginTop = "8px";
+      atrSpan.id = `info_${asset}`;
+      panel.appendChild(atrSpan);
+      assetsContainer.appendChild(panel);
+    }
   }
-  running = true;
-  modeStatusEl.innerText = "🟢 CONECTANDO...";
-  toggleBtn.innerText = "⏹ DETENER";
-  saveConfig();
-  
-  ws = new WebSocket("wss://ws.derivws.com/websockets/v3?app_id=1089");
-  
-  ws.onopen = () => {
-    addLog("🔌 Autenticando...");
-    ws.send(JSON.stringify({authorize: API_TOKEN}));
-  };
-  
-  ws.onmessage = (e) => {
-    const data = JSON.parse(e.data);
-    
-    if(data.msg_type === "authorize") {
-      addLog("✅ Autorizado. Solicitando velas para los 3 activos...");
-      requestAllCandles();
-      if(interval) clearInterval(interval);
-      interval = setInterval(() => {
-        if(running && ws && ws.readyState === WebSocket.OPEN) requestAllCandles();
-      }, 5000);
+  // Actualizar valores
+  for(let asset of ASSETS) {
+    const atr = atrMap[asset];
+    const vol = volatilityMap[asset];
+    const infoSpan = document.getElementById(`info_${asset}`);
+    if(infoSpan) infoSpan.innerText = `ATR: ${atr.toFixed(4)} | Vol: ${(vol*100).toFixed(1)}%`;
+  }
+  for(let s of signals) {
+    const zSpan = document.getElementById(`z_${s.asset}_${s.lookback}`);
+    if(zSpan) zSpan.innerText = `Z: ${s.z.toFixed(2)}`;
+    const sigSpan = document.getElementById(`sig_${s.asset}_${s.lookback}`);
+    if(sigSpan) {
+      sigSpan.innerText = s.action;
+      sigSpan.style.color = s.action === "CALL" ? "#2ed573" : "#ff4757";
     }
-    
-    if(data.msg_type === "candles") {
-      const symbol = data.echo_req.ticks_history;
-      if(symbol && candlesMap[symbol] !== undefined) {
-        candlesMap[symbol] = data.candles.map(c => parseFloat(c.close));
-        // Cuando hayan llegado datos de los 3, analizar (podemos analizar cada vez que llega uno, pero mejor con flag)
-        let allReady = ASSETS.every(asset => candlesMap[asset].length > 0);
-        if(allReady) analyzeAll();
+  }
+  for(let asset of ASSETS) {
+    for(let lb of LOOKBACKS) {
+      const sigSpan = document.getElementById(`sig_${asset}_${lb}`);
+      if(sigSpan && !signals.find(s => s.asset === asset && s.lookback === lb)) {
+        sigSpan.innerText = "---";
+        sigSpan.style.color = "#8a94a8";
       }
     }
-    
-    if(data.msg_type === "proposal_open_contract" && data.proposal_open_contract.is_sold) {
-      const pnl = parseFloat(data.proposal_open_contract.profit);
-      balance += pnl;
-      profit += pnl;
-      const isWin = pnl > 0;
-      tradeHistory.push(isWin ? 1 : 0);
-      if(tradeHistory.length > 200) tradeHistory.shift();
-      updateWinrateDisplay();
-      addLog(`${isWin ? "✅ WIN" : "❌ LOSS"} | $${pnl.toFixed(2)} | Balance $${balance.toFixed(2)}`);
-      updateUI();
-      chart.data.labels.push(""); chart.data.datasets[0].data.push(balance);
-      if(chart.data.labels.length > 30){ chart.data.labels.shift(); chart.data.datasets[0].data.shift(); }
-      chart.update();
-      if(balance >= parseFloat(tpInput.value) || balance <= -parseFloat(slInput.value)){
-        addLog("🏁 TP/SL alcanzado. Deteniendo.");
-        stopBot();
-      }
-    }
-  };
-  
-  ws.onerror = () => { addLog("⚠️ Error WebSocket"); stopBot(); };
-  ws.onclose = () => { if(running) addLog("🔌 Desconectado"); };
+  }
 }
 
-function requestAllCandles(){
+// ========== WEBSOCKET ==========
+function requestCandlesForAll() {
   for(let asset of ASSETS) {
-    if(ws && ws.readyState === WebSocket.OPEN){
+    if(ws && ws.readyState === WebSocket.OPEN) {
       ws.send(JSON.stringify({ ticks_history: asset, granularity: 60, count: 100, style: "candles" }));
     }
   }
 }
 
-function stopBot(){
+function startBot() {
+  if(running) return;
+  const token = tokenInput.value.trim();
+  if(!token) { addLog("❌ Ingresa tu API token"); return; }
+  running = true;
+  statusMsgDiv.innerText = "🟢 CONECTANDO...";
+  toggleBtn.innerText = "⏹ DETENER";
+  
+  ws = new WebSocket("wss://ws.derivws.com/websockets/v3?app_id=1089");
+  ws.onopen = () => {
+    addLog("🔌 Autenticando...");
+    ws.send(JSON.stringify({ authorize: token }));
+  };
+  ws.onmessage = (e) => {
+    const data = JSON.parse(e.data);
+    if(data.msg_type === "authorize") {
+      addLog("✅ Autorizado. Solicitando velas...");
+      requestCandlesForAll();
+      if(interval) clearInterval(interval);
+      interval = setInterval(() => {
+        if(running && ws && ws.readyState === WebSocket.OPEN) requestCandlesForAll();
+      }, 5000);
+    }
+    if(data.msg_type === "candles") {
+      const symbol = data.echo_req.ticks_history;
+      if(symbol && candlesMap[symbol] !== undefined) {
+        candlesMap[symbol] = data.candles.map(c => parseFloat(c.close));
+        evaluateAll();
+      }
+    }
+    if(data.msg_type === "proposal_open_contract" && data.proposal_open_contract.is_sold) {
+      const pnl = parseFloat(data.proposal_open_contract.profit);
+      balance += pnl;
+      profit += pnl;
+      if(pnl < 0) dailyLoss += pnl;  // suma negativa
+      dailyLossSpan.innerText = `$${dailyLoss.toFixed(2)}`;
+      
+      const isWin = pnl > 0;
+      tradeHistory.push(isWin ? 1 : 0);
+      if(tradeHistory.length > 200) tradeHistory.shift();
+      updateWinrateUI();
+      updateBalanceUI();
+      addLog(`${isWin ? "✅ WIN" : "❌ LOSS"} | $${pnl.toFixed(2)} | Balance $${balance.toFixed(2)}`);
+      balanceChart.data.labels.push(""); balanceChart.data.datasets[0].data.push(balance);
+      if(balanceChart.data.labels.length > 30) {
+        balanceChart.data.labels.shift();
+        balanceChart.data.datasets[0].data.shift();
+      }
+      balanceChart.update();
+      
+      const tp = parseFloat(tpInput.value);
+      const sl = parseFloat(slInput.value);
+      if(balance >= tp || balance <= -sl) {
+        addLog("🏁 TP/SL alcanzado. Deteniendo bot.");
+        stopBot();
+      }
+      // Verificar límite diario después de cada trade
+      if(dailyLoss <= -parseFloat(dailyLossLimitInput.value)) {
+        addLog("🚨 Límite diario de pérdidas alcanzado. Deteniendo bot.");
+        stopBot();
+      }
+    }
+  };
+  ws.onerror = () => { addLog("⚠️ Error WebSocket"); stopBot(); };
+  ws.onclose = () => { if(running) addLog("🔌 Desconectado"); };
+}
+
+function stopBot() {
   if(!running) return;
   running = false;
   clearInterval(interval);
   if(ws) ws.close();
-  modeStatusEl.innerText = "⚫ OFFLINE";
+  statusMsgDiv.innerText = "⚫ OFFLINE";
   toggleBtn.innerText = "▶ INICIAR BOT";
   addLog("🛑 Bot detenido");
 }
 
-function updateUI(){
-  let balanceElem = document.getElementById('balanceBig');
-  let profitElem = document.getElementById('profitBig');
-  if(!balanceElem){
-    const balCard = document.createElement('div'); balCard.className = 'stat-card'; balCard.innerHTML = '<div class="stat-label">BALANCE</div><div id="balanceBig" class="stat-value">$0.00</div>';
-    const profCard = document.createElement('div'); profCard.className = 'stat-card'; profCard.innerHTML = '<div class="stat-label">GANANCIA</div><div id="profitBig" class="stat-value">$0.00</div>';
-    const statsRow = document.querySelector('.stats-row');
-    statsRow.insertBefore(balCard, statsRow.children[0]);
-    statsRow.insertBefore(profCard, statsRow.children[1]);
-    balanceElem = document.getElementById('balanceBig');
-    profitElem = document.getElementById('profitBig');
-  }
-  if(balanceElem) balanceElem.innerText = `$${balance.toFixed(2)}`;
-  if(profitElem){
-    profitElem.innerText = profit>=0 ? `+$${profit.toFixed(2)}` : `-$${Math.abs(profit).toFixed(2)}`;
-    profitElem.className = `stat-value ${profit>=0?'positive':'negative'}`;
-  }
-}
-
-function addLog(msg) {
-  const logDiv = document.getElementById('log');
-  const time = new Date().toLocaleTimeString();
-  logDiv.innerHTML += `<div>[${time}] ${msg}</div>`;
-  logDiv.scrollTop = logDiv.scrollHeight;
-}
-
 toggleBtn.onclick = () => running ? stopBot() : startBot();
-loadConfig();
-updateWinrateDisplay();
-addLog("🤖 V58 LISTO | Monitoreando R_50, R_75, R_100 | 3 lookbacks por activo | Entrada óptima automática");
+
+// Inicializar UI
+updateAssetsUI([]);
+addLog("🤖 Bot CONSERVADOR listo. Filtros: Z-score alto, pendiente, ATR, volatilidad mínima, cooldown, límite diario.");
 </script>
 </body>
 </html>
