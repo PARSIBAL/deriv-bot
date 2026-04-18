@@ -287,8 +287,8 @@ const ASSET_LABELS = { "R_10":"V_10","R_25":"V_25","R_50":"V_50" };
 const Z_THRESHOLDS = { "R_10":2.2, "R_25":2.1, "R_50":2.0 };
 
 // RSI umbrales
-const RSI_OB = 65; // sobrecompra → PUT
-const RSI_OS = 35; // sobreventa  → CALL
+const RSI_OB = 80; // sobrecompra → PUT
+const RSI_OS = 20; // sobreventa  → CALL
 
 // ── ESTADO ────────────────────────────────────────────
 let ws, running=false, refreshInterval;
@@ -520,14 +520,14 @@ function updateStats(){
 // NÚCLEO: ANÁLISIS CON CONFIRMACIÓN DE 2 TICKS
 //
 // El bot original entraba directamente cuando detectaba el pico.
-// Aquí aplicamos la confirmación de 2 ticks:
+// Aquí aplicamos la confirmación de 1 ticks:
 //
 //  PICO Z POSITIVO (sobrecompra) → señal PUT pendiente
-//    Si los próximos 2 ticks son POSITIVOS (precio sube)
+//    Si los próximos 1 ticks son POSITIVOS (precio sube)
 //    → confirma el rebote → ENTRAR PUT
 //
 //  PICO Z NEGATIVO (sobreventa) → señal CALL pendiente
-//    Si los próximos 2 ticks son NEGATIVOS (precio baja)
+//    Si los próximos 1 ticks son NEGATIVOS (precio baja)
 //    → confirma el rebote → ENTRAR CALL
 //
 //  Además se verifica RSI + Volumen proxy antes de entrar
