@@ -520,14 +520,14 @@ function updateStats(){
 // NÚCLEO: ANÁLISIS CON CONFIRMACIÓN DE 2 TICKS
 //
 // El bot original entraba directamente cuando detectaba el pico.
-// Aquí aplicamos la confirmación de 1 ticks:
+// Aquí aplicamos la confirmación de 2 ticks:
 //
 //  PICO Z POSITIVO (sobrecompra) → señal PUT pendiente
-//    Si los próximos 1 ticks son POSITIVOS (precio sube)
+//    Si los próximos 2 ticks son POSITIVOS (precio sube)
 //    → confirma el rebote → ENTRAR PUT
 //
 //  PICO Z NEGATIVO (sobreventa) → señal CALL pendiente
-//    Si los próximos 1 ticks son NEGATIVOS (precio baja)
+//    Si los próximos 2 ticks son NEGATIVOS (precio baja)
 //    → confirma el rebote → ENTRAR CALL
 //
 //  Además se verifica RSI + Volumen proxy antes de entrar
@@ -656,7 +656,7 @@ function onNewPrice(sym, price){
       cs.dir='PUT';
       cs.count=0;
       cs.peakZ=z;
-      addLog('🔺 PICO+ '+ASSET_LABELS[sym]+' z:'+z.toFixed(2)+' → esperando 2 ticks bajistas...');
+      addLog('🔺 PICO+ '+ASSET_LABELS[sym]+' z:'+z.toFixed(2)+' → esperando 2 ticks alcistas...');
       document.getElementById('activeSignal').innerText='PICO+ '+ASSET_LABELS[sym]+' z:'+z.toFixed(2);
     }
     // Pico negativo: Z bajo y empezando a subir → señal CALL pendiente
@@ -665,7 +665,7 @@ function onNewPrice(sym, price){
       cs.dir='CALL';
       cs.count=0;
       cs.peakZ=z;
-      addLog('🔻 PICO- '+ASSET_LABELS[sym]+' z:'+z.toFixed(2)+' → esperando 2 ticks alcistas...');
+      addLog('🔻 PICO- '+ASSET_LABELS[sym]+' z:'+z.toFixed(2)+' → esperando 2 ticks bajistas...');
       document.getElementById('activeSignal').innerText='PICO- '+ASSET_LABELS[sym]+' z:'+z.toFixed(2);
     }
   }
