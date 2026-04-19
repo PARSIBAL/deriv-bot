@@ -144,8 +144,46 @@ canvas{margin:10px 0;background:#010810;border-radius:14px;padding:4px;}
 
 /* SIMULACIÓN */
 .sim-table{background:#010810;border-radius:16px;padding:14px;margin-top:14px;border:1px solid #1e2a3a;}
-.sim-row{display:flex;justify-content:space-between;padding:5px 0;font-size:12px;border-bottom:1px solid #0d1520;}
-.sim-row:last-child{border:none;}
+
+
+
+/* HORARIO COLOMBIA */
+.schedule-panel{background:#010810;border-radius:16px;padding:14px;margin:12px 0;border:1px solid #1e2a3a;}
+.schedule-title{font-size:9px;color:#6c7a8e;letter-spacing:2px;margin-bottom:10px;text-transform:uppercase;}
+.schedule-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;}
+.sess-box{border-radius:12px;padding:10px 8px;text-align:center;border:1px solid transparent;transition:all .4s;}
+.sess-box.hot{border-color:#2ed573;background:rgba(46,213,115,0.08);}
+.sess-box.warm{border-color:#ffaa44;background:rgba(255,170,68,0.08);}
+.sess-box.cold{border-color:#ff4757;background:rgba(255,71,87,0.08);}
+.sess-box.inactive{border-color:#1e2a3a;background:#010810;}
+.sess-name{font-size:10px;font-weight:700;letter-spacing:1px;}
+.sess-box.hot .sess-name{color:#2ed573;}
+.sess-box.warm .sess-name{color:#ffaa44;}
+.sess-box.cold .sess-name{color:#ff4757;}
+.sess-box.inactive .sess-name{color:#3a4a5a;}
+.sess-time{font-size:9px;color:#6c7a8e;margin-top:3px;}
+.sess-status{font-size:9px;margin-top:4px;font-weight:700;}
+.sess-box.hot .sess-status{color:#2ed573;}
+.sess-box.warm .sess-status{color:#ffaa44;}
+.sess-box.cold .sess-status{color:#ff4757;}
+.sess-box.inactive .sess-status{color:#2a3a4a;}
+.clock-display{text-align:center;font-size:13px;font-family:monospace;color:#00ffcc;margin-bottom:8px;}
+
+/* GANANCIA PANEL */
+.profit-panel{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin:12px 0;}
+.pbox{background:#010810;border-radius:14px;padding:10px;text-align:center;border:1px solid #1e2a3a;}
+.pbox-lbl{font-size:8px;color:#6c7a8e;letter-spacing:1px;text-transform:uppercase;}
+.pbox-val{font-size:20px;font-weight:800;font-family:monospace;margin-top:3px;}
+
+/* Z-SCORE SELECTOR POR ACTIVO */
+.z-selector{display:flex;align-items:center;gap:6px;margin-top:6px;justify-content:center;}
+.z-inp{
+  width:60px;background:#02091a;border:1px solid #2a3a4a;
+  padding:4px 6px;border-radius:8px;color:#ffaa44;
+  text-align:center;font-size:13px;font-weight:700;font-family:monospace;
+  outline:none;
+}
+.z-lbl-sm{font-size:8px;color:#6c7a8e;letter-spacing:1px;}
 
 /* SEGURIDAD CUENTA */
 .safety-panel{
@@ -176,7 +214,7 @@ canvas{margin:10px 0;background:#010810;border-radius:14px;padding:4px;}
   <div class="input-row">
     <div class="input-group">
       <label>🔑 API TOKEN DERIV</label>
-      <input type="password" id="apiToken" placeholder="e1lRgxNoxWwBkzx">
+      <input type="password" id="apiToken" placeholder="Tu token aquí">
     </div>
     <div class="input-group">
       <label>💰 STAKE POR OPERACIÓN ($)</label>
@@ -247,17 +285,6 @@ canvas{margin:10px 0;background:#010810;border-radius:14px;padding:4px;}
       <div class="sbox"><div class="sbox-lbl">RACHA PÉRDIDAS</div><div class="sbox-val" id="lossStreak">0</div></div>
       <div class="sbox"><div class="sbox-lbl">PAUSA TRAS 3 LOSS</div><div class="sbox-val" id="pauseStatus">--</div></div>
     </div>
-  </div>
-
-  <!-- SIMULACIÓN -->
-  <div class="sim-table">
-    <h3>📈 SIMULACIÓN CUENTA $100 USD</h3>
-    <div class="sim-row"><span>Ganancia por WIN:</span><span id="profitWin" style="color:#2ed573">+$0.00</span></div>
-    <div class="sim-row"><span>Pérdida por LOSS:</span><span id="profitLoss" style="color:#ff4757">-$0.00</span></div>
-    <div class="sim-row"><span>Winrate breakeven:</span><span id="breakeven" style="color:#ffaa44">0%</span></div>
-    <div class="sim-row"><span>Proyección 10 ops · 60% WR:</span><span id="proj60" style="color:#00ffcc">$0.00</span></div>
-    <div class="sim-row"><span>Proyección 10 ops · 70% WR:</span><span id="proj70" style="color:#00ffcc">$0.00</span></div>
-    <div class="sim-row"><span>Ops para doblar cuenta ($200):</span><span id="opsDouble" style="color:#00b8ff">--</span></div>
   </div>
 </div>
 
@@ -355,10 +382,11 @@ function addLog(msg,cls=''){
 
 // ── TICKS CONFIG UI ───────────────────────────────────
 function buildTicksGrid(){
-  const presets=[1,2,3,4,5,6,8,10];
+  const presets=[1,2,3,4,5,6,7,8,9,10];
   document.getElementById('ticksGrid').innerHTML=ASSETS.map(a=>{
     const lbl=ASSET_LABELS[a];
     const v=ticksPerAsset[a];
+    const zv=Z_THRESHOLDS[a];
     const pHtml=presets.map(p=>`<span class="tp${p===v?' on':''}" onclick="setTick('${a}',${p},this)">${p}</span>`).join('');
     return `<div class="tick-card">
       <div class="tick-sym">${lbl}</div>
@@ -366,6 +394,14 @@ function buildTicksGrid(){
       <input type="number" class="tick-inp" id="tick_${a}" value="${v}" min="1" max="10"
         onchange="ticksPerAsset['${a}']=parseInt(this.value);addLog('⚙️ ${lbl} ticks → '+this.value)">
       <div class="tick-presets">${pHtml}</div>
+      <div style="margin-top:8px;border-top:1px solid #1e2a3a;padding-top:6px;">
+        <div class="z-lbl-sm">Z-SCORE MÍNIMO</div>
+        <div class="z-selector">
+          <span class="z-lbl-sm">Z ≥</span>
+          <input type="number" class="z-inp" id="zmin_${a}" value="${zv}" min="1.0" max="5.0" step="0.1"
+            onchange="Z_THRESHOLDS['${a}']=parseFloat(this.value);addLog('⚙️ ${lbl} Z_MIN → '+this.value)">
+        </div>
+      </div>
     </div>`;
   }).join('');
 }
@@ -486,23 +522,6 @@ function updateSafety(){
   }
 }
 
-// ── SIMULACIÓN ────────────────────────────────────────
-function updateSim(){
-  const stake=parseFloat(document.getElementById('stake').value)||1;
-  const payout=0.87;
-  const win=stake*payout;
-  const loss=stake;
-  const be=(loss/(win+loss)*100);
-  const p60=(win*6)-(loss*4);
-  const p70=(win*7)-(loss*3);
-  const opsDouble=win>0?Math.ceil((100*0.87)/(win-loss*(1-0.6))):'-';
-  document.getElementById('profitWin').innerText='+$'+win.toFixed(2);
-  document.getElementById('profitLoss').innerText='-$'+loss.toFixed(2);
-  document.getElementById('breakeven').innerText=be.toFixed(1)+'%';
-  document.getElementById('proj60').innerText='$'+p60.toFixed(2);
-  document.getElementById('proj70').innerText='$'+p70.toFixed(2);
-  document.getElementById('opsDouble').innerText='~'+(balance>0?Math.ceil((200-balance)/win):'-')+' ops';
-}
 
 // ── STATS ─────────────────────────────────────────────
 function updateStats(){
@@ -513,8 +532,58 @@ function updateStats(){
   document.getElementById('statWR').innerText=wr+'%';
   document.getElementById('balDisplay').innerText='$'+balance.toFixed(2);
   updateSafety();
-  updateSim();
+  }
+
+
+// ── RELOJ COLOMBIA + SESIONES ─────────────────────────
+let bestPnl=0, worstPnl=0, sessionPnl=0;
+
+function getColSession(){
+  const col=new Date(Date.now()-5*3600000);
+  const h=col.getUTCHours()+col.getUTCMinutes()/60;
+  if((h>=1&&h<7)||(h>=13&&h<19)) return 'optima';
+  if((h>=7&&h<10)||(h>=20&&h<24)||h<1) return 'normal';
+  return 'baja';
 }
+
+function updateClock(){
+  const col=new Date(Date.now()-5*3600000);
+  const h=col.getUTCHours(), m=String(col.getUTCMinutes()).padStart(2,'0');
+  const ampm=h<12?'AM':'PM';
+  const h12=h%12||12;
+  document.getElementById('colClock').innerText=h12+':'+m+' '+ampm+' · Colombia';
+
+  const sess=getColSession();
+  const boxes={optima:'sess_optima',normal:'sess_normal',baja:'sess_baja'};
+  const classes={optima:'hot',normal:'warm',baja:'cold'};
+  const labels={optima:'▶ ACTIVA',normal:'▶ ACTIVA',baja:'▶ ACTIVA'};
+
+  Object.keys(boxes).forEach(s=>{
+    const el=document.getElementById(boxes[s]);
+    const st=document.getElementById(boxes[s]+'_st');
+    if(s===sess){
+      el.className='sess-box '+classes[s];
+      st.innerText=labels[s];
+    } else {
+      el.className='sess-box inactive';
+      st.innerText='inactiva';
+    }
+  });
+}
+
+function updateProfitPanel(pnl){
+  sessionPnl+=pnl;
+  if(pnl>bestPnl) bestPnl=pnl;
+  if(pnl<worstPnl) worstPnl=pnl;
+  const pEl=document.getElementById('profitSession');
+  pEl.innerText=(sessionPnl>=0?'+$':'-$')+Math.abs(sessionPnl).toFixed(2);
+  pEl.style.color=sessionPnl>=0?'#2ed573':'#ff4757';
+  document.getElementById('profitBest').innerText='+$'+Math.max(0,bestPnl).toFixed(2);
+  document.getElementById('profitWorst').innerText='-$'+Math.abs(Math.min(0,worstPnl)).toFixed(2);
+}
+
+setInterval(updateClock,1000);
+updateClock();
 
 // ════════════════════════════════════════════════════════
 // NÚCLEO: ANÁLISIS CON CONFIRMACIÓN DE 2 TICKS
@@ -523,11 +592,11 @@ function updateStats(){
 // Aquí aplicamos la confirmación de 2 ticks:
 //
 //  PICO Z POSITIVO (sobrecompra) → señal PUT pendiente
-//    Si los próximos 2 ticks son POSITIVOS (precio sube)
+//    Si los próximos 2 ticks son POSITIVOS (precio baja)
 //    → confirma el rebote → ENTRAR PUT
 //
 //  PICO Z NEGATIVO (sobreventa) → señal CALL pendiente
-//    Si los próximos 2 ticks son NEGATIVOS (precio baja)
+//    Si los próximos 2 ticks son NEGATIVOS (precio sube)
 //    → confirma el rebote → ENTRAR CALL
 //
 //  Además se verifica RSI + Volumen proxy antes de entrar
@@ -694,6 +763,7 @@ function onResult(sym, pnl){
   if(tradeHistory.length>100) tradeHistory.shift();
 
   addLog((isWin?'✅ WIN':'❌ LOSS')+' '+lbl+' PnL:$'+pnl.toFixed(2)+' Bal:$'+balance.toFixed(2), isWin?'lw':'ll');
+  updateProfitPanel(pnl);
 
   // Gráfico balance
   chart.data.labels.push('');
@@ -714,6 +784,10 @@ function startBot(){
 
   // Reset
   balance=100; sessionStart=100;
+  sessionPnl=0; bestPnl=0; worstPnl=0;
+  document.getElementById('profitSession').innerText='+$0.00';
+  document.getElementById('profitBest').innerText='+$0.00';
+  document.getElementById('profitWorst').innerText='$0.00';
   wins=0; losses=0; lossStreak=0; pauseUntil=0;
   tradeHistory=[];
   ASSETS.forEach(a=>{
@@ -750,8 +824,7 @@ function startBot(){
         addLog('🔗 Suscrito a '+ASSET_LABELS[a]+' · ticks en vivo','li');
       });
       ws.send(JSON.stringify({balance:1}));
-      updateSim();
-    }
+          }
 
     if(d.balance){ balance=d.balance.balance; updateStats(); }
 
@@ -811,11 +884,9 @@ function stopBot(){
 
 // ── INICIALIZACIÓN ────────────────────────────────────
 document.getElementById('toggleBtn').onclick=()=>running?stopBot():startBot();
-document.getElementById('stake').addEventListener('input',updateSim);
 
 buildTicksGrid();
 updateStats();
-updateSim();
 addLog('🤖 Z-PEAK BOT v2 LISTO | V10·V25·V50 | Confirmación 2 ticks | RSI + Volumen');
 </script>
 </body>
