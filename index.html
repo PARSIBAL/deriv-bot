@@ -284,7 +284,7 @@ const ASSETS = ["R_10","R_25","R_50"];
 const ASSET_LABELS = { "R_10":"V_10","R_25":"V_25","R_50":"V_50" };
 
 // Umbrales Z por activo (más exigente en los más volátiles)
-const Z_THRESHOLDS = { "R_10":2.5, "R_25":2.3, "R_50":2.5 };
+const Z_THRESHOLDS = { "R_10":2.8, "R_25":3.1, "R_50":3.4 };
 
 // RSI umbrales
 const RSI_OB = 80; // sobrecompra → PUT
@@ -312,7 +312,7 @@ let confirmState = {
 ASSETS.forEach(a=>lastTradeTime[a]=0);
 
 // Ticks por activo (configurables)
-let ticksPerAsset = { "R_10":5,"R_25":4,"R_50":3 };
+let ticksPerAsset = { "R_10":3,"R_25":4,"R_50":5 };
 
 // contractToAsset map
 let contractToAsset = {};
