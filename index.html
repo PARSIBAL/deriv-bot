@@ -284,7 +284,7 @@ const ASSETS = ["R_10","R_25","R_50"];
 const ASSET_LABELS = { "R_10":"V_10","R_25":"V_25","R_50":"V_50" };
 
 // Umbrales Z por activo (más exigente en los más volátiles)
-const Z_THRESHOLDS = { "R_10":2.8, "R_25":3.1, "R_50":3.4 };
+const Z_THRESHOLDS = { "R_10":2.5, "R_25":2.3, "R_50":2.5 };
 
 // RSI umbrales
 const RSI_OB = 80; // sobrecompra → PUT
@@ -312,7 +312,7 @@ let confirmState = {
 ASSETS.forEach(a=>lastTradeTime[a]=0);
 
 // Ticks por activo (configurables)
-let ticksPerAsset = { "R_10":3,"R_25":4,"R_50":5 };
+let ticksPerAsset = { "R_10":5,"R_25":4,"R_50":3 };
 
 // contractToAsset map
 let contractToAsset = {};
@@ -575,7 +575,9 @@ function onNewPrice(sym, price){
 
   // ── FASE 2: CONFIRMAR TICKS ──────────────────────────
   if(cs.pending){
-    const tickDir=cs.dir==='PUT' ? (lastRet<0) : (lastRet>0);
+    // PICO+→PUT: confirma con 2 ticks POSITIVOS (precio sube antes de caer)
+    // PICO-→CALL: confirma con 2 ticks NEGATIVOS (precio baja antes de subir)
+    const tickDir=cs.dir==='PUT' ? (lastRet>0) : (lastRet<0);
     if(tickDir){
       cs.count++;
       if(cs.count>=2){
@@ -632,7 +634,7 @@ function onNewPrice(sym, price){
         addLog('⚡ '+ASSET_LABELS[sym]+' → '+signal+' $'+stake+' z:'+peakZ.toFixed(2)+' RSI:'+rsi.toFixed(0)+' Vol:'+vol.label+' '+ticks+'t','lk');
         document.getElementById('activeSignal').innerText=signal+' en '+ASSET_LABELS[sym]+' z:'+peakZ.toFixed(2);
       } else {
-        addLog('🔎 '+ASSET_LABELS[sym]+' confirmando tick '+cs.count+'/2...');
+        addLog('🔎 '+ASSET_LABELS[sym]+' tick '+(cs.dir==='PUT'?'positivo':'negativo')+' confirmado '+cs.count+'/2...');
       }
     } else {
       // Tick va en dirección contraria — el rebote no se confirmó, cancelar
@@ -656,7 +658,7 @@ function onNewPrice(sym, price){
       cs.dir='PUT';
       cs.count=0;
       cs.peakZ=z;
-      addLog('🔺 PICO+ '+ASSET_LABELS[sym]+' z:'+z.toFixed(2)+' → esperando 2 ticks alcistas...');
+      addLog('🔺 PICO+ '+ASSET_LABELS[sym]+' z:'+z.toFixed(2)+' → esperando 2 ticks positivos → PUT...');
       document.getElementById('activeSignal').innerText='PICO+ '+ASSET_LABELS[sym]+' z:'+z.toFixed(2);
     }
     // Pico negativo: Z bajo y empezando a subir → señal CALL pendiente
@@ -665,7 +667,7 @@ function onNewPrice(sym, price){
       cs.dir='CALL';
       cs.count=0;
       cs.peakZ=z;
-      addLog('🔻 PICO- '+ASSET_LABELS[sym]+' z:'+z.toFixed(2)+' → esperando 2 ticks bajistas...');
+      addLog('🔻 PICO- '+ASSET_LABELS[sym]+' z:'+z.toFixed(2)+' → esperando 2 ticks negativos → CALL...');
       document.getElementById('activeSignal').innerText='PICO- '+ASSET_LABELS[sym]+' z:'+z.toFixed(2);
     }
   }
