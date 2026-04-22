@@ -6,7 +6,7 @@
 <title>Z-PEAK BOT v2 | V10·V25·V50 | HIGH PRECISION</title>
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <style>
-/* ===== ESTILOS (sin cambios relevantes) ===== */
+/* ===== ESTILOS (sin cambios) ===== */
 *{margin:0;padding:0;box-sizing:border-box;}
 body{
   background:radial-gradient(circle at 20% 30%,#0a0f1a,#02060d);
@@ -65,6 +65,7 @@ h3{color:#00ffcc;font-size:.85rem;margin:12px 0 8px;letter-spacing:1px;}
 }
 .tp:hover,.tp.on{border-color:#00ffcc;color:#00ffcc;}
 .tp.on{background:rgba(0,255,200,0.1);}
+.tp.disabled{opacity:0.4;pointer-events:none;}
 
 .btn{
   width:100%;
@@ -221,29 +222,52 @@ canvas{margin:10px 0;background:#010810;border-radius:14px;padding:4px;}
 
 <script>
 // ════════════════════════════════════════════════════════
-// MOMENTUM BURST BOT — PRECISION EDGE v6
-// MEJORAS CLAVE:
-//   ✓ Filtro lateral robusto (bloquea rangos)
-//   ✓ Persistencia estructural obligatoria
-//   ✓ Detección de impulso temprano (no entradas tardías)
-//   ✓ Scoring híbrido: condiciones "hard" + score multiplicativo
+// Z-PEAK BOT v6 — ARQUITECTURA CONFIG‑DRIVEN
 // ════════════════════════════════════════════════════════
 
-const ASSETS = ["R_10","R_25","R_50"];
-const ASSET_LABELS = { "R_10":"V_10","R_25":"V_25","R_50":"V_50" };
-const Z_THRESHOLDS = { "R_10":2.5, "R_25":2.3, "R_50":2.5 };
+// ── CONFIGURACIÓN POR ACTIVO ─────────────────────────────
+const CONFIG = {
+  "R_10": {
+    label: "V_10",
+    enabled: false,            // ← DESACTIVADO POR DEFECTO (modo test)
+    ticks: 5,
+    scoreScanMin: 55,           // mínimo para entrar en fase CONFIRM
+    scoreConfirmMin: 80,        // mínimo para ejecutar orden
+    zThreshold: 2.5
+  },
+  "R_25": {
+    label: "V_25",
+    enabled: false,            // ← DESACTIVADO POR DEFECTO
+    ticks: 4,
+    scoreScanMin: 55,
+    scoreConfirmMin: 80,
+    zThreshold: 2.3
+  },
+  "R_50": {
+    label: "V_50",
+    enabled: true,             // ← ÚNICO ACTIVO (TEST)
+    ticks: 3,
+    scoreScanMin: 55,
+    scoreConfirmMin: 80,
+    zThreshold: 2.5
+  }
+};
+
+// Lista de activos habilitados (se genera a partir de CONFIG)
+const ENABLED_ASSETS = Object.keys(CONFIG).filter(sym => CONFIG[sym].enabled);
+const ALL_ASSETS = Object.keys(CONFIG);  // para UI completa
 
 // ── ESTADO ────────────────────────────────────────────
-let ws, running=false;
-let balance=100.00, sessionStart=100.00;
-let wins=0, losses=0, lossStreak=0, pauseUntil=0;
-let lastTradeTime={};
-let tradeHistory=[];
-let opLog=[];
+let ws, running = false;
+let balance = 100.00, sessionStart = 100.00;
+let wins = 0, losses = 0, lossStreak = 0, pauseUntil = 0;
+let lastTradeTime = {};
+let tradeHistory = [];
+let opLog = [];
 
-let prices    = { "R_10":[],"R_25":[],"R_50":[] };
-let zHist     = { "R_10":[],"R_25":[],"R_50":[] };
-let retHistory = { "R_10":[],"R_25":[],"R_50":[] };
+let prices    = { "R_10":[], "R_25":[], "R_50":[] };
+let zHist     = { "R_10":[], "R_25":[], "R_50":[] };
+let retHistory = { "R_10":[], "R_25":[], "R_50":[] };
 
 let momentumState = {
   "R_10":{ phase:'SCAN', dir:null, accelTicks:0, burstStart:0, score:0 },
@@ -254,14 +278,13 @@ let momentumState = {
 let confirmState = {
   "R_10":{ pending:false, dir:null, count:0 },
   "R_25":{ pending:false, dir:null, count:0 },
-  "R_50":{ pending:false, dir:null, count:0 }
+  "R_50":{ pending:true, dir:null, count:0 }
 };
 
-ASSETS.forEach(a=>lastTradeTime[a]=0);
-let ticksPerAsset = { "R_10":5,"R_25":4,"R_50":3 };
+ALL_ASSETS.forEach(a => lastTradeTime[a] = 0);
 let contractToAsset = {};
 let openContracts = {};
-ASSETS.forEach(a=>openContracts[a]=null);
+ALL_ASSETS.forEach(a => openContracts[a] = null);
 let tradeTimestamps = [];
 
 // Chart
@@ -271,35 +294,60 @@ const chart = new Chart(document.getElementById('chart'),{
   options:{ responsive:true, maintainAspectRatio:true, plugins:{legend:{labels:{color:'#6c7a8e'}}}, scales:{ x:{ticks:{color:'#6c7a8e'}}, y:{ticks:{color:'#6c7a8e'}} } }
 });
 
-function addLog(msg,cls=''){
-  const t=new Date().toLocaleTimeString();
-  const d=document.createElement('div');
-  d.className=cls;
-  d.textContent='['+t+'] '+msg;
-  const logDiv=document.getElementById('logDiv');
+function addLog(msg, cls = ''){
+  const t = new Date().toLocaleTimeString();
+  const d = document.createElement('div');
+  d.className = cls;
+  d.textContent = '[' + t + '] ' + msg;
+  const logDiv = document.getElementById('logDiv');
   logDiv.appendChild(d);
-  logDiv.scrollTop=logDiv.scrollHeight;
+  logDiv.scrollTop = logDiv.scrollHeight;
 }
 
-// UI Ticks
+// UI Ticks (usa CONFIG)
 function buildTicksGrid(){
-  const presets=[1,2,3,4,5,6,8,10];
-  document.getElementById('ticksGrid').innerHTML=ASSETS.map(a=>{
-    const lbl=ASSET_LABELS[a];
-    const v=ticksPerAsset[a];
-    const pHtml=presets.map(p=>`<span class="tp${p===v?' on':''}" onclick="setTick('${a}',${p},this)">${p}</span>`).join('');
-    return `<div class="tick-card"><div class="tick-sym">${lbl}</div><div class="tick-label">Duración</div><input type="number" class="tick-inp" id="tick_${a}" value="${v}" min="1" max="10" onchange="ticksPerAsset['${a}']=parseInt(this.value);addLog('⚙️ ${lbl} ticks → '+this.value)"><div class="tick-presets">${pHtml}</div></div>`;
+  const presets = [1,2,3,4,5,6,8,10];
+  const gridHtml = ALL_ASSETS.map(sym => {
+    const cfg = CONFIG[sym];
+    const lbl = cfg.label;
+    const v = cfg.ticks;
+    const disabledClass = cfg.enabled ? '' : 'disabled';
+    const pHtml = presets.map(p => {
+      const isOn = p === v ? 'on' : '';
+      return `<span class="tp ${isOn} ${disabledClass}" onclick="setTick('${sym}',${p},this)">${p}</span>`;
+    }).join('');
+    return `<div class="tick-card" style="opacity:${cfg.enabled ? 1 : 0.5}">
+      <div class="tick-sym">${lbl} ${cfg.enabled ? '' : '(OFF)'}</div>
+      <div class="tick-label">Duración</div>
+      <input type="number" class="tick-inp" id="tick_${sym}" value="${v}" min="1" max="10" ${cfg.enabled ? '' : 'disabled'} onchange="updateConfigTick('${sym}', this.value)">
+      <div class="tick-presets">${pHtml}</div>
+    </div>`;
   }).join('');
-}
-function setTick(asset,val,el){
-  ticksPerAsset[asset]=val;
-  document.getElementById('tick_'+asset).value=val;
-  el.closest('.tick-card').querySelectorAll('.tp').forEach(e=>e.classList.remove('on'));
-  el.classList.add('on');
-  addLog('⚙️ '+ASSET_LABELS[asset]+' ticks → '+val);
+  document.getElementById('ticksGrid').innerHTML = gridHtml;
 }
 
-// ── MÉTRICAS BASE ─────────────────────────────────────
+function setTick(sym, val, el){
+  if (!CONFIG[sym].enabled) {
+    addLog(`⚠️ ${CONFIG[sym].label} está desactivado, no se puede cambiar`, 'll');
+    return;
+  }
+  CONFIG[sym].ticks = val;
+  document.getElementById('tick_' + sym).value = val;
+  el.closest('.tick-card').querySelectorAll('.tp').forEach(e => e.classList.remove('on'));
+  el.classList.add('on');
+  addLog(`⚙️ ${CONFIG[sym].label} ticks → ${val}`);
+}
+
+function updateConfigTick(sym, val){
+  const num = parseInt(val) || 3;
+  if (CONFIG[sym].enabled) {
+    CONFIG[sym].ticks = num;
+    addLog(`⚙️ ${CONFIG[sym].label} ticks actualizado → ${num}`);
+  }
+  document.getElementById('tick_' + sym).value = CONFIG[sym].ticks;
+}
+
+// ── MÉTRICAS BASE (sin cambios) ──────────────────────────
 function calcVolRegime(rets){
   if(rets.length < 25) return { shortVol:0, longVol:0, ratio:1, regime:'CALC', absVol:0 };
   const short = rets.slice(-6);
@@ -364,52 +412,39 @@ function detectMomentumDecay(rets, direction){
 }
 
 // ══════════════════════════════════════════════════════
-// NUEVOS FILTROS DE PRECISIÓN
+// FILTROS DE PRECISIÓN (sin cambios)
 // ══════════════════════════════════════════════════════
-
-// 1. DETECCIÓN DE MERCADO LATERAL (CRÍTICO)
 function isLateralMarket(rets, arr, volRegime){
   if(rets.length < 20) return { lateral: true, confidence: 1, reason: 'insuf_data' };
   const recentRets = rets.slice(-20);
   const recentPrices = arr.slice(-21);
-  
-  // A) Frecuencia de cambios de dirección (zig-zag)
   let dirChanges = 0;
   for(let i=1;i<recentRets.length;i++){
     if(Math.sign(recentRets[i]) !== Math.sign(recentRets[i-1])) dirChanges++;
   }
   const changeRatio = dirChanges / (recentRets.length-1);
-  
-  // B) Rango pequeño vs volatilidad
   const maxP = Math.max(...recentPrices);
   const minP = Math.min(...recentPrices);
   const range = maxP - minP;
   const avgAbsRet = recentRets.reduce((a,r)=>a+Math.abs(r),0)/recentRets.length;
   const rangeVsVol = avgAbsRet>0 ? range / avgAbsRet : 0;
-  
-  // C) Consistencia direccional baja
   const upMoves = recentRets.filter(r=>r>0).length;
   const downMoves = recentRets.filter(r=>r<0).length;
   const directionBalance = Math.abs(upMoves - downMoves) / recentRets.length;
-  
-  // D) Autocorrelación baja (ruido)
   let sumProd = 0, sumSq = 0;
   for(let i=1;i<recentRets.length;i++){ sumProd += recentRets[i]*recentRets[i-1]; sumSq += recentRets[i-1]**2; }
   const acf1 = sumSq>0 ? sumProd/sumSq : 0;
-  
   let lateralScore = 0;
-  if(changeRatio > 0.55) lateralScore += 2;      // muchos cambios de signo
-  if(rangeVsVol < 3.5) lateralScore += 2;        // rango estrecho
-  if(directionBalance < 0.25) lateralScore += 2; // sin dirección clara
-  if(acf1 < 0.1) lateralScore += 1;              // ruido blanco
+  if(changeRatio > 0.55) lateralScore += 2;
+  if(rangeVsVol < 3.5) lateralScore += 2;
+  if(directionBalance < 0.25) lateralScore += 2;
+  if(acf1 < 0.1) lateralScore += 1;
   if(volRegime.regime === 'RANGE') lateralScore += 3;
-  
   const lateral = lateralScore >= 4;
   const reason = lateral ? `LATERAL (chg:${changeRatio.toFixed(2)} rng:${rangeVsVol.toFixed(1)} bal:${directionBalance.toFixed(2)})` : '';
   return { lateral, confidence: lateralScore/9, reason };
 }
 
-// 2. PERSISTENCIA ESTRUCTURAL (mejorada)
 function isMomentumPersistent(rets, momStr, absVol){
   if(momStr.consistent < 4) return { persistent:false, reason:'cons<4' };
   const streak = rets.slice(-momStr.consistent);
@@ -425,7 +460,6 @@ function isMomentumPersistent(rets, momStr, absVol){
   return { persistent, cv, slopeOk, reason: !persistent?`CV:${cv.toFixed(2)} slp:${slopeOk}`:'' };
 }
 
-// 3. IMPULSO FUERTE (con umbral más estricto)
 function isStrongMomentum(momStr, absVol){
   const reasons=[];
   if(momStr.relStrength < 1.8) reasons.push(`relStr_bajo:${momStr.relStrength.toFixed(2)}<1.8`);
@@ -434,13 +468,11 @@ function isStrongMomentum(momStr, absVol){
   return { strong: reasons.length===0, reason: reasons.join('|') };
 }
 
-// 4. DETECCIÓN DE IMPULSO TEMPRANO (evitar entrada tardía)
 function isEarlyStageMomentum(rets, burstStartAge){
   if(rets.length < 8) return { early: true, reason: '' };
   const recentMags = rets.slice(-8).map(Math.abs);
   const maxIdx = recentMags.lastIndexOf(Math.max(...recentMags));
   const ticksSincePeak = recentMags.length - 1 - maxIdx;
-  // Si el pico ocurrió hace 2 o más ticks y la magnitud actual es <70% del pico → tarde
   const lastMag = recentMags[recentMags.length-1];
   const peakMag = recentMags[maxIdx];
   const decaying = lastMag < peakMag * 0.65;
@@ -448,28 +480,23 @@ function isEarlyStageMomentum(rets, burstStartAge){
   return { early: !late, reason: late?`pico_hace_${ticksSincePeak}T`:'OK' };
 }
 
-// 5. SCORE HÍBRIDO (condiciones obligatorias + multiplicador)
 function calcSignalScore(momStr, regime, volRegime, decay, strongImpulse, persistent, lateral){
-  // HARD GATES: condiciones que descalifican totalmente
   if(lateral) return 0;
   if(regime==='RANGE' || regime==='EXTREME') return 0;
   if(!momStr.magnitudeOk || momStr.consistent < 4) return 0;
   if(decay.decaying) return 0;
   if(!strongImpulse.strong) return 0;
   if(!persistent.persistent) return 0;
-  
   let score = 0;
   score += Math.min(25, (momStr.weightedCons / 28) * 25);
   score += Math.min(25, momStr.relStrength * 9);
   score += (regime==='BURST'?25:10);
   if(momStr.acc !== 0 && Math.sign(momStr.acc) === Math.sign(momStr.vel))
     score += Math.min(15, Math.abs(momStr.acc) / (Math.abs(momStr.vel)+1e-10) * 12);
-  
   let multiplier = 1.0;
   if(persistent.persistent) multiplier += 0.2;
   if(strongImpulse.strong) multiplier += 0.15;
   if(volRegime.ratio > 1.8) multiplier += 0.1;
-  
   return Math.min(100, Math.round(score * multiplier));
 }
 
@@ -478,58 +505,64 @@ function calcZ(arr){ if(arr.length<2) return 0; const mean=arr.reduce((a,b)=>a+b
 function calcRSI(arr,period=14){ if(arr.length<period+1) return 50; let gains=0,losses=0; for(let i=arr.length-period;i<arr.length;i++){ const d=arr[i]-arr[i-1]; if(d>0) gains+=d; else losses-=d; } const ag=gains/period,al=losses/period; return al===0?100:100-(100/(1+(ag/al))); }
 
 // UI updates
-function updateConfirmPanel(score,scoreOk,persist,persistOk,regime,regimeOk,early,earlyOk){
-  document.getElementById('cZ').innerText=score;
-  document.getElementById('cZ').className='cbox-val '+(scoreOk?'ok':'warn');
-  document.getElementById('cZchk').innerText=scoreOk?'✅ SCORE ≥80':'⏳ Bajo';
-  document.getElementById('cTick').innerText=persist;
-  document.getElementById('cTickchk').innerText=persistOk?'✅ PERSISTENTE':'❌ Débil';
-  document.getElementById('cRSI').innerText=regime;
-  document.getElementById('cRSIchk').innerText=regimeOk?'✅ TENDENCIAL':'⛔ Lateral/Rango';
-  document.getElementById('cVol').innerText=early;
-  document.getElementById('cVolchk').innerText=earlyOk?'✅ TEMPRANO':'⏰ Tarde';
+function updateConfirmPanel(score, scoreOk, persist, persistOk, regime, regimeOk, early, earlyOk){
+  document.getElementById('cZ').innerText = score;
+  document.getElementById('cZ').className = 'cbox-val ' + (scoreOk ? 'ok' : 'warn');
+  document.getElementById('cZchk').innerText = scoreOk ? '✅ SCORE OK' : '⏳ Bajo';
+  document.getElementById('cTick').innerText = persist;
+  document.getElementById('cTickchk').innerText = persistOk ? '✅ PERSISTENTE' : '❌ Débil';
+  document.getElementById('cRSI').innerText = regime;
+  document.getElementById('cRSIchk').innerText = regimeOk ? '✅ TENDENCIAL' : '⛔ Lateral/Rango';
+  document.getElementById('cVol').innerText = early;
+  document.getElementById('cVolchk').innerText = earlyOk ? '✅ TEMPRANO' : '⏰ Tarde';
 }
 
 function updateAssetsGrid(){
-  const lookbacks=[10,25,50];
-  document.getElementById('assetsGrid').innerHTML=ASSETS.map(a=>{
-    const lbl=ASSET_LABELS[a];
-    const arr=prices[a];
-    const rows=lookbacks.map(lb=>{
-      if(arr.length<lb) return `<div class="lb-row"><span class="lb-name">LB${lb}</span><span class="lb-z" style="color:#2a3555">--</span></div>`;
-      const z=calcZ(arr.slice(-lb));
-      const abs=Math.abs(z);
-      const col=abs>=Z_THRESHOLDS[a]?'#ff4757':abs>=1.5?'#ffaa44':'#2ed573';
-      const barW=Math.min(100,abs*25);
+  const lookbacks = [10,25,50];
+  const gridHtml = ALL_ASSETS.map(sym => {
+    const cfg = CONFIG[sym];
+    const lbl = cfg.label;
+    const arr = prices[sym];
+    const rows = lookbacks.map(lb => {
+      if(arr.length < lb) return `<div class="lb-row"><span class="lb-name">LB${lb}</span><span class="lb-z" style="color:#2a3555">--</span></div>`;
+      const z = calcZ(arr.slice(-lb));
+      const abs = Math.abs(z);
+      const col = abs >= cfg.zThreshold ? '#ff4757' : (abs >= 1.5 ? '#ffaa44' : '#2ed573');
+      const barW = Math.min(100, abs*25);
       return `<div class="lb-row"><span class="lb-name">LB${lb}</span><div style="flex:1;margin:0 8px;"><div class="lb-bar" style="width:${barW}%;background:${z>0?'#ff4757':'#2ed573'};"></div></div><span class="lb-z" style="color:${col}">${z.toFixed(2)}</span></div>`;
     }).join('');
-    const ms=momentumState[a];
-    return `<div class="asset-card"><div class="asset-title">${lbl} <span style="font-size:9px;color:${ms.phase==='CONFIRM'?'#ffaa44':'#2a3555'}">${ms.phase}</span></div>${rows}</div>`;
+    const ms = momentumState[sym];
+    const enabledBadge = cfg.enabled ? '' : ' <span style="color:#ff4757;font-size:9px;">⛔ OFF</span>';
+    return `<div class="asset-card" style="opacity:${cfg.enabled ? 1 : 0.5}">
+      <div class="asset-title">${lbl} ${enabledBadge} <span style="font-size:9px;color:${ms.phase==='CONFIRM'?'#ffaa44':'#2a3555'}">${ms.phase}</span></div>
+      ${rows}
+    </div>`;
   }).join('');
+  document.getElementById('assetsGrid').innerHTML = gridHtml;
 }
 
 function updateStats(){
-  document.getElementById('statWins').innerText=wins;
-  document.getElementById('statLosses').innerText=losses;
-  const tot=wins+losses;
-  document.getElementById('statWR').innerText=tot>0?((wins/tot)*100).toFixed(1)+'%':'0%';
-  document.getElementById('balDisplay').innerText='$'+balance.toFixed(2);
-  const dd=sessionStart-balance;
-  document.getElementById('drawdown').innerText=dd>0?'-$'+dd.toFixed(2):'$0.00';
-  document.getElementById('stopLimit').innerText='$'+(sessionStart*0.05).toFixed(2);
-  document.getElementById('lossStreak').innerText=lossStreak;
-  document.getElementById('pauseStatus').innerText=pauseUntil>Date.now()?'PAUSA':'ACTIVO';
+  document.getElementById('statWins').innerText = wins;
+  document.getElementById('statLosses').innerText = losses;
+  const tot = wins + losses;
+  document.getElementById('statWR').innerText = tot > 0 ? ((wins/tot)*100).toFixed(1) + '%' : '0%';
+  document.getElementById('balDisplay').innerText = '$' + balance.toFixed(2);
+  const dd = sessionStart - balance;
+  document.getElementById('drawdown').innerText = dd > 0 ? '-$' + dd.toFixed(2) : '$0.00';
+  document.getElementById('stopLimit').innerText = '$' + (sessionStart*0.05).toFixed(2);
+  document.getElementById('lossStreak').innerText = lossStreak;
+  document.getElementById('pauseStatus').innerText = pauseUntil > Date.now() ? 'PAUSA' : 'ACTIVO';
 }
 
 function updateSim(){
-  const stake=parseFloat(document.getElementById('stake').value)||1;
-  const win=stake*0.87, loss=stake;
-  const be=(loss/(win+loss)*100);
-  document.getElementById('profitWin').innerText='+$'+win.toFixed(2);
-  document.getElementById('profitLoss').innerText='-$'+loss.toFixed(2);
-  document.getElementById('breakeven').innerText=be.toFixed(1)+'%';
-  document.getElementById('proj60').innerText='$'+(win*6-loss*4).toFixed(2);
-  document.getElementById('proj70').innerText='$'+(win*7-loss*3).toFixed(2);
+  const stake = parseFloat(document.getElementById('stake').value) || 1;
+  const win = stake * 0.87, loss = stake;
+  const be = (loss/(win+loss)*100);
+  document.getElementById('profitWin').innerText = '+$' + win.toFixed(2);
+  document.getElementById('profitLoss').innerText = '-$' + loss.toFixed(2);
+  document.getElementById('breakeven').innerText = be.toFixed(1) + '%';
+  document.getElementById('proj60').innerText = '$' + (win*6 - loss*4).toFixed(2);
+  document.getElementById('proj70').innerText = '$' + (win*7 - loss*3).toFixed(2);
 }
 
 function resetMomentum(sym){
@@ -538,173 +571,202 @@ function resetMomentum(sym){
 }
 
 function tradesPerMinute(){
-  const now=Date.now();
-  tradeTimestamps = tradeTimestamps.filter(t=>now-t<60000);
+  const now = Date.now();
+  tradeTimestamps = tradeTimestamps.filter(t => now - t < 60000);
   return tradeTimestamps.length;
 }
 
 function getAdaptiveStake(){
-  const base=parseFloat(document.getElementById('stake').value)||1;
-  const dd=sessionStart-balance;
-  const ddPct=dd/sessionStart;
-  if(ddPct>0.03) return Math.max(0.35, base*0.5);
-  else if(ddPct>0.015) return Math.max(0.35, base*0.75);
+  const base = parseFloat(document.getElementById('stake').value) || 1;
+  const dd = sessionStart - balance;
+  const ddPct = dd / sessionStart;
+  if(ddPct > 0.03) return Math.max(0.35, base * 0.5);
+  else if(ddPct > 0.015) return Math.max(0.35, base * 0.75);
   return base;
 }
 
 // ════════════════════════════════════════════════════════
-// NÚCLEO DE DECISIÓN (con lateralidad bloqueante)
+// NÚCLEO DE DECISIÓN (con configuración por activo)
 // ════════════════════════════════════════════════════════
 function onNewPrice(sym, price){
+  const cfg = CONFIG[sym];
+  if (!cfg.enabled) return;  // ⛔ ignorar activos desactivados
+
   const arr = prices[sym];
   arr.push(price);
-  if(arr.length>200) arr.shift();
-  if(arr.length<30) return;
-  
+  if(arr.length > 200) arr.shift();
+  if(arr.length < 30) return;
+
   const now = Date.now();
   const ms = momentumState[sym];
   const lastRet = arr[arr.length-1] - arr[arr.length-2];
   const rets = retHistory[sym];
   rets.push(lastRet);
-  if(rets.length>60) rets.shift();
+  if(rets.length > 60) rets.shift();
   if(rets.length < 20) return;
-  
+
   const volRegime = calcVolRegime(rets);
   const momStr = calculateMomentumStrength(rets, volRegime.absVol);
   const decay = detectMomentumDecay(rets, momStr.direction);
   const lateral = isLateralMarket(rets, arr, volRegime);
-  
-  // ⛔ BLOQUEO TOTAL SI ES LATERAL (a menos que ya esté en confirmación, se cancela)
+
   if(lateral.lateral && ms.phase !== 'CONFIRM'){
-    // actualizar UI con indicación de lateral
     document.getElementById('indVol').innerText = 'LATERAL';
     document.getElementById('indVol').style.color = '#ff4757';
     updateAssetsGrid();
     return;
   }
-  
+
   const persistent = isMomentumPersistent(rets, momStr, volRegime.absVol);
   const strongMom = isStrongMomentum(momStr, volRegime.absVol);
-  const burstAge = ms.phase==='CONFIRM' ? Math.floor((now-ms.burstStart)/500) : 0;
+  const burstAge = ms.phase === 'CONFIRM' ? Math.floor((now - ms.burstStart)/500) : 0;
   const early = isEarlyStageMomentum(rets, burstAge);
-  
-  const regimeOk = volRegime.regime==='BURST' || volRegime.regime==='TREND';
+
+  const regimeOk = volRegime.regime === 'BURST' || volRegime.regime === 'TREND';
   const accOk = momStr.consistent >= 4 && momStr.magnitudeOk && strongMom.strong && persistent.persistent;
   const score = calcSignalScore(momStr, volRegime.regime, volRegime, decay, strongMom, persistent, lateral.lateral);
-  
-  // UI
-  document.getElementById('indAsset').innerText = ASSET_LABELS[sym];
+
+  // UI (mostramos info aunque solo un activo esté habilitado)
+  document.getElementById('indAsset').innerText = cfg.label;
   document.getElementById('indZ').innerText = score;
-  document.getElementById('indZ').style.color = score>=80?'#2ed573':'#ffaa44';
+  document.getElementById('indZ').style.color = score >= cfg.scoreConfirmMin ? '#2ed573' : '#ffaa44';
   document.getElementById('indRSI').innerText = lateral.lateral ? '⛔LATERAL' : volRegime.regime;
-  document.getElementById('indVol').innerText = lateral.lateral ? 'BLOQUEADO' : (early.early?'TEMPRANO':'TARDE');
-  
-  // Panel confirmaciones
-  updateConfirmPanel(score, score>=80, persistent.persistent?'✅':'❌', persistent.persistent, 
+  document.getElementById('indVol').innerText = lateral.lateral ? 'BLOQUEADO' : (early.early ? 'TEMPRANO' : 'TARDE');
+
+  updateConfirmPanel(score, score >= cfg.scoreConfirmMin, persistent.persistent?'✅':'❌', persistent.persistent,
                      lateral.lateral?'LATERAL':volRegime.regime, !lateral.lateral && regimeOk,
                      early.early?'✅':'❌', early.early);
-  
+
   // ── FASE CONFIRM ─────────────────────────────────────
   if(ms.phase === 'CONFIRM'){
-    if(lateral.lateral || !regimeOk || decay.decaying || !early.early || score<75){
-      addLog(`⛔ ${ASSET_LABELS[sym]} cancelado: ${lateral.lateral?'LATERAL':!regimeOk?'RÉGIMEN':!early.early?'TARDE':'BAJO_SCORE'}`, 'll');
+    if(lateral.lateral || !regimeOk || decay.decaying || !early.early || score < cfg.scoreConfirmMin){
+      addLog(`⛔ ${cfg.label} cancelado: ${lateral.lateral?'LATERAL':!regimeOk?'RÉGIMEN':!early.early?'TARDE':'BAJO_SCORE'}`, 'll');
       resetMomentum(sym); updateAssetsGrid(); return;
     }
     if(now - ms.burstStart > 5000){ addLog('⏱ timeout'); resetMomentum(sym); return; }
-    
+
     const minTickMag = volRegime.absVol * 0.2;
-    const tickDir = ms.dir==='CALL' ? lastRet>0 : lastRet<0;
+    const tickDir = ms.dir === 'CALL' ? lastRet > 0 : lastRet < 0;
     const tickMagOk = Math.abs(lastRet) >= minTickMag;
     if(tickDir && tickMagOk){
       ms.accelTicks++;
-      if(ms.accelTicks >= 3 && score >= 80 && !lateral.lateral && persistent.persistent && early.early){
-        // Ejecutar trade
-        if(now < pauseUntil || sessionStart-balance >= sessionStart*0.05 || now-lastTradeTime[sym] < 30000 || openContracts[sym] || tradesPerMinute()>=3){
+      if(ms.accelTicks >= 3 && score >= cfg.scoreConfirmMin && !lateral.lateral && persistent.persistent && early.early){
+        if(now < pauseUntil || sessionStart - balance >= sessionStart*0.05 || now - lastTradeTime[sym] < 30000 || openContracts[sym] || tradesPerMinute() >= 3){
           addLog('⛔ Bloqueo operativo'); resetMomentum(sym); return;
         }
         const stake = getAdaptiveStake();
-        addLog(`⚡ ENTRADA ${ASSET_LABELS[sym]} → ${ms.dir} | Sc:${score} | Persistente | Temprano | $${stake} | ${ticksPerAsset[sym]}t`, 'lk');
+        addLog(`⚡ ENTRADA ${cfg.label} → ${ms.dir} | Sc:${score} | Persistente | Temprano | $${stake} | ${cfg.ticks}t`, 'lk');
         resetMomentum(sym);
-        lastTradeTime[sym]=now;
-        openContracts[sym]='pending';
+        lastTradeTime[sym] = now;
+        openContracts[sym] = 'pending';
         tradeTimestamps.push(now);
-        ws.send(JSON.stringify({ proposal:1, amount:stake, basis:'stake', contract_type:ms.dir, currency:'USD', duration:ticksPerAsset[sym], duration_unit:'t', symbol:sym }));
+        ws.send(JSON.stringify({ proposal:1, amount:stake, basis:'stake', contract_type:ms.dir, currency:'USD', duration:cfg.ticks, duration_unit:'t', symbol:sym }));
       } else {
-        addLog(`🔎 ${ASSET_LABELS[sym]} confirm ${ms.accelTicks}/3`);
+        addLog(`🔎 ${cfg.label} confirm ${ms.accelTicks}/3`);
       }
     } else {
-      addLog(`❌ ${ASSET_LABELS[sym]} falló confirmación`, 'll');
+      addLog(`❌ ${cfg.label} falló confirmación`, 'll');
       resetMomentum(sym);
     }
     updateAssetsGrid();
     return;
   }
-  
-  // ── FASE SCAN: DETECTAR BURST CON FILTROS ─────────────
-  if(ms.phase === 'SCAN' && !lateral.lateral && regimeOk && volRegime.ratio > 1.4 && momStr.consistent >= 4 && momStr.magnitudeOk && strongMom.strong && persistent.persistent && early.early && score >= 55){
+
+  // ── FASE SCAN: DETECTAR BURST CON FILTROS (usando scoreScanMin) ─────────────
+  if(ms.phase === 'SCAN' && !lateral.lateral && regimeOk && volRegime.ratio > 1.4 && momStr.consistent >= 4 && momStr.magnitudeOk && strongMom.strong && persistent.persistent && early.early && score >= cfg.scoreScanMin){
     const dir = momStr.direction > 0 ? 'CALL' : 'PUT';
     ms.phase = 'CONFIRM';
     ms.dir = dir;
     ms.accelTicks = momStr.consistent;
     ms.burstStart = now;
     ms.score = score;
-    addLog(`🚀 BURST ${ASSET_LABELS[sym]} → ${dir} | VR:${volRegime.ratio.toFixed(2)} Cons:${momStr.consistent} Persist:${persistent.persistent} Early:${early.early} Sc:${score}`, 'li');
+    addLog(`🚀 BURST ${cfg.label} → ${dir} | VR:${volRegime.ratio.toFixed(2)} Cons:${momStr.consistent} Persist:${persistent.persistent} Early:${early.early} Sc:${score}`, 'li');
   }
   updateAssetsGrid();
 }
 
 function onResult(sym, pnl){
-  const lbl=ASSET_LABELS[sym];
-  openContracts[sym]=null;
-  balance+=pnl;
-  if(pnl>0){ wins++; lossStreak=0; } else { losses++; lossStreak++; if(lossStreak>=3){ pauseUntil=Date.now()+45000; addLog('⏸ Pausa 45s'); lossStreak=0; } }
-  tradeHistory.push(pnl>0?1:0); if(tradeHistory.length>100) tradeHistory.shift();
-  addLog((pnl>0?'✅ WIN':'❌ LOSS')+' '+lbl+' $'+pnl.toFixed(2)+' Bal:$'+balance.toFixed(2), pnl>0?'lw':'ll');
-  chart.data.labels.push(''); chart.data.datasets[0].data.push(balance); if(chart.data.labels.length>30){ chart.data.labels.shift(); chart.data.datasets[0].data.shift(); } chart.update();
+  const cfg = CONFIG[sym];
+  const lbl = cfg.label;
+  openContracts[sym] = null;
+  balance += pnl;
+  if(pnl > 0){ wins++; lossStreak = 0; } else { losses++; lossStreak++; if(lossStreak >= 3){ pauseUntil = Date.now() + 45000; addLog('⏸ Pausa 45s'); lossStreak = 0; } }
+  tradeHistory.push(pnl > 0 ? 1 : 0); if(tradeHistory.length > 100) tradeHistory.shift();
+  addLog((pnl > 0 ? '✅ WIN' : '❌ LOSS') + ' ' + lbl + ' $' + pnl.toFixed(2) + ' Bal:$' + balance.toFixed(2), pnl > 0 ? 'lw' : 'll');
+  chart.data.labels.push(''); chart.data.datasets[0].data.push(balance); if(chart.data.labels.length > 30){ chart.data.labels.shift(); chart.data.datasets[0].data.shift(); } chart.update();
   updateStats();
 }
 
 // WebSocket
 function startBot(){
-  const token=document.getElementById('apiToken').value.trim();
+  const token = document.getElementById('apiToken').value.trim();
   if(!token){ addLog('❌ Token requerido','ll'); return; }
   if(running) return;
-  balance=100; sessionStart=100; wins=0; losses=0; lossStreak=0; pauseUntil=0; tradeHistory=[]; tradeTimestamps=[];
-  ASSETS.forEach(a=>{ prices[a]=[]; retHistory[a]=[]; resetMomentum(a); openContracts[a]=null; lastTradeTime[a]=0; });
-  chart.data.labels=[]; chart.data.datasets[0].data=[100]; chart.update(); updateStats();
-  running=true;
-  document.getElementById('statusDiv').innerText='🟢 CONECTANDO...';
-  document.getElementById('toggleBtn').innerText='⏹ DETENER'; document.getElementById('toggleBtn').className='btn stop';
-  ws=new WebSocket('wss://ws.binaryws.com/websockets/v3?app_id=1089');
-  ws.onopen=()=>{ ws.send(JSON.stringify({authorize:token})); addLog('🔌 Conectando...'); };
-  ws.onmessage=(e)=>{
-    const d=JSON.parse(e.data);
-    if(d.authorize){ addLog('✅ Autorizado','li'); document.getElementById('statusDiv').innerText='🟢 ONLINE — PRECISION MODE'; ASSETS.forEach(a=>{ ws.send(JSON.stringify({ticks:a,subscribe:1})); }); updateSim(); }
-    if(d.tick && running){ const sym=d.tick.symbol; if(prices[sym]) onNewPrice(sym, parseFloat(d.tick.quote)); }
-    if(d.proposal&&d.proposal.id){ const pendSym=ASSETS.find(a=>openContracts[a]==='pending'); if(pendSym) contractToAsset[d.proposal.id]=pendSym; ws.send(JSON.stringify({buy:d.proposal.id,price:parseFloat(document.getElementById('stake').value)||1})); }
-    if(d.buy){ const cid=d.buy.contract_id; const sym=ASSETS.find(a=>openContracts[a]==='pending'); if(sym) openContracts[sym]=cid; }
-    if(d.proposal_open_contract&&d.proposal_open_contract.is_sold){ const poc=d.proposal_open_contract; const sym=ASSETS.find(a=>openContracts[a]===poc.contract_id); if(sym){ openContracts[sym]=null; onResult(sym, parseFloat(poc.profit)); } }
-    if(d.error) addLog('⚠️ '+d.error.message,'ll');
+  balance = 100; sessionStart = 100; wins = 0; losses = 0; lossStreak = 0; pauseUntil = 0; tradeHistory = []; tradeTimestamps = [];
+  ALL_ASSETS.forEach(a => { prices[a] = []; retHistory[a] = []; resetMomentum(a); openContracts[a] = null; lastTradeTime[a] = 0; });
+  chart.data.labels = []; chart.data.datasets[0].data = [100]; chart.update(); updateStats();
+  running = true;
+  document.getElementById('statusDiv').innerText = '🟢 CONECTANDO...';
+  document.getElementById('toggleBtn').innerText = '⏹ DETENER'; document.getElementById('toggleBtn').className = 'btn stop';
+  ws = new WebSocket('wss://ws.binaryws.com/websockets/v3?app_id=1089');
+  ws.onopen = () => {
+    ws.send(JSON.stringify({authorize: token}));
+    addLog('🔌 Conectando...');
   };
-  ws.onerror=()=>{ stopBot(); };
-  ws.onclose=()=>{ if(running){ addLog('🔌 Desconectado'); running=false; } };
+  ws.onmessage = (e) => {
+    const d = JSON.parse(e.data);
+    if(d.authorize){
+      addLog('✅ Autorizado','li');
+      document.getElementById('statusDiv').innerText = '🟢 ONLINE — PRECISION MODE';
+      // Suscribirse SOLO a activos habilitados
+      ENABLED_ASSETS.forEach(sym => {
+        ws.send(JSON.stringify({ticks: sym, subscribe: 1}));
+        addLog(`📡 Suscrito a ${CONFIG[sym].label} (ticks=${CONFIG[sym].ticks}, scoreMin=${CONFIG[sym].scoreConfirmMin})`, 'li');
+      });
+      updateSim();
+    }
+    if(d.tick && running){
+      const sym = d.tick.symbol;
+      if(prices[sym] && CONFIG[sym].enabled) onNewPrice(sym, parseFloat(d.tick.quote));
+    }
+    if(d.proposal && d.proposal.id){
+      const pendSym = ALL_ASSETS.find(a => openContracts[a] === 'pending');
+      if(pendSym) contractToAsset[d.proposal.id] = pendSym;
+      ws.send(JSON.stringify({buy: d.proposal.id, price: parseFloat(document.getElementById('stake').value) || 1}));
+    }
+    if(d.buy){
+      const cid = d.buy.contract_id;
+      const sym = ALL_ASSETS.find(a => openContracts[a] === 'pending');
+      if(sym) openContracts[sym] = cid;
+    }
+    if(d.proposal_open_contract && d.proposal_open_contract.is_sold){
+      const poc = d.proposal_open_contract;
+      const sym = ALL_ASSETS.find(a => openContracts[a] === poc.contract_id);
+      if(sym){ openContracts[sym] = null; onResult(sym, parseFloat(poc.profit)); }
+    }
+    if(d.error) addLog('⚠️ ' + d.error.message, 'll');
+  };
+  ws.onerror = () => { stopBot(); };
+  ws.onclose = () => { if(running){ addLog('🔌 Desconectado'); running = false; } };
 }
+
 function stopBot(){
   if(!running) return;
-  running=false;
+  running = false;
   if(ws) ws.close();
-  document.getElementById('statusDiv').innerText='⚫ OFFLINE';
-  document.getElementById('toggleBtn').innerText='▶ INICIAR BOT'; document.getElementById('toggleBtn').className='btn';
+  document.getElementById('statusDiv').innerText = '⚫ OFFLINE';
+  document.getElementById('toggleBtn').innerText = '▶ INICIAR BOT'; document.getElementById('toggleBtn').className = 'btn';
   addLog('🛑 Bot detenido');
   updateStats();
 }
 
-document.getElementById('toggleBtn').onclick=()=>running?stopBot():startBot();
-document.getElementById('stake').addEventListener('input',updateSim);
+document.getElementById('toggleBtn').onclick = () => running ? stopBot() : startBot();
+document.getElementById('stake').addEventListener('input', updateSim);
 buildTicksGrid();
 updateStats();
 updateSim();
-addLog('🤖 PRECISION ENGINE v6 | Filtro lateral | Persistencia estructural | Entrada temprana obligatoria');
+addLog('🤖 PRECISION ENGINE v6 | Config-driven | Activo: solo R_50 (modo test)');
+addLog(`⚙️ Activos habilitados: ${ENABLED_ASSETS.map(s => CONFIG[s].label).join(', ') || 'ninguno'}`);
 </script>
 </body>
 </html>
