@@ -457,7 +457,7 @@ function calcMomentumMetrics(rets, n=5){
 
 // ── 3. SCORE DE SEÑAL (0-100) ────────────────────────
 // Combina: aceleración, consistencia, régimen, volumen del burst
-// Score ≥ 75 requerido para entrar
+// Score ≥ 65 requerido para entrar
 function calcSignalScore(metrics, regime, volRatio, rets){
   if(!metrics || !regime) return 0;
 
@@ -699,7 +699,7 @@ function getAdaptiveStake(){
 //  Fase SCAN   → acumula retornos, busca inicio de burst
 //  Fase BURST  → detecta aceleración real con 3+ ticks consistentes
 //  Fase CONFIRM→ confirma que el momentum no se ha agotado
-//  Entrada     → solo si score ≥ 75 y régimen favorable
+//  Entrada     → solo si score ≥ 65 y régimen favorable
 //
 // TIPO DE CONTRATO:
 //  Si momentum CALL+ (precio subiendo con aceleración) → CALL
@@ -784,8 +784,8 @@ function onNewPrice(sym, price){
                  (chopIndex.isChoppy?' [CHOPPY]':''),'ll');
           resetMomentum(sym); return;
         }
-        if(score < 75){
-          addLog('⛔ '+ASSET_LABELS[sym]+' score insuficiente: '+score+'/100 (req 75)','ll');
+        if(score < 65){
+          addLog('⛔ '+ASSET_LABELS[sym]+' score insuficiente: '+score+'/100 (req 65)','ll');
           resetMomentum(sym); return;
         }
         if(now < pauseUntil){
@@ -1022,7 +1022,7 @@ document.getElementById('stake').addEventListener('input',updateSim);
 buildTicksGrid();
 updateStats();
 updateSim();
-addLog('🤖 MOMENTUM BURST ENGINE v3 | V10·V25·V50 | Score ≥75 | Régimen adaptativo | Anti-chop');
+addLog('🤖 MOMENTUM BURST ENGINE v3 | V10·V25·V50 | Score ≥65 | Régimen adaptativo | Anti-chop');
 addLog('📊 ESTRATEGIA: Micro-Momentum + Volatility Burst | NO reversión | Continuación de impulso','li');
 </script>
 </body>
