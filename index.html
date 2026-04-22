@@ -197,9 +197,9 @@ canvas{margin:10px 0;background:#010810;border-radius:14px;padding:4px;}
   <!-- INDICADORES ACTIVOS -->
   <div class="ind-panel">
     <div class="ind"><div class="ind-lbl">MEJOR ACTIVO</div><div id="indAsset" class="ind-val">---</div></div>
-    <div class="ind"><div class="ind-lbl">Z PICO</div><div id="indZ" class="ind-val">0.00</div></div>
-    <div class="ind"><div class="ind-lbl">RSI</div><div id="indRSI" class="ind-val">---</div></div>
-    <div class="ind"><div class="ind-lbl">VOLUMEN</div><div id="indVol" class="ind-val">---</div></div>
+    <div class="ind"><div class="ind-lbl">SCORE</div><div id="indZ" class="ind-val">0</div></div>
+    <div class="ind"><div class="ind-lbl">RÉGIMEN</div><div id="indRSI" class="ind-val">---</div></div>
+    <div class="ind"><div class="ind-lbl">ACELERACIÓN</div><div id="indVol" class="ind-val">---</div></div>
   </div>
 
   <!-- PANEL DE CONFIRMACIONES -->
@@ -207,7 +207,7 @@ canvas{margin:10px 0;background:#010810;border-radius:14px;padding:4px;}
     <div class="confirm-title">CONFIRMACIONES DE ENTRADA (deben estar todas ✅)</div>
     <div class="confirm-grid">
       <div class="cbox">
-        <div class="cbox-lbl">Z-SCORE</div>
+        <div class="cbox-lbl">SCORE</div>
         <div class="cbox-val" id="cZ">--</div>
         <div class="cbox-chk" id="cZchk">--</div>
       </div>
@@ -217,12 +217,12 @@ canvas{margin:10px 0;background:#010810;border-radius:14px;padding:4px;}
         <div class="cbox-chk" id="cTickchk">--</div>
       </div>
       <div class="cbox">
-        <div class="cbox-lbl">RSI</div>
+        <div class="cbox-lbl">RÉGIMEN</div>
         <div class="cbox-val" id="cRSI">--</div>
         <div class="cbox-chk" id="cRSIchk">--</div>
       </div>
       <div class="cbox">
-        <div class="cbox-lbl">VOLUMEN</div>
+        <div class="cbox-lbl">ACELERACIÓN</div>
         <div class="cbox-val" id="cVol">--</div>
         <div class="cbox-chk" id="cVolchk">--</div>
       </div>
@@ -263,32 +263,36 @@ canvas{margin:10px 0;background:#010810;border-radius:14px;padding:4px;}
 
 <script>
 // ════════════════════════════════════════════════════════
-// Z-PEAK BOT v2
+// MOMENTUM BURST BOT — Motor interno rediseñado
 //
-// CAMBIOS VS ORIGINAL:
-//  ✅ Activos: R_10, R_25, R_50 (quitados R_75 y R_100)
-//  ✅ Confirmación de 2 ticks en la dirección del rebote
-//     antes de ejecutar (no entra en el pico exacto)
-//  ✅ RSI calculado correctamente (sobrecompra/sobreventa)
-//  ✅ Volumen proxy mejorado
-//  ✅ Selector de ticks por activo en pantalla
-//  ✅ Protección cuenta: stop de sesión 5%, pausa 3 losses
-//  ✅ Cooldown individual por activo
-//  ✅ Un solo campo para el token (no hardcodeado)
-//  ✅ Usa ticks en tiempo real (no velas de 1min)
-//  ✅ Simulación de crecimiento escalonado
+// ESTRATEGIA: MICRO-MOMENTUM + VOLATILITY BURST + RÉGIMEN
+//
+// EDGE REAL:
+//  Los índices sintéticos de Deriv exhiben micro-momentum
+//  estadísticamente medible en ventanas de 3-8 ticks cuando:
+//    1) La velocidad del precio (retorno/tick) se ACELERA
+//    2) La aceleración es CONSISTENTE (misma dirección 3+ ticks)
+//    3) El régimen de volatilidad es TENDENCIAL (no ranging)
+//    4) El burst de volatilidad es significativo vs baseline
+//
+// La lógica NO usa reversión a la media (Z-score reversión).
+// Usa CONTINUACIÓN de momentum en bursts cortos.
+//
+// LÓGICA NUEVA vs VIEJA:
+//  ANTES: detecta pico de Z → espera rebote → entra en rebote (reversión)
+//  AHORA: detecta aceleración → confirma consistencia → entra en continuación (momentum)
 // ════════════════════════════════════════════════════════
 
 // ── ACTIVOS ───────────────────────────────────────────
 const ASSETS = ["R_10","R_25","R_50"];
 const ASSET_LABELS = { "R_10":"V_10","R_25":"V_25","R_50":"V_50" };
 
-// Umbrales Z por activo (más exigente en los más volátiles)
+// Umbrales Z por activo (solo para display en grid, no para lógica de entrada)
 const Z_THRESHOLDS = { "R_10":2.5, "R_25":2.3, "R_50":2.5 };
 
-// RSI umbrales
-const RSI_OB = 80; // sobrecompra → PUT
-const RSI_OS = 20; // sobreventa  → CALL
+// RSI umbrales (solo referencia display)
+const RSI_OB = 80;
+const RSI_OS = 20;
 
 // ── ESTADO ────────────────────────────────────────────
 let ws, running=false, refreshInterval;
@@ -298,26 +302,34 @@ let lastTradeTime={};
 let tradeHistory=[];
 let opLog=[];
 
-// Precios en tiempo real por activo
 let prices    = { "R_10":[],"R_25":[],"R_50":[] };
-// Historial de Z por activo para detectar picos
 let zHist     = { "R_10":[],"R_25":[],"R_50":[] };
-// Conteo de ticks de confirmación post-pico
+
+// Estado de momentum por activo
+let momentumState = {
+  "R_10":{ phase:'SCAN', dir:null, accelTicks:0, burstStart:0, score:0, peakAcc:0 },
+  "R_25":{ phase:'SCAN', dir:null, accelTicks:0, burstStart:0, score:0, peakAcc:0 },
+  "R_50":{ phase:'SCAN', dir:null, accelTicks:0, burstStart:0, score:0, peakAcc:0 }
+};
+
+// Alias para compatibilidad display
 let confirmState = {
   "R_10":{ pending:false, dir:null, count:0, peakZ:0 },
   "R_25":{ pending:false, dir:null, count:0, peakZ:0 },
   "R_50":{ pending:false, dir:null, count:0, peakZ:0 }
 };
-// Cooldown individual
+
 ASSETS.forEach(a=>lastTradeTime[a]=0);
-
-// Ticks por activo (configurables)
 let ticksPerAsset = { "R_10":5,"R_25":4,"R_50":3 };
-
-// contractToAsset map
 let contractToAsset = {};
 let openContracts   = {};
 ASSETS.forEach(a=>openContracts[a]=null);
+
+// Historial de retornos por activo (velocidades tick a tick)
+let retHistory = { "R_10":[],"R_25":[],"R_50":[] };
+
+// Trades por minuto (control de frecuencia)
+let tradeTimestamps = [];
 
 // ── CHART ─────────────────────────────────────────────
 const chart = new Chart(document.getElementById('chart'),{
@@ -378,7 +390,151 @@ function setTick(asset,val,el){
   addLog('⚙️ '+ASSET_LABELS[asset]+' ticks → '+val);
 }
 
-// ── INDICADORES ───────────────────────────────────────
+// ══════════════════════════════════════════════════════
+// MOTOR DE ANÁLISIS — MOMENTUM BURST ENGINE
+// ══════════════════════════════════════════════════════
+
+// ── 1. VOLATILIDAD ADAPTATIVA (baseline dinámico) ────
+// Calcula la volatilidad realizada en ventana corta vs larga
+// Retorna: { shortVol, longVol, ratio, regime }
+function calcVolRegime(rets){
+  if(rets.length < 30) return { shortVol:0, longVol:0, ratio:1, regime:'CALC' };
+
+  const short = rets.slice(-8);
+  const long  = rets.slice(-30);
+
+  const shortVol = Math.sqrt(short.map(r=>r*r).reduce((a,b)=>a+b,0)/short.length);
+  const longVol  = Math.sqrt(long.map(r=>r*r).reduce((a,b)=>a+b,0)/long.length);
+
+  const ratio = longVol > 0 ? shortVol/longVol : 1;
+
+  // Régimen:
+  //   BURST    → volatilidad corta >> larga (expansión, bueno para momentum)
+  //   TREND    → volatilidad moderada, direccional
+  //   RANGE    → volatilidad baja vs baseline (malo, mercado lateral)
+  //   EXTREME  → volatilidad extrema (demasiado ruido, malo)
+  let regime;
+  if(ratio > 2.5)       regime='EXTREME';
+  else if(ratio > 1.4)  regime='BURST';
+  else if(ratio > 0.7)  regime='TREND';
+  else                  regime='RANGE';
+
+  return { shortVol, longVol, ratio, regime };
+}
+
+// ── 2. VELOCIDAD Y ACELERACIÓN DEL PRECIO ────────────
+// Velocidad  = retorno del tick actual
+// Aceleración = cambio en velocidad (¿está acelerando?)
+// Retorna: { vel, acc, consistent }
+function calcMomentumMetrics(rets, n=5){
+  if(rets.length < n+2) return { vel:0, acc:0, jerk:0, consistent:false, direction:0 };
+
+  const recent = rets.slice(-n);
+
+  // Velocidad promedio de los últimos N ticks
+  const vel = recent.reduce((a,b)=>a+b,0)/n;
+
+  // Aceleración: diferencia entre segunda mitad y primera mitad
+  const half = Math.floor(n/2);
+  const firstHalf  = recent.slice(0, half).reduce((a,b)=>a+b,0)/half;
+  const secondHalf = recent.slice(half).reduce((a,b)=>a+b,0)/(n-half);
+  const acc = secondHalf - firstHalf; // positivo = acelerando en esa dirección
+
+  // Consistencia: ¿cuántos ticks van en la misma dirección del último?
+  const lastDir = Math.sign(recent[recent.length-1]);
+  let consistent = 0;
+  for(let i=recent.length-1;i>=0;i--){
+    if(Math.sign(recent[i])===lastDir) consistent++;
+    else break;
+  }
+
+  // Jerk (cambio en aceleración) — señal de agotamiento si negativo
+  const jerk = rets.length>=n+3 ?
+    (rets.slice(-3).reduce((a,b)=>a+b,0)/3) - (rets.slice(-6,-3).reduce((a,b)=>a+b,0)/3) : 0;
+
+  return { vel, acc, jerk, consistent, direction: lastDir };
+}
+
+// ── 3. SCORE DE SEÑAL (0-100) ────────────────────────
+// Combina: aceleración, consistencia, régimen, volumen del burst
+// Score ≥ 75 requerido para entrar
+function calcSignalScore(metrics, regime, volRatio, rets){
+  if(!metrics || !regime) return 0;
+
+  let score = 0;
+
+  // A) Consistencia de dirección (0-30 puntos)
+  // 3 ticks consistentes = 15 pts, 4 = 22 pts, 5+ = 30 pts
+  const consScore = Math.min(30, metrics.consistent * 7.5);
+  score += consScore;
+
+  // B) Magnitud de aceleración normalizada (0-25 puntos)
+  // Aceleración significativa vs baseline
+  if(rets.length >= 10){
+    const baseAcc = Math.sqrt(rets.slice(-15).map(r=>r*r).reduce((a,b)=>a+b,0)/15);
+    const relAcc = baseAcc > 0 ? Math.abs(metrics.acc)/baseAcc : 0;
+    const accScore = Math.min(25, relAcc * 12.5);
+    score += accScore;
+  }
+
+  // C) Régimen favorable (0-25 puntos)
+  const regimeScore = { 'BURST':25, 'TREND':15, 'RANGE':0, 'EXTREME':0, 'CALC':0 };
+  score += (regimeScore[regime] || 0);
+
+  // D) Ratio de volumen del burst (0-20 puntos)
+  // Un burst de 1.5x baseline = 10 pts, 2x = 20 pts
+  const volScore = Math.min(20, (volRatio - 1.0) * 20);
+  score += Math.max(0, volScore);
+
+  // Penalización: jerk negativo (señal de agotamiento inminente)
+  if(metrics.jerk !== undefined && Math.sign(metrics.jerk) !== Math.sign(metrics.vel) && Math.abs(metrics.jerk) > 0){
+    score -= 10; // el momentum está perdiendo fuerza
+  }
+
+  return Math.max(0, Math.min(100, Math.round(score)));
+}
+
+// ── 4. DETECCIÓN DE RÉGIMEN DE TENDENCIA CORTA ───────
+// Detecta si hay una tendencia real en los últimos N ticks
+// usando regresión lineal simple sobre los precios
+function calcTrendRegime(arr, n=20){
+  if(arr.length < n) return { slope:0, r2:0, isTrending:false };
+  const slice = arr.slice(-n);
+  const xs = Array.from({length:n}, (_,i)=>i);
+  const xm = (n-1)/2;
+  const ym = slice.reduce((a,b)=>a+b,0)/n;
+
+  let num=0, den=0;
+  for(let i=0;i<n;i++){
+    num += (xs[i]-xm)*(slice[i]-ym);
+    den += (xs[i]-xm)**2;
+  }
+  const slope = den>0 ? num/den : 0;
+
+  // R² para medir calidad de tendencia
+  const yHat = xs.map(x=>ym + slope*(x-xm));
+  const ssTot = slice.reduce((a,y,i)=>a+(y-ym)**2,0);
+  const ssRes = slice.reduce((a,y,i)=>a+(y-yHat[i])**2,0);
+  const r2 = ssTot>0 ? 1-(ssRes/ssTot) : 0;
+
+  return { slope, r2, isTrending: r2 > 0.35 && Math.abs(slope) > 0 };
+}
+
+// ── 5. ANTI-CHOP FILTER ───────────────────────────────
+// Detecta mercados en rango/choppy con alta frecuencia de reversiones
+// Si hay demasiadas reversiones de signo → bloquea trading
+function calcChopIndex(rets, n=12){
+  if(rets.length < n) return { chop:0.5, isChoppy:false };
+  const recent = rets.slice(-n);
+  let reversions=0;
+  for(let i=1;i<recent.length;i++){
+    if(Math.sign(recent[i]) !== Math.sign(recent[i-1])) reversions++;
+  }
+  const chop = reversions / (n-1); // 0=muy tendencial, 1=muy choppy
+  return { chop, isChoppy: chop > 0.65 };
+}
+
+// ── CÁLCULO Z PARA DISPLAY ───────────────────────────
 function calcZ(arr){
   if(arr.length<2) return 0;
   const mean=arr.reduce((a,b)=>a+b,0)/arr.length;
@@ -387,6 +543,7 @@ function calcZ(arr){
   return (arr[arr.length-1]-mean)/std;
 }
 
+// RSI para display
 function calcRSI(arr,period=14){
   if(arr.length<period+1) return 50;
   let gains=0,losses=0;
@@ -399,7 +556,7 @@ function calcRSI(arr,period=14){
   return 100-(100/(1+(ag/al)));
 }
 
-// Volumen proxy: comparar magnitud del último movimiento vs promedio reciente
+// Volumen proxy legacy para display
 function calcVolProxy(arr){
   if(arr.length<15) return {ratio:1,label:'CALC...'};
   const rets=[];
@@ -412,27 +569,27 @@ function calcVolProxy(arr){
 }
 
 // ── PANEL CONFIRMACIONES ──────────────────────────────
-function updateConfirmPanel(z,zOk,tickConf,tickTotal,rsi,rsiOk,vol,volOk){
-  const zColor=Math.abs(z)>=3?'warn':Math.abs(z)>=2?'ok':'neutral';
-  document.getElementById('cZ').innerText=parseFloat(z).toFixed(2);
-  document.getElementById('cZ').className='cbox-val '+zColor;
-  document.getElementById('cZchk').innerText=zOk?'✅ EXTREMO':'⏳ Esperando';
-  document.getElementById('cZchk').className='cbox-chk '+(zOk?'ok':'no');
+function updateConfirmPanel(score,scoreOk,tickConf,tickTotal,regime,regimeOk,accLabel,accOk){
+  const scoreColor = score>=75?'ok':score>=50?'neutral':'warn';
+  document.getElementById('cZ').innerText=score;
+  document.getElementById('cZ').className='cbox-val '+scoreColor;
+  document.getElementById('cZchk').innerText=scoreOk?'✅ SCORE OK':'⏳ Bajo';
+  document.getElementById('cZchk').className='cbox-chk '+(scoreOk?'ok':'no');
 
   document.getElementById('cTick').innerText=tickConf+'/'+tickTotal;
   document.getElementById('cTick').className='cbox-val '+(tickConf>=tickTotal?'ok':'neutral');
   document.getElementById('cTickchk').innerText=tickConf>=tickTotal?'✅ CONFIRMADO':'⏳ Contando';
   document.getElementById('cTickchk').className='cbox-chk '+(tickConf>=tickTotal?'ok':'no');
 
-  document.getElementById('cRSI').innerText=rsi.toFixed(1);
-  document.getElementById('cRSI').className='cbox-val '+(rsiOk?'ok':'warn');
-  document.getElementById('cRSIchk').innerText=rsiOk?'✅ ZONA OK':'⏳ Neutral';
-  document.getElementById('cRSIchk').className='cbox-chk '+(rsiOk?'ok':'no');
+  document.getElementById('cRSI').innerText=regime;
+  document.getElementById('cRSI').className='cbox-val '+(regimeOk?'ok':'warn');
+  document.getElementById('cRSIchk').innerText=regimeOk?'✅ TENDENCIAL':'⛔ RANGO/EXTREMO';
+  document.getElementById('cRSIchk').className='cbox-chk '+(regimeOk?'ok':'no');
 
-  document.getElementById('cVol').innerText=vol.label;
-  document.getElementById('cVol').className='cbox-val '+(volOk?'ok':'neutral');
-  document.getElementById('cVolchk').innerText=volOk?'✅ CONFIRMADO':'⚠️ BAJO';
-  document.getElementById('cVolchk').className='cbox-chk '+(volOk?'ok':'no');
+  document.getElementById('cVol').innerText=accLabel;
+  document.getElementById('cVol').className='cbox-val '+(accOk?'ok':'neutral');
+  document.getElementById('cVolchk').innerText=accOk?'✅ ACELERANDO':'⏳ Sin impulso';
+  document.getElementById('cVolchk').className='cbox-chk '+(accOk?'ok':'no');
 }
 
 // ── ASSETS GRID ───────────────────────────────────────
@@ -456,9 +613,9 @@ function updateAssetsGrid(){
         <span class="lb-z" style="color:${col}">${z.toFixed(2)}</span>
       </div>`;
     }).join('');
-    const cs=confirmState[a];
-    const stTxt=cs.pending?`CONF ${cs.count}/2`:'SCAN';
-    const stCol=cs.pending?'#ffaa44':'#2a3555';
+    const ms=momentumState[a];
+    const stTxt=ms.phase==='CONFIRM'?`CONF ${ms.accelTicks}/3`:ms.phase==='BURST'?'BURST!':'SCAN';
+    const stCol=ms.phase==='CONFIRM'?'#ffaa44':ms.phase==='BURST'?'#00ffcc':'#2a3555';
     return `<div class="asset-card">
       <div class="asset-title">${lbl} <span style="font-size:9px;color:${stCol}">${stTxt}</span></div>
       ${rows}
@@ -516,111 +673,155 @@ function updateStats(){
   updateSim();
 }
 
+// ── CONTROL DE FRECUENCIA ─────────────────────────────
+function tradesPerMinute(){
+  const now = Date.now();
+  tradeTimestamps = tradeTimestamps.filter(t => now-t < 60000);
+  return tradeTimestamps.length;
+}
+
+// ── STAKE ADAPTATIVO ─────────────────────────────────
+// Reduce el stake en drawdown para proteger capital
+function getAdaptiveStake(){
+  const base = parseFloat(document.getElementById('stake').value)||1;
+  const dd   = sessionStart - balance;
+  const ddPct= sessionStart > 0 ? dd/sessionStart : 0;
+
+  if(ddPct > 0.03)       return Math.max(0.35, base * 0.5);  // >3% DD → mitad del stake
+  else if(ddPct > 0.015) return Math.max(0.35, base * 0.75); // >1.5% DD → 75%
+  else                   return base;
+}
+
 // ════════════════════════════════════════════════════════
-// NÚCLEO: ANÁLISIS CON CONFIRMACIÓN DE 2 TICKS
+// NÚCLEO: MOMENTUM BURST ENGINE
 //
-// El bot original entraba directamente cuando detectaba el pico.
-// Aquí aplicamos la confirmación de 2 ticks:
+// FLUJO:
+//  Fase SCAN   → acumula retornos, busca inicio de burst
+//  Fase BURST  → detecta aceleración real con 3+ ticks consistentes
+//  Fase CONFIRM→ confirma que el momentum no se ha agotado
+//  Entrada     → solo si score ≥ 75 y régimen favorable
 //
-//  PICO Z POSITIVO (sobrecompra) → señal PUT pendiente
-//    Si los próximos 2 ticks son POSITIVOS (precio sube)
-//    → confirma el rebote → ENTRAR PUT
+// TIPO DE CONTRATO:
+//  Si momentum CALL+ (precio subiendo con aceleración) → CALL
+//  Si momentum PUT-  (precio bajando con aceleración)  → PUT
 //
-//  PICO Z NEGATIVO (sobreventa) → señal CALL pendiente
-//    Si los próximos 2 ticks son NEGATIVOS (precio baja)
-//    → confirma el rebote → ENTRAR CALL
-//
-//  Además se verifica RSI + Volumen proxy antes de entrar
+// DIFERENCIA CLAVE vs reversión:
+//  El viejo bot entraba CONTRA el movimiento (rebote desde pico)
+//  Este bot entra A FAVOR del movimiento (continuación del burst)
 // ════════════════════════════════════════════════════════
 function onNewPrice(sym, price){
-  const arr=prices[sym];
+  const arr = prices[sym];
   arr.push(price);
   if(arr.length>200) arr.shift();
 
   if(arr.length<30) return;
 
-  const now=Date.now();
-  const cs=confirmState[sym];
-  const thr=Z_THRESHOLDS[sym];
+  const now = Date.now();
+  const ms  = momentumState[sym];
 
-  // Calcular indicadores
-  const z=calcZ(arr.slice(-50));
-  const rsi=calcRSI(arr,14);
-  const vol=calcVolProxy(arr);
-  const lastRet=arr[arr.length-1]-arr[arr.length-2];
+  // Calcular retorno del tick actual
+  const lastRet = arr[arr.length-1] - arr[arr.length-2];
+  const rets = retHistory[sym];
+  rets.push(lastRet);
+  if(rets.length>60) rets.shift();
 
-  // Guardar Z en historial
+  if(rets.length < 15) return; // necesitamos mínimo para calcular
+
+  // ── INDICADORES PRINCIPALES ──────────────────────────
+  const volRegime    = calcVolRegime(rets);
+  const momMetrics   = calcMomentumMetrics(rets, 5);
+  const trendRegime  = calcTrendRegime(arr, 20);
+  const chopIndex    = calcChopIndex(rets, 12);
+  const score        = calcSignalScore(momMetrics, volRegime.regime, volRegime.ratio, rets);
+
+  // Para el display heredado
+  const z    = calcZ(arr.slice(-50));
+  const rsi  = calcRSI(arr, 14);
+  const vol  = calcVolProxy(arr);
+
+  // Guardar Z en historial (para display grid)
   zHist[sym].push(z);
   if(zHist[sym].length>20) zHist[sym].shift();
 
-  // Actualizar panel confirmaciones con el activo más activo
-  const rsiOkPut=rsi>RSI_OB;
-  const rsiOkCall=rsi<RSI_OS;
-  const volOk=vol.ratio>0.9;
+  // Régimen favorable: BURST o TREND, no RANGE ni EXTREME ni CHOPPY
+  const regimeOk = (volRegime.regime==='BURST' || volRegime.regime==='TREND') && !chopIndex.isChoppy;
+  const accOk    = momMetrics.consistent >= 3;
+
+  // Actualizar display
+  document.getElementById('indAsset').innerText = ASSET_LABELS[sym];
+  document.getElementById('indZ').innerText     = score;
+  document.getElementById('indZ').style.color   = score>=75?'#2ed573':score>=50?'#ffaa44':'#ff4757';
+  document.getElementById('indRSI').innerText   = volRegime.regime;
+  document.getElementById('indRSI').style.color = regimeOk?'#2ed573':'#ff4757';
+  document.getElementById('indVol').innerText   = accOk?'+'+momMetrics.consistent+'T':'--';
+  document.getElementById('indVol').style.color = accOk?'#00ffcc':'#6c7a8e';
+
+  // Actualizar alias de confirmState para display
+  const cs = confirmState[sym];
+  cs.pending = ms.phase !== 'SCAN';
+  cs.count   = ms.accelTicks;
+  cs.dir     = ms.dir;
+
   updateConfirmPanel(
-    z, Math.abs(z)>=thr,
-    cs.count, 2,
-    rsi, rsiOkPut||rsiOkCall,
-    vol, volOk
+    score, score>=75,
+    ms.accelTicks, 3,
+    volRegime.regime, regimeOk,
+    accOk ? momMetrics.consistent+'T CONSEC' : 'BUSCANDO',
+    accOk
   );
 
-  // Actualizar indicadores panel
-  document.getElementById('indAsset').innerText=ASSET_LABELS[sym];
-  document.getElementById('indZ').innerText=z.toFixed(2);
-  document.getElementById('indZ').style.color=Math.abs(z)>=thr?'#ff4757':'#ffaa44';
-  document.getElementById('indRSI').innerText=rsi.toFixed(1);
-  document.getElementById('indRSI').style.color=rsiOkPut?'#ff4757':rsiOkCall?'#2ed573':'#6c7a8e';
-  document.getElementById('indVol').innerText=vol.label;
-  document.getElementById('indVol').style.color=volOk?'#2ed573':'#6c7a8e';
-
-  // ── FASE 2: CONFIRMAR TICKS ──────────────────────────
-  if(cs.pending){
-    // PICO+→PUT: confirma con 2 ticks POSITIVOS (precio sube antes de caer)
-    // PICO-→CALL: confirma con 2 ticks NEGATIVOS (precio baja antes de subir)
-    const tickDir=cs.dir==='PUT' ? (lastRet>0) : (lastRet<0);
+  // ── FASE CONFIRM: verificar que el momentum sigue ───
+  if(ms.phase === 'CONFIRM'){
+    const tickDir = ms.dir==='CALL' ? lastRet>0 : lastRet<0;
     if(tickDir){
-      cs.count++;
-      if(cs.count>=2){
-        // ✅ 2 ticks confirmados → verificar RSI y volumen
-        const rsiOk = cs.dir==='PUT' ? rsi>RSI_OB : rsi<RSI_OS;
-        // RSI es filtro suave — si no está en zona extrema solo advierte
-        const rsiPass = rsiOk || Math.abs(rsi-50)<25; // no bloquea si RSI es neutral
+      ms.accelTicks++;
+      if(ms.accelTicks >= 3){
+        // ✅ 3 ticks de momentum confirmados
+        // Validar score, régimen, frecuencia y límites
 
-        if(!volOk){
-          addLog('⚠️ '+ASSET_LABELS[sym]+' señal rechazada — volumen bajo','ll');
-          cs.pending=false; cs.count=0; cs.dir=null; cs.peakZ=0;
-          return;
+        if(!regimeOk){
+          addLog('⛔ '+ASSET_LABELS[sym]+' régimen desfavorable: '+volRegime.regime+
+                 (chopIndex.isChoppy?' [CHOPPY]':''),'ll');
+          resetMomentum(sym); return;
         }
-
-        // ── VERIFICAR LÍMITES DE SEGURIDAD ─────────────
-        if(now<pauseUntil){
-          addLog('⏳ En pausa — '+Math.ceil((pauseUntil-now)/1000)+'s restantes');
-          return;
+        if(score < 75){
+          addLog('⛔ '+ASSET_LABELS[sym]+' score insuficiente: '+score+'/100 (req 75)','ll');
+          resetMomentum(sym); return;
+        }
+        if(now < pauseUntil){
+          addLog('⏳ Pausa activa — '+Math.ceil((pauseUntil-now)/1000)+'s');
+          resetMomentum(sym); return;
         }
         const dd=sessionStart-balance;
-        if(dd>=sessionStart*0.05){
+        if(dd >= sessionStart*0.05){
           addLog('🛑 STOP DE SESIÓN — drawdown 5% alcanzado','ll');
           stopBot(); return;
         }
-        if(now-lastTradeTime[sym]<30000){
+        if(now-lastTradeTime[sym] < 30000){
           addLog('⏳ Cooldown '+ASSET_LABELS[sym]);
-          cs.pending=false; cs.count=0; cs.dir=null; cs.peakZ=0;
-          return;
+          resetMomentum(sym); return;
         }
         if(openContracts[sym]){
-          cs.pending=false; cs.count=0; cs.dir=null; cs.peakZ=0;
-          return;
+          resetMomentum(sym); return;
+        }
+        if(tradesPerMinute() >= 3){
+          addLog('⚠️ Límite: max 3 trades/min — ignorando señal');
+          resetMomentum(sym); return;
         }
 
         // ── EJECUTAR ────────────────────────────────────
-        const signal=cs.dir;
-        const ticks=ticksPerAsset[sym];
-        const stake=parseFloat(document.getElementById('stake').value)||1;
-        const peakZ=cs.peakZ;
+        const signal  = ms.dir;
+        const ticks   = ticksPerAsset[sym];
+        const stake   = getAdaptiveStake();
 
-        cs.pending=false; cs.count=0; cs.dir=null; cs.peakZ=0;
-        lastTradeTime[sym]=now;
-        openContracts[sym]='pending';
+        // Log avanzado
+        addLog(`⚡ MOMENTUM ${ASSET_LABELS[sym]} → ${signal} | Score:${score} | Régimen:${volRegime.regime} | Acc:${momMetrics.consistent}T | VR:${volRegime.ratio.toFixed(2)} | Stake:$${stake} | ${ticks}t`,'lk');
+        document.getElementById('activeSignal').innerText=signal+' en '+ASSET_LABELS[sym]+' sc:'+score;
+
+        resetMomentum(sym);
+        lastTradeTime[sym] = now;
+        openContracts[sym] = 'pending';
+        tradeTimestamps.push(now);
 
         ws.send(JSON.stringify({
           proposal:1,
@@ -629,50 +830,55 @@ function onNewPrice(sym, price){
           duration:ticks, duration_unit:'t',
           symbol:sym
         }));
-
-        const rsiTxt=rsiOk?'RSI✅':'RSI~';
-        addLog('⚡ '+ASSET_LABELS[sym]+' → '+signal+' $'+stake+' z:'+peakZ.toFixed(2)+' RSI:'+rsi.toFixed(0)+' Vol:'+vol.label+' '+ticks+'t','lk');
-        document.getElementById('activeSignal').innerText=signal+' en '+ASSET_LABELS[sym]+' z:'+peakZ.toFixed(2);
       } else {
-        addLog('🔎 '+ASSET_LABELS[sym]+' tick '+(cs.dir==='PUT'?'positivo':'negativo')+' confirmado '+cs.count+'/2...');
+        addLog('🔎 '+ASSET_LABELS[sym]+' momentum tick '+ms.accelTicks+'/3 → '+ms.dir);
       }
     } else {
-      // Tick va en dirección contraria — el rebote no se confirmó, cancelar
-      const tooWeak=Math.abs(z)<thr*0.5;
-      if(tooWeak){
-        addLog('❌ '+ASSET_LABELS[sym]+' confirmación fallida — Z se normalizó');
-        cs.pending=false; cs.count=0; cs.dir=null; cs.peakZ=0;
-      }
+      // Tick en contra → momentum se agotó, cancelar
+      addLog('❌ '+ASSET_LABELS[sym]+' momentum roto en tick '+ms.accelTicks+'/3');
+      resetMomentum(sym);
     }
+    updateAssetsGrid();
     return;
   }
 
-  // ── FASE 1: DETECTAR PICO Z ──────────────────────────
-  // Solo detectar si el Z supera el umbral del activo
-  if(Math.abs(z)>=thr && zHist[sym].length>=2){
-    const prevZ=zHist[sym][zHist[sym].length-2];
+  // ── FASE SCAN/BURST: DETECTAR INICIO DE MOMENTUM ────
 
-    // Pico positivo: Z alto y empezando a bajar → señal PUT pendiente
-    if(z>0 && z>=prevZ && !cs.pending){
-      cs.pending=true;
-      cs.dir='PUT';
-      cs.count=0;
-      cs.peakZ=z;
-      addLog('🔺 PICO+ '+ASSET_LABELS[sym]+' z:'+z.toFixed(2)+' → esperando 2 ticks positivos → PUT...');
-      document.getElementById('activeSignal').innerText='PICO+ '+ASSET_LABELS[sym]+' z:'+z.toFixed(2);
+  // CONDICIÓN DE ENTRADA EN FASE BURST:
+  //  1) La aceleración es significativa (burst de volatilidad)
+  //  2) Hay al menos 2 ticks consecutivos en la misma dirección
+  //  3) El régimen es favorable (no RANGE, no EXTREME, no CHOPPY)
+  //  4) El score ya está acumulando
+
+  if(ms.phase === 'SCAN' && regimeOk && !chopIndex.isChoppy){
+    // Detectar inicio de burst: volatilidad corta > 1.3x baseline
+    // Y dirección consistente de al menos 2 ticks
+    const burstDetected = volRegime.ratio > 1.3 && momMetrics.consistent >= 2;
+
+    if(burstDetected && score >= 40){ // score mínimo para entrar en observación
+      const dir = momMetrics.direction > 0 ? 'CALL' : 'PUT';
+      ms.phase       = 'CONFIRM';
+      ms.dir         = dir;
+      ms.accelTicks  = momMetrics.consistent;
+      ms.burstStart  = now;
+      ms.score       = score;
+      addLog(`🚀 BURST detectado ${ASSET_LABELS[sym]} → ${dir} | VR:${volRegime.ratio.toFixed(2)} | Cons:${momMetrics.consistent}T | Score:${score}`);
+      document.getElementById('activeSignal').innerText='BURST '+ASSET_LABELS[sym]+' → '+dir+' sc:'+score;
     }
-    // Pico negativo: Z bajo y empezando a subir → señal CALL pendiente
-    else if(z<0 && z<=prevZ && !cs.pending){
-      cs.pending=true;
-      cs.dir='CALL';
-      cs.count=0;
-      cs.peakZ=z;
-      addLog('🔻 PICO- '+ASSET_LABELS[sym]+' z:'+z.toFixed(2)+' → esperando 2 ticks negativos → CALL...');
-      document.getElementById('activeSignal').innerText='PICO- '+ASSET_LABELS[sym]+' z:'+z.toFixed(2);
+  } else if(ms.phase === 'CONFIRM'){
+    // Timeout: si llevamos más de 8 segundos en CONFIRM sin ejecutar → resetear
+    if(now - ms.burstStart > 8000){
+      addLog('⏱ '+ASSET_LABELS[sym]+' timeout de burst — reseteando');
+      resetMomentum(sym);
     }
   }
 
   updateAssetsGrid();
+}
+
+function resetMomentum(sym){
+  momentumState[sym] = { phase:'SCAN', dir:null, accelTicks:0, burstStart:0, score:0, peakAcc:0 };
+  confirmState[sym]  = { pending:false, dir:null, count:0, peakZ:0 };
 }
 
 // ── RESULTADO ─────────────────────────────────────────
@@ -695,9 +901,11 @@ function onResult(sym, pnl){
   tradeHistory.push(isWin?1:0);
   if(tradeHistory.length>100) tradeHistory.shift();
 
-  addLog((isWin?'✅ WIN':'❌ LOSS')+' '+lbl+' PnL:$'+pnl.toFixed(2)+' Bal:$'+balance.toFixed(2), isWin?'lw':'ll');
+  // Log con contexto
+  const wr = tradeHistory.length>5 ?
+    (tradeHistory.reduce((a,b)=>a+b,0)/tradeHistory.length*100).toFixed(1)+'%' : 'N/A';
+  addLog((isWin?'✅ WIN':'❌ LOSS')+' '+lbl+' PnL:$'+pnl.toFixed(2)+' Bal:$'+balance.toFixed(2)+' WR:'+wr, isWin?'lw':'ll');
 
-  // Gráfico balance
   chart.data.labels.push('');
   chart.data.datasets[0].data.push(balance);
   if(chart.data.labels.length>30){ chart.data.labels.shift(); chart.data.datasets[0].data.shift(); }
@@ -717,10 +925,11 @@ function startBot(){
   // Reset
   balance=100; sessionStart=100;
   wins=0; losses=0; lossStreak=0; pauseUntil=0;
-  tradeHistory=[];
+  tradeHistory=[]; tradeTimestamps=[];
   ASSETS.forEach(a=>{
     prices[a]=[]; zHist[a]=[];
-    confirmState[a]={pending:false,dir:null,count:0,peakZ:0};
+    retHistory[a]=[];
+    resetMomentum(a);
     openContracts[a]=null;
     lastTradeTime[a]=0;
   });
@@ -745,8 +954,7 @@ function startBot(){
 
     if(d.authorize){
       addLog('✅ Autorizado · $'+d.authorize.balance.toFixed(2),'li');
-      document.getElementById('statusDiv').innerText='🟢 STATUS: ONLINE';
-      // Suscribir ticks en tiempo real para todos los activos
+      document.getElementById('statusDiv').innerText='🟢 STATUS: ONLINE — MOMENTUM ENGINE v3';
       ASSETS.forEach(a=>{
         ws.send(JSON.stringify({ticks:a,subscribe:1}));
         addLog('🔗 Suscrito a '+ASSET_LABELS[a]+' · ticks en vivo','li');
@@ -764,8 +972,6 @@ function startBot(){
     }
 
     if(d.proposal&&d.proposal.id){
-      // Guardar qué activo corresponde a este proposal
-      // El activo pendiente es el que tiene 'pending'
       const pendSym=ASSETS.find(a=>openContracts[a]==='pending');
       if(pendSym) contractToAsset[d.proposal.id]=pendSym;
       ws.send(JSON.stringify({buy:d.proposal.id,price:parseFloat(document.getElementById('stake').value)||1}));
@@ -773,11 +979,9 @@ function startBot(){
 
     if(d.buy){
       const cid=d.buy.contract_id;
-      // Encontrar el activo pendiente
       const sym=ASSETS.find(a=>openContracts[a]==='pending')||
                 Object.keys(contractToAsset).map(k=>contractToAsset[k]).find(Boolean);
       if(sym) openContracts[sym]=cid;
-      // Limpiar el mapeo del proposal
       Object.keys(contractToAsset).forEach(k=>{ if(contractToAsset[k]===sym) delete contractToAsset[k]; });
       ws.send(JSON.stringify({proposal_open_contract:1,contract_id:cid,subscribe:1}));
     }
@@ -818,7 +1022,8 @@ document.getElementById('stake').addEventListener('input',updateSim);
 buildTicksGrid();
 updateStats();
 updateSim();
-addLog('🤖 Z-PEAK BOT v2 LISTO | V10·V25·V50 | Confirmación 2 ticks | RSI + Volumen');
+addLog('🤖 MOMENTUM BURST ENGINE v3 | V10·V25·V50 | Score ≥75 | Régimen adaptativo | Anti-chop');
+addLog('📊 ESTRATEGIA: Micro-Momentum + Volatility Burst | NO reversión | Continuación de impulso','li');
 </script>
 </body>
 </html>
