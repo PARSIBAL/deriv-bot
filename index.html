@@ -1,772 +1,679 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Z-PEAK BOT v2 | V10·V25·V50 | HIGH PRECISION</title>
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-<style>
-/* ===== ESTILOS (sin cambios) ===== */
-*{margin:0;padding:0;box-sizing:border-box;}
-body{
-  background:radial-gradient(circle at 20% 30%,#0a0f1a,#02060d);
-  min-height:100vh;display:flex;justify-content:center;
-  font-family:'Segoe UI',monospace;padding:16px;
-}
-.container{
-  max-width:980px;width:100%;
-  background:rgba(5,10,20,0.92);
-  backdrop-filter:blur(12px);
-  border-radius:28px;border:1px solid rgba(0,255,200,0.25);
-  padding:20px;align-self:flex-start;
-}
-h2{
-  font-size:1.4rem;
-  background:linear-gradient(135deg,#00ffcc,#00b8ff);
-  -webkit-background-clip:text;background-clip:text;color:transparent;
-  margin-bottom:16px;letter-spacing:2px;
-}
-h3{color:#00ffcc;font-size:.85rem;margin:12px 0 8px;letter-spacing:1px;}
-
-.stats-row{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:16px;}
-.stat-card{background:rgba(0,10,20,0.9);border-radius:16px;padding:10px;text-align:center;border:1px solid rgba(0,255,200,0.15);}
-.stat-label{font-size:9px;color:#6c7a8e;letter-spacing:1px;text-transform:uppercase;}
-.stat-value{font-size:22px;font-weight:800;color:#00ffcc;font-family:monospace;}
-.stat-value.pos{color:#2ed573;}.stat-value.neg{color:#ff4757;}.stat-value.wr{color:#ffaa44;}
-
-.input-row{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px;}
-.input-group label{font-size:10px;color:#6c7a8e;display:block;margin-bottom:4px;letter-spacing:1px;}
-.input-group input{
-  width:100%;background:#010810;
-  border:1px solid #1e2a3a;padding:9px 12px;
-  border-radius:16px;color:#00ffcc;font-family:monospace;font-size:14px;
-  outline:none;transition:border .2s;
-}
-.input-group input:focus{border-color:#00ffcc;}
-
-.ticks-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:16px;}
-.tick-card{
-  background:#010810;border-radius:16px;padding:12px;
-  border:1px solid #1e2a3a;text-align:center;
-}
-.tick-sym{font-size:13px;font-weight:700;color:#00ffcc;margin-bottom:6px;}
-.tick-label{font-size:9px;color:#6c7a8e;margin-bottom:6px;}
-.tick-inp{
-  width:70px;background:#02091a;border:1px solid #2a3a4a;
-  padding:5px 8px;border-radius:10px;color:#00ffcc;
-  text-align:center;font-size:16px;font-weight:700;font-family:monospace;
-  outline:none;
-}
-.tick-presets{display:flex;gap:4px;justify-content:center;margin-top:6px;flex-wrap:wrap;}
-.tp{
-  font-size:9px;padding:3px 7px;border:1px solid #2a3a4a;
-  border-radius:8px;color:#6c7a8e;background:#010810;
-  cursor:pointer;transition:all .2s;font-family:monospace;
-}
-.tp:hover,.tp.on{border-color:#00ffcc;color:#00ffcc;}
-.tp.on{background:rgba(0,255,200,0.1);}
-.tp.disabled{opacity:0.4;pointer-events:none;}
-
-.btn{
-  width:100%;
-  background:linear-gradient(90deg,#00d4aa,#00b8ff);
-  border:none;padding:13px;border-radius:32px;
-  font-weight:700;font-size:14px;color:#01050c;
-  cursor:pointer;margin:12px 0;letter-spacing:2px;
-  transition:all .2s;
-}
-.btn:hover{box-shadow:0 4px 20px rgba(0,255,200,.3);}
-.btn.stop{background:linear-gradient(90deg,#7a0020,#ff4757);color:#fff;}
-
-.status{
-  text-align:center;background:rgba(0,255,200,0.04);
-  padding:8px;border-radius:32px;font-size:11px;
-  margin-bottom:12px;border:1px solid rgba(0,255,200,0.1);
-  font-family:monospace;
-}
-.signal-box{
-  text-align:center;background:#010810;padding:10px;
-  border-radius:20px;margin:10px 0;font-size:13px;font-weight:700;
-  border:1px solid #1e2a3a;
-}
-.signal-value{color:#ffaa44;}
-
-.ind-panel{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin:10px 0;}
-.ind{background:#010810;padding:8px;text-align:center;border-radius:12px;border:1px solid #1e2a3a;}
-.ind-lbl{font-size:8px;color:#6c7a8e;letter-spacing:1px;text-transform:uppercase;}
-.ind-val{font-size:13px;font-weight:700;color:#00ffcc;font-family:monospace;margin-top:2px;}
-
-.assets-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin:12px 0;}
-.asset-card{background:#010810;border-radius:16px;padding:12px;border:1px solid #1e2a3a;}
-.asset-title{font-size:14px;font-weight:700;color:#00ffcc;text-align:center;margin-bottom:8px;}
-.lb-row{
-  display:flex;justify-content:space-between;align-items:center;
-  padding:5px 0;border-bottom:1px solid #1a2533;font-size:11px;
-}
-.lb-name{color:#6c7a8e;}
-.lb-z{font-family:monospace;font-weight:700;}
-.lb-bar{height:3px;border-radius:2px;margin-top:3px;transition:width .3s;}
-
-.confirm-panel{
-  background:#010810;border-radius:16px;padding:12px;
-  margin:10px 0;border:1px solid rgba(0,255,200,0.15);
-}
-.confirm-title{font-size:9px;color:#6c7a8e;letter-spacing:2px;margin-bottom:8px;}
-.confirm-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;}
-.cbox{background:#02091a;border-radius:10px;padding:7px;text-align:center;}
-.cbox-lbl{font-size:8px;color:#6c7a8e;letter-spacing:1px;}
-.cbox-val{font-size:11px;font-weight:700;font-family:monospace;margin-top:3px;}
-.cbox-val.ok{color:#2ed573;}.cbox-val.warn{color:#ff4757;}.cbox-val.neutral{color:#ffaa44;}
-.cbox-chk{font-size:9px;margin-top:2px;}
-.cbox-chk.ok{color:#2ed573;}.cbox-chk.no{color:#ff4757;}
-
-canvas{margin:10px 0;background:#010810;border-radius:14px;padding:4px;}
-
-.log{
-  background:#010810;border-radius:16px;
-  height:130px;overflow-y:auto;padding:8px 10px;
-  font-size:10px;font-family:monospace;color:#6c7a8e;
-  border:1px solid #1e2a3a;
-}
-.log div{padding:2px 0;border-bottom:1px solid #0d1520;}
-.lw{color:#2ed573;}.ll{color:#ff4757;}.li{color:#00b8ff;}
-.lk{color:#ffaa44;font-weight:700;}
-
-.sim-table{background:#010810;border-radius:16px;padding:14px;margin-top:14px;border:1px solid #1e2a3a;}
-.sim-row{display:flex;justify-content:space-between;padding:5px 0;font-size:12px;border-bottom:1px solid #0d1520;}
-.sim-row:last-child{border:none;}
-
-.safety-panel{
-  background:rgba(255,170,0,0.05);border-radius:16px;
-  padding:12px;margin:10px 0;
-  border:1px solid rgba(255,170,0,0.2);
-}
-.safety-title{font-size:9px;color:#ffaa44;letter-spacing:2px;margin-bottom:8px;}
-.safety-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
-.sbox{background:#010810;border-radius:10px;padding:8px;text-align:center;}
-.sbox-lbl{font-size:8px;color:#6c7a8e;letter-spacing:1px;}
-.sbox-val{font-size:15px;font-weight:700;font-family:monospace;color:#ffaa44;margin-top:2px;}
-</style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DerivAdaptiveBot — V10/V25 M1</title>
+    <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700;800&family=JetBrains+Mono:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { background: #070d14; color: #c9d6e6; font-family: 'Inter', 'Segoe UI', sans-serif; }
+        #root { min-height: 100vh; }
+        .code-section { display: none; }
+        .code-section.active { display: block; }
+        .tab-btn { 
+            padding: 6px 14px; 
+            border-radius: 6px 6px 0 0; 
+            border: 1px solid #1a2d42; 
+            background: #0d1a27; 
+            color: #4a6070; 
+            cursor: pointer; 
+            font-family: 'JetBrains Mono', monospace; 
+            font-size: 11px; 
+            margin-right: 2px;
+            transition: all 0.2s;
+        }
+        .tab-btn.active { background: #00e5a018; color: #00e5a0; border-color: #00e5a0; }
+        .code-block {
+            background: #0d1117;
+            border: 1px solid #1a2d42;
+            border-radius: 0 8px 8px 8px;
+            padding: 16px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 12px;
+            line-height: 1.7;
+            color: #8899aa;
+            overflow-x: auto;
+            max-height: 70vh;
+            white-space: pre-wrap;
+        }
+    </style>
 </head>
 <body>
-<div class="container">
-  <h2>📊 Z-PEAK BOT v2 | PRECISION · V10·V25·V50</h2>
-
-  <!-- STATS -->
-  <div class="stats-row">
-    <div class="stat-card"><div class="stat-label">WINS</div><div id="statWins" class="stat-value pos">0</div></div>
-    <div class="stat-card"><div class="stat-label">LOSSES</div><div id="statLosses" class="stat-value neg">0</div></div>
-    <div class="stat-card"><div class="stat-label">WINRATE</div><div id="statWR" class="stat-value wr">0%</div></div>
-    <div class="stat-card"><div class="stat-label">BALANCE</div><div id="balDisplay" class="stat-value">$100.00</div></div>
-  </div>
-
-  <div class="input-row">
-    <div class="input-group">
-      <label>🔑 API TOKEN DERIV</label>
-      <input type="password" id="apiToken" placeholder="e1lRgxNoxWwBkzx">
+    <!-- Pestañas de código Python -->
+    <div style="background: #0d1a27; border-bottom: 1px solid #1a2d42; padding: 12px 20px 0 20px;">
+        <span style="color: #4a6070; font-size: 10px; font-family: 'JetBrains Mono', monospace; margin-right: 12px;">📁 CÓDIGO FUENTE PYTHON:</span>
+        <button class="tab-btn active" onclick="switchTab('bot')">bot.py</button>
+        <button class="tab-btn" onclick="switchTab('regime')">market_regime.py</button>
+        <button class="tab-btn" onclick="switchTab('signal')">signal_engine.py</button>
+        <button class="tab-btn" onclick="switchTab('adaptive')">adaptive_system.py</button>
+        <button class="tab-btn" onclick="switchTab('exit')">exit_manager.py</button>
     </div>
-    <div class="input-group">
-      <label>💰 STAKE POR OPERACIÓN ($)</label>
-      <input type="number" id="stake" value="1.00" step="0.25" min="0.35">
-    </div>
-  </div>
+    <!-- Bloques de código Python (ocultos/mostrados) -->
+    <div id="code-bot" class="code-section active" style="padding: 0 20px;"><div class="code-block">"""DerivAdaptiveBot — Main Orchestrator""" ... [código completo de bot.py]</div></div>
+    <div id="code-regime" class="code-section" style="padding: 0 20px;"><div class="code-block">"""Market Regime Detection Engine""" ... [código completo de market_regime.py]</div></div>
+    <div id="code-signal" class="code-section" style="padding: 0 20px;"><div class="code-block">"""Signal Engine — Entry Detection""" ... [código completo de signal_engine.py]</div></div>
+    <div id="code-adaptive" class="code-section" style="padding: 0 20px;"><div class="code-block">"""Adaptive Learning System""" ... [código completo de adaptive_system.py]</div></div>
+    <div id="code-exit" class="code-section" style="padding: 0 20px;"><div class="code-block">"""Exit Management System""" ... [código completo de exit_manager.py]</div></div>
 
-  <h3>⚙️ DURACIÓN DEL CONTRATO POR ACTIVO (ticks)</h3>
-  <div class="ticks-grid" id="ticksGrid"></div>
+    <!-- Dashboard React -->
+    <div id="root"></div>
 
-  <button class="btn" id="toggleBtn">▶ INICIAR BOT</button>
-  <div class="status" id="statusDiv">⚙️ STATUS: OFFLINE</div>
-  <div class="signal-box">🎯 SEÑAL: <span id="activeSignal" class="signal-value">---</span></div>
+    <script type="text/babel">
+        // ─────────────────────────────────────────────────────────────────
+        // CÓDIGO ORIGINAL DE DerivBotDashboard.jsx (SIN MODIFICACIONES)
+        // ─────────────────────────────────────────────────────────────────
+        const { useState, useEffect, useCallback } = React;
 
-  <div class="ind-panel">
-    <div class="ind"><div class="ind-lbl">MEJOR ACTIVO</div><div id="indAsset" class="ind-val">---</div></div>
-    <div class="ind"><div class="ind-lbl">SCORE</div><div id="indZ" class="ind-val">0</div></div>
-    <div class="ind"><div class="ind-lbl">RÉGIMEN</div><div id="indRSI" class="ind-val">---</div></div>
-    <div class="ind"><div class="ind-lbl">LATERAL</div><div id="indVol" class="ind-val">---</div></div>
-  </div>
-
-  <div class="confirm-panel">
-    <div class="confirm-title">CONFIRMACIONES DE ENTRADA</div>
-    <div class="confirm-grid">
-      <div class="cbox"><div class="cbox-lbl">SCORE</div><div class="cbox-val" id="cZ">--</div><div class="cbox-chk" id="cZchk">--</div></div>
-      <div class="cbox"><div class="cbox-lbl">PERSISTENCIA</div><div class="cbox-val" id="cTick">--</div><div class="cbox-chk" id="cTickchk">--</div></div>
-      <div class="cbox"><div class="cbox-lbl">RÉGIMEN</div><div class="cbox-val" id="cRSI">--</div><div class="cbox-chk" id="cRSIchk">--</div></div>
-      <div class="cbox"><div class="cbox-lbl">IMPULSO TEMPRANO</div><div class="cbox-val" id="cVol">--</div><div class="cbox-chk" id="cVolchk">--</div></div>
-    </div>
-  </div>
-
-  <div class="assets-grid" id="assetsGrid"></div>
-  <canvas id="chart" height="80"></canvas>
-  <div class="log" id="logDiv"></div>
-
-  <div class="safety-panel">
-    <div class="safety-title">🛡 PROTECCIÓN CUENTA $100 USD</div>
-    <div class="safety-grid">
-      <div class="sbox"><div class="sbox-lbl">DRAWDOWN ACTUAL</div><div class="sbox-val" id="drawdown">$0.00</div></div>
-      <div class="sbox"><div class="sbox-lbl">STOP SESIÓN (5%)</div><div class="sbox-val" id="stopLimit">$5.00</div></div>
-      <div class="sbox"><div class="sbox-lbl">RACHA PÉRDIDAS</div><div class="sbox-val" id="lossStreak">0</div></div>
-      <div class="sbox"><div class="sbox-lbl">PAUSA TRAS 3 LOSS</div><div class="sbox-val" id="pauseStatus">--</div></div>
-    </div>
-  </div>
-
-  <div class="sim-table">
-    <h3>📈 SIMULACIÓN CUENTA $100 USD</h3>
-    <div class="sim-row"><span>Ganancia por WIN:</span><span id="profitWin" style="color:#2ed573">+$0.00</span></div>
-    <div class="sim-row"><span>Pérdida por LOSS:</span><span id="profitLoss" style="color:#ff4757">-$0.00</span></div>
-    <div class="sim-row"><span>Winrate breakeven:</span><span id="breakeven" style="color:#ffaa44">0%</span></div>
-    <div class="sim-row"><span>Proyección 10 ops · 60% WR:</span><span id="proj60" style="color:#00ffcc">$0.00</span></div>
-    <div class="sim-row"><span>Proyección 10 ops · 70% WR:</span><span id="proj70" style="color:#00ffcc">$0.00</span></div>
-    <div class="sim-row"><span>Ops para doblar cuenta ($200):</span><span id="opsDouble" style="color:#00b8ff">--</span></div>
-  </div>
-</div>
-
-<script>
-// ════════════════════════════════════════════════════════
-// Z-PEAK BOT v6 — ARQUITECTURA CONFIG‑DRIVEN
-// ════════════════════════════════════════════════════════
-
-// ── CONFIGURACIÓN POR ACTIVO ─────────────────────────────
-const CONFIG = {
-  "R_10": {
-    label: "V_10",
-    enabled: false,            // ← DESACTIVADO POR DEFECTO (modo test)
-    ticks: 5,
-    scoreScanMin: 55,           // mínimo para entrar en fase CONFIRM
-    scoreConfirmMin: 80,        // mínimo para ejecutar orden
-    zThreshold: 2.5
-  },
-  "R_25": {
-    label: "V_25",
-    enabled: false,            // ← DESACTIVADO POR DEFECTO
-    ticks: 4,
-    scoreScanMin: 55,
-    scoreConfirmMin: 80,
-    zThreshold: 2.3
-  },
-  "R_50": {
-    label: "V_50",
-    enabled: true,             // ← ÚNICO ACTIVO (TEST)
-    ticks: 3,
-    scoreScanMin: 55,
-    scoreConfirmMin: 80,
-    zThreshold: 2.5
-  }
-};
-
-// Lista de activos habilitados (se genera a partir de CONFIG)
-const ENABLED_ASSETS = Object.keys(CONFIG).filter(sym => CONFIG[sym].enabled);
-const ALL_ASSETS = Object.keys(CONFIG);  // para UI completa
-
-// ── ESTADO ────────────────────────────────────────────
-let ws, running = false;
-let balance = 100.00, sessionStart = 100.00;
-let wins = 0, losses = 0, lossStreak = 0, pauseUntil = 0;
-let lastTradeTime = {};
-let tradeHistory = [];
-let opLog = [];
-
-let prices    = { "R_10":[], "R_25":[], "R_50":[] };
-let zHist     = { "R_10":[], "R_25":[], "R_50":[] };
-let retHistory = { "R_10":[], "R_25":[], "R_50":[] };
-
-let momentumState = {
-  "R_10":{ phase:'SCAN', dir:null, accelTicks:0, burstStart:0, score:0 },
-  "R_25":{ phase:'SCAN', dir:null, accelTicks:0, burstStart:0, score:0 },
-  "R_50":{ phase:'SCAN', dir:null, accelTicks:0, burstStart:0, score:0 }
-};
-
-let confirmState = {
-  "R_10":{ pending:false, dir:null, count:0 },
-  "R_25":{ pending:false, dir:null, count:0 },
-  "R_50":{ pending:true, dir:null, count:0 }
-};
-
-ALL_ASSETS.forEach(a => lastTradeTime[a] = 0);
-let contractToAsset = {};
-let openContracts = {};
-ALL_ASSETS.forEach(a => openContracts[a] = null);
-let tradeTimestamps = [];
-
-// Chart
-const chart = new Chart(document.getElementById('chart'),{
-  type:'line',
-  data:{ labels:[], datasets:[{ label:'Balance USD', data:[100], borderColor:'#00ffcc', borderWidth:2, fill:false, tension:0.3, pointRadius:3 }] },
-  options:{ responsive:true, maintainAspectRatio:true, plugins:{legend:{labels:{color:'#6c7a8e'}}}, scales:{ x:{ticks:{color:'#6c7a8e'}}, y:{ticks:{color:'#6c7a8e'}} } }
-});
-
-function addLog(msg, cls = ''){
-  const t = new Date().toLocaleTimeString();
-  const d = document.createElement('div');
-  d.className = cls;
-  d.textContent = '[' + t + '] ' + msg;
-  const logDiv = document.getElementById('logDiv');
-  logDiv.appendChild(d);
-  logDiv.scrollTop = logDiv.scrollHeight;
-}
-
-// UI Ticks (usa CONFIG)
-function buildTicksGrid(){
-  const presets = [1,2,3,4,5,6,8,10];
-  const gridHtml = ALL_ASSETS.map(sym => {
-    const cfg = CONFIG[sym];
-    const lbl = cfg.label;
-    const v = cfg.ticks;
-    const disabledClass = cfg.enabled ? '' : 'disabled';
-    const pHtml = presets.map(p => {
-      const isOn = p === v ? 'on' : '';
-      return `<span class="tp ${isOn} ${disabledClass}" onclick="setTick('${sym}',${p},this)">${p}</span>`;
-    }).join('');
-    return `<div class="tick-card" style="opacity:${cfg.enabled ? 1 : 0.5}">
-      <div class="tick-sym">${lbl} ${cfg.enabled ? '' : '(OFF)'}</div>
-      <div class="tick-label">Duración</div>
-      <input type="number" class="tick-inp" id="tick_${sym}" value="${v}" min="1" max="10" ${cfg.enabled ? '' : 'disabled'} onchange="updateConfigTick('${sym}', this.value)">
-      <div class="tick-presets">${pHtml}</div>
-    </div>`;
-  }).join('');
-  document.getElementById('ticksGrid').innerHTML = gridHtml;
-}
-
-function setTick(sym, val, el){
-  if (!CONFIG[sym].enabled) {
-    addLog(`⚠️ ${CONFIG[sym].label} está desactivado, no se puede cambiar`, 'll');
-    return;
-  }
-  CONFIG[sym].ticks = val;
-  document.getElementById('tick_' + sym).value = val;
-  el.closest('.tick-card').querySelectorAll('.tp').forEach(e => e.classList.remove('on'));
-  el.classList.add('on');
-  addLog(`⚙️ ${CONFIG[sym].label} ticks → ${val}`);
-}
-
-function updateConfigTick(sym, val){
-  const num = parseInt(val) || 3;
-  if (CONFIG[sym].enabled) {
-    CONFIG[sym].ticks = num;
-    addLog(`⚙️ ${CONFIG[sym].label} ticks actualizado → ${num}`);
-  }
-  document.getElementById('tick_' + sym).value = CONFIG[sym].ticks;
-}
-
-// ── MÉTRICAS BASE (sin cambios) ──────────────────────────
-function calcVolRegime(rets){
-  if(rets.length < 25) return { shortVol:0, longVol:0, ratio:1, regime:'CALC', absVol:0 };
-  const short = rets.slice(-6);
-  const long  = rets.slice(-25);
-  const shortVol = Math.sqrt(short.map(r=>r*r).reduce((a,b)=>a+b,0)/short.length);
-  const longVol  = Math.sqrt(long.map(r=>r*r).reduce((a,b)=>a+b,0)/long.length);
-  const absVol   = longVol;
-  const ratio = longVol>0 ? shortVol/longVol : 1;
-  let regime;
-  if(ratio > 2.8)       regime='EXTREME';
-  else if(ratio > 1.35) regime='BURST';
-  else if(ratio > 0.65) regime='TREND';
-  else                  regime='RANGE';
-  return { shortVol, longVol, ratio, regime, absVol };
-}
-
-function calculateMomentumStrength(rets, absVol){
-  const N = 7;
-  if(rets.length < N+2) return { vel:0, acc:0, strength:0, consistent:0, weightedCons:0, relStrength:0, burstVel:0, direction:0, magnitudeOk:false };
-  const recent = rets.slice(-N);
-  let wSum=0, wTot=0;
-  for(let i=0;i<N;i++){ const w=i+1; wSum+=recent[i]*w; wTot+=w; }
-  const vel = wSum/wTot;
-  const burst3 = rets.slice(-3);
-  const burstVel = burst3.reduce((a,b)=>a+b,0)/3;
-  const accArr=[];
-  for(let i=1;i<recent.length;i++) accArr.push(recent[i]-recent[i-1]);
-  const accRecent = accArr.slice(-4);
-  let aWsum=0, aWtot=0;
-  accRecent.forEach((a,i)=>{ const w=i+1; aWsum+=a*w; aWtot+=w; });
-  const acc = aWtot>0 ? aWsum/aWtot : 0;
-  const lastDir = Math.sign(recent[recent.length-1]);
-  let consistent=0, weightedCons=0;
-  for(let i=recent.length-1;i>=0;i--){
-    if(Math.sign(recent[i])===lastDir){ consistent++; weightedCons+=(i+1); }
-    else break;
-  }
-  const relStrength = absVol>0 ? Math.abs(vel)/absVol : 0;
-  const minMag = absVol * 0.20;
-  const consistentSlice = recent.slice(-consistent);
-  const magnitudeOk = consistent>=3 && consistentSlice.every(r => Math.abs(r) >= minMag);
-  const strength = Math.abs(vel) * (1 + Math.min(1, relStrength)) * (consistent>=3?1.2:1.0) * (acc>0 && Math.sign(acc)===Math.sign(vel)?1.15:0.85);
-  return { vel, acc, strength, consistent, weightedCons, relStrength, burstVel, direction: lastDir, magnitudeOk };
-}
-
-function detectMomentumDecay(rets, direction){
-  if(rets.length < 8) return { decaying:false, fatigueScore:0, reason:'' };
-  const w1 = rets.slice(-8,-4);
-  const w2 = rets.slice(-4);
-  let fatigueScore=0, reasons=[];
-  const avgW1 = w1.map(Math.abs).reduce((a,b)=>a+b,0)/w1.length;
-  const avgW2 = w2.map(Math.abs).reduce((a,b)=>a+b,0)/w2.length;
-  if(avgW1>0 && avgW2<avgW1*0.70){ fatigueScore+=40; reasons.push('VEL↓'); }
-  const last2 = rets.slice(-2);
-  if(last2.every(r => Math.sign(r) !== direction && r !== 0)){ fatigueScore+=35; reasons.push('DIV'); }
-  const t3 = rets.slice(-3).map(Math.abs);
-  if(t3.length===3 && t3[0]>t3[1] && t3[1]>t3[2] && t3[2]<t3[0]*0.50){ fatigueScore+=30; reasons.push('COMP'); }
-  const burstAvg = w2.map(Math.abs).reduce((a,b)=>a+b,0)/w2.length;
-  const lastTick = rets[rets.length-1];
-  if(Math.sign(lastTick) !== direction && Math.abs(lastTick) > burstAvg * 0.60){ fatigueScore+=35; reasons.push('INV_FUERTE'); }
-  return { decaying: fatigueScore>=50, fatigueScore, reason: reasons.join('+') };
-}
-
-// ══════════════════════════════════════════════════════
-// FILTROS DE PRECISIÓN (sin cambios)
-// ══════════════════════════════════════════════════════
-function isLateralMarket(rets, arr, volRegime){
-  if(rets.length < 20) return { lateral: true, confidence: 1, reason: 'insuf_data' };
-  const recentRets = rets.slice(-20);
-  const recentPrices = arr.slice(-21);
-  let dirChanges = 0;
-  for(let i=1;i<recentRets.length;i++){
-    if(Math.sign(recentRets[i]) !== Math.sign(recentRets[i-1])) dirChanges++;
-  }
-  const changeRatio = dirChanges / (recentRets.length-1);
-  const maxP = Math.max(...recentPrices);
-  const minP = Math.min(...recentPrices);
-  const range = maxP - minP;
-  const avgAbsRet = recentRets.reduce((a,r)=>a+Math.abs(r),0)/recentRets.length;
-  const rangeVsVol = avgAbsRet>0 ? range / avgAbsRet : 0;
-  const upMoves = recentRets.filter(r=>r>0).length;
-  const downMoves = recentRets.filter(r=>r<0).length;
-  const directionBalance = Math.abs(upMoves - downMoves) / recentRets.length;
-  let sumProd = 0, sumSq = 0;
-  for(let i=1;i<recentRets.length;i++){ sumProd += recentRets[i]*recentRets[i-1]; sumSq += recentRets[i-1]**2; }
-  const acf1 = sumSq>0 ? sumProd/sumSq : 0;
-  let lateralScore = 0;
-  if(changeRatio > 0.55) lateralScore += 2;
-  if(rangeVsVol < 3.5) lateralScore += 2;
-  if(directionBalance < 0.25) lateralScore += 2;
-  if(acf1 < 0.1) lateralScore += 1;
-  if(volRegime.regime === 'RANGE') lateralScore += 3;
-  const lateral = lateralScore >= 4;
-  const reason = lateral ? `LATERAL (chg:${changeRatio.toFixed(2)} rng:${rangeVsVol.toFixed(1)} bal:${directionBalance.toFixed(2)})` : '';
-  return { lateral, confidence: lateralScore/9, reason };
-}
-
-function isMomentumPersistent(rets, momStr, absVol){
-  if(momStr.consistent < 4) return { persistent:false, reason:'cons<4' };
-  const streak = rets.slice(-momStr.consistent);
-  const mags = streak.map(Math.abs);
-  const mean = mags.reduce((a,b)=>a+b,0)/mags.length;
-  const variance = mags.reduce((a,m)=>a+(m-mean)**2,0)/mags.length;
-  const cv = mean>0 ? Math.sqrt(variance)/mean : 1;
-  const half = Math.floor(mags.length/2);
-  const firstHalfAvg = mags.slice(0,half).reduce((a,b)=>a+b,0)/half;
-  const secondHalfAvg = mags.slice(half).reduce((a,b)=>a+b,0)/(mags.length-half);
-  const slopeOk = secondHalfAvg >= firstHalfAvg * 0.70;
-  const persistent = momStr.consistent >= 4 && cv < 0.75 && slopeOk;
-  return { persistent, cv, slopeOk, reason: !persistent?`CV:${cv.toFixed(2)} slp:${slopeOk}`:'' };
-}
-
-function isStrongMomentum(momStr, absVol){
-  const reasons=[];
-  if(momStr.relStrength < 1.8) reasons.push(`relStr_bajo:${momStr.relStrength.toFixed(2)}<1.8`);
-  if(momStr.burstVel !== 0 && Math.sign(momStr.burstVel) !== Math.sign(momStr.vel)) reasons.push('burstVel_incoherente');
-  if(momStr.consistent < 4) reasons.push(`cons_insuf:${momStr.consistent}<4`);
-  return { strong: reasons.length===0, reason: reasons.join('|') };
-}
-
-function isEarlyStageMomentum(rets, burstStartAge){
-  if(rets.length < 8) return { early: true, reason: '' };
-  const recentMags = rets.slice(-8).map(Math.abs);
-  const maxIdx = recentMags.lastIndexOf(Math.max(...recentMags));
-  const ticksSincePeak = recentMags.length - 1 - maxIdx;
-  const lastMag = recentMags[recentMags.length-1];
-  const peakMag = recentMags[maxIdx];
-  const decaying = lastMag < peakMag * 0.65;
-  const late = (ticksSincePeak >= 2 && decaying) || burstStartAge >= 6;
-  return { early: !late, reason: late?`pico_hace_${ticksSincePeak}T`:'OK' };
-}
-
-function calcSignalScore(momStr, regime, volRegime, decay, strongImpulse, persistent, lateral){
-  if(lateral) return 0;
-  if(regime==='RANGE' || regime==='EXTREME') return 0;
-  if(!momStr.magnitudeOk || momStr.consistent < 4) return 0;
-  if(decay.decaying) return 0;
-  if(!strongImpulse.strong) return 0;
-  if(!persistent.persistent) return 0;
-  let score = 0;
-  score += Math.min(25, (momStr.weightedCons / 28) * 25);
-  score += Math.min(25, momStr.relStrength * 9);
-  score += (regime==='BURST'?25:10);
-  if(momStr.acc !== 0 && Math.sign(momStr.acc) === Math.sign(momStr.vel))
-    score += Math.min(15, Math.abs(momStr.acc) / (Math.abs(momStr.vel)+1e-10) * 12);
-  let multiplier = 1.0;
-  if(persistent.persistent) multiplier += 0.2;
-  if(strongImpulse.strong) multiplier += 0.15;
-  if(volRegime.ratio > 1.8) multiplier += 0.1;
-  return Math.min(100, Math.round(score * multiplier));
-}
-
-// ── UTILIDADES ────────────────────────────────────────
-function calcZ(arr){ if(arr.length<2) return 0; const mean=arr.reduce((a,b)=>a+b,0)/arr.length; const std=Math.sqrt(arr.map(x=>(x-mean)**2).reduce((a,b)=>a+b,0)/arr.length); return std===0?0:(arr[arr.length-1]-mean)/std; }
-function calcRSI(arr,period=14){ if(arr.length<period+1) return 50; let gains=0,losses=0; for(let i=arr.length-period;i<arr.length;i++){ const d=arr[i]-arr[i-1]; if(d>0) gains+=d; else losses-=d; } const ag=gains/period,al=losses/period; return al===0?100:100-(100/(1+(ag/al))); }
-
-// UI updates
-function updateConfirmPanel(score, scoreOk, persist, persistOk, regime, regimeOk, early, earlyOk){
-  document.getElementById('cZ').innerText = score;
-  document.getElementById('cZ').className = 'cbox-val ' + (scoreOk ? 'ok' : 'warn');
-  document.getElementById('cZchk').innerText = scoreOk ? '✅ SCORE OK' : '⏳ Bajo';
-  document.getElementById('cTick').innerText = persist;
-  document.getElementById('cTickchk').innerText = persistOk ? '✅ PERSISTENTE' : '❌ Débil';
-  document.getElementById('cRSI').innerText = regime;
-  document.getElementById('cRSIchk').innerText = regimeOk ? '✅ TENDENCIAL' : '⛔ Lateral/Rango';
-  document.getElementById('cVol').innerText = early;
-  document.getElementById('cVolchk').innerText = earlyOk ? '✅ TEMPRANO' : '⏰ Tarde';
-}
-
-function updateAssetsGrid(){
-  const lookbacks = [10,25,50];
-  const gridHtml = ALL_ASSETS.map(sym => {
-    const cfg = CONFIG[sym];
-    const lbl = cfg.label;
-    const arr = prices[sym];
-    const rows = lookbacks.map(lb => {
-      if(arr.length < lb) return `<div class="lb-row"><span class="lb-name">LB${lb}</span><span class="lb-z" style="color:#2a3555">--</span></div>`;
-      const z = calcZ(arr.slice(-lb));
-      const abs = Math.abs(z);
-      const col = abs >= cfg.zThreshold ? '#ff4757' : (abs >= 1.5 ? '#ffaa44' : '#2ed573');
-      const barW = Math.min(100, abs*25);
-      return `<div class="lb-row"><span class="lb-name">LB${lb}</span><div style="flex:1;margin:0 8px;"><div class="lb-bar" style="width:${barW}%;background:${z>0?'#ff4757':'#2ed573'};"></div></div><span class="lb-z" style="color:${col}">${z.toFixed(2)}</span></div>`;
-    }).join('');
-    const ms = momentumState[sym];
-    const enabledBadge = cfg.enabled ? '' : ' <span style="color:#ff4757;font-size:9px;">⛔ OFF</span>';
-    return `<div class="asset-card" style="opacity:${cfg.enabled ? 1 : 0.5}">
-      <div class="asset-title">${lbl} ${enabledBadge} <span style="font-size:9px;color:${ms.phase==='CONFIRM'?'#ffaa44':'#2a3555'}">${ms.phase}</span></div>
-      ${rows}
-    </div>`;
-  }).join('');
-  document.getElementById('assetsGrid').innerHTML = gridHtml;
-}
-
-function updateStats(){
-  document.getElementById('statWins').innerText = wins;
-  document.getElementById('statLosses').innerText = losses;
-  const tot = wins + losses;
-  document.getElementById('statWR').innerText = tot > 0 ? ((wins/tot)*100).toFixed(1) + '%' : '0%';
-  document.getElementById('balDisplay').innerText = '$' + balance.toFixed(2);
-  const dd = sessionStart - balance;
-  document.getElementById('drawdown').innerText = dd > 0 ? '-$' + dd.toFixed(2) : '$0.00';
-  document.getElementById('stopLimit').innerText = '$' + (sessionStart*0.05).toFixed(2);
-  document.getElementById('lossStreak').innerText = lossStreak;
-  document.getElementById('pauseStatus').innerText = pauseUntil > Date.now() ? 'PAUSA' : 'ACTIVO';
-}
-
-function updateSim(){
-  const stake = parseFloat(document.getElementById('stake').value) || 1;
-  const win = stake * 0.87, loss = stake;
-  const be = (loss/(win+loss)*100);
-  document.getElementById('profitWin').innerText = '+$' + win.toFixed(2);
-  document.getElementById('profitLoss').innerText = '-$' + loss.toFixed(2);
-  document.getElementById('breakeven').innerText = be.toFixed(1) + '%';
-  document.getElementById('proj60').innerText = '$' + (win*6 - loss*4).toFixed(2);
-  document.getElementById('proj70').innerText = '$' + (win*7 - loss*3).toFixed(2);
-}
-
-function resetMomentum(sym){
-  momentumState[sym] = { phase:'SCAN', dir:null, accelTicks:0, burstStart:0, score:0 };
-  confirmState[sym] = { pending:false, dir:null, count:0 };
-}
-
-function tradesPerMinute(){
-  const now = Date.now();
-  tradeTimestamps = tradeTimestamps.filter(t => now - t < 60000);
-  return tradeTimestamps.length;
-}
-
-function getAdaptiveStake(){
-  const base = parseFloat(document.getElementById('stake').value) || 1;
-  const dd = sessionStart - balance;
-  const ddPct = dd / sessionStart;
-  if(ddPct > 0.03) return Math.max(0.35, base * 0.5);
-  else if(ddPct > 0.015) return Math.max(0.35, base * 0.75);
-  return base;
-}
-
-// ════════════════════════════════════════════════════════
-// NÚCLEO DE DECISIÓN (con configuración por activo)
-// ════════════════════════════════════════════════════════
-function onNewPrice(sym, price){
-  const cfg = CONFIG[sym];
-  if (!cfg.enabled) return;  // ⛔ ignorar activos desactivados
-
-  const arr = prices[sym];
-  arr.push(price);
-  if(arr.length > 200) arr.shift();
-  if(arr.length < 30) return;
-
-  const now = Date.now();
-  const ms = momentumState[sym];
-  const lastRet = arr[arr.length-1] - arr[arr.length-2];
-  const rets = retHistory[sym];
-  rets.push(lastRet);
-  if(rets.length > 60) rets.shift();
-  if(rets.length < 20) return;
-
-  const volRegime = calcVolRegime(rets);
-  const momStr = calculateMomentumStrength(rets, volRegime.absVol);
-  const decay = detectMomentumDecay(rets, momStr.direction);
-  const lateral = isLateralMarket(rets, arr, volRegime);
-
-  if(lateral.lateral && ms.phase !== 'CONFIRM'){
-    document.getElementById('indVol').innerText = 'LATERAL';
-    document.getElementById('indVol').style.color = '#ff4757';
-    updateAssetsGrid();
-    return;
-  }
-
-  const persistent = isMomentumPersistent(rets, momStr, volRegime.absVol);
-  const strongMom = isStrongMomentum(momStr, volRegime.absVol);
-  const burstAge = ms.phase === 'CONFIRM' ? Math.floor((now - ms.burstStart)/500) : 0;
-  const early = isEarlyStageMomentum(rets, burstAge);
-
-  const regimeOk = volRegime.regime === 'BURST' || volRegime.regime === 'TREND';
-  const accOk = momStr.consistent >= 4 && momStr.magnitudeOk && strongMom.strong && persistent.persistent;
-  const score = calcSignalScore(momStr, volRegime.regime, volRegime, decay, strongMom, persistent, lateral.lateral);
-
-  // UI (mostramos info aunque solo un activo esté habilitado)
-  document.getElementById('indAsset').innerText = cfg.label;
-  document.getElementById('indZ').innerText = score;
-  document.getElementById('indZ').style.color = score >= cfg.scoreConfirmMin ? '#2ed573' : '#ffaa44';
-  document.getElementById('indRSI').innerText = lateral.lateral ? '⛔LATERAL' : volRegime.regime;
-  document.getElementById('indVol').innerText = lateral.lateral ? 'BLOQUEADO' : (early.early ? 'TEMPRANO' : 'TARDE');
-
-  updateConfirmPanel(score, score >= cfg.scoreConfirmMin, persistent.persistent?'✅':'❌', persistent.persistent,
-                     lateral.lateral?'LATERAL':volRegime.regime, !lateral.lateral && regimeOk,
-                     early.early?'✅':'❌', early.early);
-
-  // ── FASE CONFIRM ─────────────────────────────────────
-  if(ms.phase === 'CONFIRM'){
-    if(lateral.lateral || !regimeOk || decay.decaying || !early.early || score < cfg.scoreConfirmMin){
-      addLog(`⛔ ${cfg.label} cancelado: ${lateral.lateral?'LATERAL':!regimeOk?'RÉGIMEN':!early.early?'TARDE':'BAJO_SCORE'}`, 'll');
-      resetMomentum(sym); updateAssetsGrid(); return;
-    }
-    if(now - ms.burstStart > 5000){ addLog('⏱ timeout'); resetMomentum(sym); return; }
-
-    const minTickMag = volRegime.absVol * 0.2;
-    const tickDir = ms.dir === 'CALL' ? lastRet > 0 : lastRet < 0;
-    const tickMagOk = Math.abs(lastRet) >= minTickMag;
-    if(tickDir && tickMagOk){
-      ms.accelTicks++;
-      if(ms.accelTicks >= 3 && score >= cfg.scoreConfirmMin && !lateral.lateral && persistent.persistent && early.early){
-        if(now < pauseUntil || sessionStart - balance >= sessionStart*0.05 || now - lastTradeTime[sym] < 30000 || openContracts[sym] || tradesPerMinute() >= 3){
-          addLog('⛔ Bloqueo operativo'); resetMomentum(sym); return;
+        // ── Simulation Engine ─────────────────────────────────────────────────────────
+        function generateSyntheticV10(n = 200) {
+          const bars = [];
+          let price = 8500;
+          for (let i = 0; i < n; i++) {
+            const phase = Math.floor(i / 70) % 3;
+            const drift = phase === 0 ? 0.012 : phase === 1 ? 0 : -0.012;
+            const vol = price * 0.0012;
+            const change = drift * vol + (Math.random() - 0.5) * vol * 1.8;
+            price = Math.max(price + change, 1);
+            const range = Math.abs(Math.random() * vol * 1.4 + vol * 0.3);
+            const open = price - change * Math.random();
+            bars.push({
+              t: Date.now() - (n - i) * 60000,
+              o: open,
+              h: Math.max(price, open) + range * 0.3,
+              l: Math.min(price, open) - range * 0.3,
+              c: price,
+              v: Math.max(10, Math.round(150 + (Math.random() - 0.5) * 60)),
+            });
+          }
+          return bars;
         }
-        const stake = getAdaptiveStake();
-        addLog(`⚡ ENTRADA ${cfg.label} → ${ms.dir} | Sc:${score} | Persistente | Temprano | $${stake} | ${cfg.ticks}t`, 'lk');
-        resetMomentum(sym);
-        lastTradeTime[sym] = now;
-        openContracts[sym] = 'pending';
-        tradeTimestamps.push(now);
-        ws.send(JSON.stringify({ proposal:1, amount:stake, basis:'stake', contract_type:ms.dir, currency:'USD', duration:cfg.ticks, duration_unit:'t', symbol:sym }));
-      } else {
-        addLog(`🔎 ${cfg.label} confirm ${ms.accelTicks}/3`);
-      }
-    } else {
-      addLog(`❌ ${cfg.label} falló confirmación`, 'll');
-      resetMomentum(sym);
-    }
-    updateAssetsGrid();
-    return;
-  }
 
-  // ── FASE SCAN: DETECTAR BURST CON FILTROS (usando scoreScanMin) ─────────────
-  if(ms.phase === 'SCAN' && !lateral.lateral && regimeOk && volRegime.ratio > 1.4 && momStr.consistent >= 4 && momStr.magnitudeOk && strongMom.strong && persistent.persistent && early.early && score >= cfg.scoreScanMin){
-    const dir = momStr.direction > 0 ? 'CALL' : 'PUT';
-    ms.phase = 'CONFIRM';
-    ms.dir = dir;
-    ms.accelTicks = momStr.consistent;
-    ms.burstStart = now;
-    ms.score = score;
-    addLog(`🚀 BURST ${cfg.label} → ${dir} | VR:${volRegime.ratio.toFixed(2)} Cons:${momStr.consistent} Persist:${persistent.persistent} Early:${early.early} Sc:${score}`, 'li');
-  }
-  updateAssetsGrid();
-}
+        function calcEMA(arr, period) {
+          const ema = new Array(arr.length).fill(0);
+          if (arr.length < period) return ema;
+          const k = 2 / (period + 1);
+          ema[period - 1] = arr.slice(0, period).reduce((a, b) => a + b, 0) / period;
+          for (let i = period; i < arr.length; i++) {
+            ema[i] = arr[i] * k + ema[i - 1] * (1 - k);
+          }
+          return ema;
+        }
 
-function onResult(sym, pnl){
-  const cfg = CONFIG[sym];
-  const lbl = cfg.label;
-  openContracts[sym] = null;
-  balance += pnl;
-  if(pnl > 0){ wins++; lossStreak = 0; } else { losses++; lossStreak++; if(lossStreak >= 3){ pauseUntil = Date.now() + 45000; addLog('⏸ Pausa 45s'); lossStreak = 0; } }
-  tradeHistory.push(pnl > 0 ? 1 : 0); if(tradeHistory.length > 100) tradeHistory.shift();
-  addLog((pnl > 0 ? '✅ WIN' : '❌ LOSS') + ' ' + lbl + ' $' + pnl.toFixed(2) + ' Bal:$' + balance.toFixed(2), pnl > 0 ? 'lw' : 'll');
-  chart.data.labels.push(''); chart.data.datasets[0].data.push(balance); if(chart.data.labels.length > 30){ chart.data.labels.shift(); chart.data.datasets[0].data.shift(); } chart.update();
-  updateStats();
-}
+        function calcATR(bars, period = 14) {
+          const tr = bars.map((b, i) => {
+            if (i === 0) return b.h - b.l;
+            return Math.max(b.h - b.l, Math.abs(b.h - bars[i-1].c), Math.abs(b.l - bars[i-1].c));
+          });
+          const atr = new Array(bars.length).fill(0);
+          if (bars.length < period) return atr;
+          atr[period-1] = tr.slice(0,period).reduce((a,b)=>a+b,0)/period;
+          for (let i = period; i < bars.length; i++) {
+            atr[i] = (atr[i-1]*(period-1)+tr[i])/period;
+          }
+          return atr;
+        }
 
-// WebSocket
-function startBot(){
-  const token = document.getElementById('apiToken').value.trim();
-  if(!token){ addLog('❌ Token requerido','ll'); return; }
-  if(running) return;
-  balance = 100; sessionStart = 100; wins = 0; losses = 0; lossStreak = 0; pauseUntil = 0; tradeHistory = []; tradeTimestamps = [];
-  ALL_ASSETS.forEach(a => { prices[a] = []; retHistory[a] = []; resetMomentum(a); openContracts[a] = null; lastTradeTime[a] = 0; });
-  chart.data.labels = []; chart.data.datasets[0].data = [100]; chart.update(); updateStats();
-  running = true;
-  document.getElementById('statusDiv').innerText = '🟢 CONECTANDO...';
-  document.getElementById('toggleBtn').innerText = '⏹ DETENER'; document.getElementById('toggleBtn').className = 'btn stop';
-  ws = new WebSocket('wss://ws.binaryws.com/websockets/v3?app_id=1089');
-  ws.onopen = () => {
-    ws.send(JSON.stringify({authorize: token}));
-    addLog('🔌 Conectando...');
-  };
-  ws.onmessage = (e) => {
-    const d = JSON.parse(e.data);
-    if(d.authorize){
-      addLog('✅ Autorizado','li');
-      document.getElementById('statusDiv').innerText = '🟢 ONLINE — PRECISION MODE';
-      // Suscribirse SOLO a activos habilitados
-      ENABLED_ASSETS.forEach(sym => {
-        ws.send(JSON.stringify({ticks: sym, subscribe: 1}));
-        addLog(`📡 Suscrito a ${CONFIG[sym].label} (ticks=${CONFIG[sym].ticks}, scoreMin=${CONFIG[sym].scoreConfirmMin})`, 'li');
-      });
-      updateSim();
-    }
-    if(d.tick && running){
-      const sym = d.tick.symbol;
-      if(prices[sym] && CONFIG[sym].enabled) onNewPrice(sym, parseFloat(d.tick.quote));
-    }
-    if(d.proposal && d.proposal.id){
-      const pendSym = ALL_ASSETS.find(a => openContracts[a] === 'pending');
-      if(pendSym) contractToAsset[d.proposal.id] = pendSym;
-      ws.send(JSON.stringify({buy: d.proposal.id, price: parseFloat(document.getElementById('stake').value) || 1}));
-    }
-    if(d.buy){
-      const cid = d.buy.contract_id;
-      const sym = ALL_ASSETS.find(a => openContracts[a] === 'pending');
-      if(sym) openContracts[sym] = cid;
-    }
-    if(d.proposal_open_contract && d.proposal_open_contract.is_sold){
-      const poc = d.proposal_open_contract;
-      const sym = ALL_ASSETS.find(a => openContracts[a] === poc.contract_id);
-      if(sym){ openContracts[sym] = null; onResult(sym, parseFloat(poc.profit)); }
-    }
-    if(d.error) addLog('⚠️ ' + d.error.message, 'll');
-  };
-  ws.onerror = () => { stopBot(); };
-  ws.onclose = () => { if(running){ addLog('🔌 Desconectado'); running = false; } };
-}
+        function detectRegime(bars) {
+          if (bars.length < 60) return { regime: "WARMING_UP", confidence: 0, trend: 0 };
+          const closes = bars.map(b => b.c);
+          const ema8 = calcEMA(closes, 8);
+          const ema21 = calcEMA(closes, 21);
+          const ema55 = calcEMA(closes, 55);
+          const atr = calcATR(bars);
+          const n = closes.length - 1;
 
-function stopBot(){
-  if(!running) return;
-  running = false;
-  if(ws) ws.close();
-  document.getElementById('statusDiv').innerText = '⚫ OFFLINE';
-  document.getElementById('toggleBtn').innerText = '▶ INICIAR BOT'; document.getElementById('toggleBtn').className = 'btn';
-  addLog('🛑 Bot detenido');
-  updateStats();
-}
+          const atrHistory = atr.slice(-100).filter(v => v > 0);
+          const atrPct = atrHistory.filter(v => v <= atr[n]).length / atrHistory.length;
 
-document.getElementById('toggleBtn').onclick = () => running ? stopBot() : startBot();
-document.getElementById('stake').addEventListener('input', updateSim);
-buildTicksGrid();
-updateStats();
-updateSim();
-addLog('🤖 PRECISION ENGINE v6 | Config-driven | Activo: solo R_50 (modo test)');
-addLog(`⚙️ Activos habilitados: ${ENABLED_ASSETS.map(s => CONFIG[s].label).join(', ') || 'ninguno'}`);
-</script>
+          const aligned_up = ema8[n] > ema21[n] && ema21[n] > ema55[n];
+          const aligned_dn = ema8[n] < ema21[n] && ema21[n] < ema55[n];
+
+          const recentSlope = (closes[n] - closes[n-10]) / closes[n] * 100;
+          const adxApprox = Math.abs(recentSlope) * 8;
+
+          let regime = "RANGE";
+          let confidence = 0.5;
+          let direction = 0;
+
+          if (adxApprox > 28 && aligned_up) { regime = "STRONG_TREND_UP"; confidence = 0.85; direction = 1; }
+          else if (adxApprox > 28 && aligned_dn) { regime = "STRONG_TREND_DOWN"; confidence = 0.85; direction = -1; }
+          else if (adxApprox > 16 && aligned_up) { regime = "WEAK_TREND_UP"; confidence = 0.65; direction = 1; }
+          else if (adxApprox > 16 && aligned_dn) { regime = "WEAK_TREND_DOWN"; confidence = 0.65; direction = -1; }
+          else if (atrPct < 0.25) { regime = "COMPRESSION"; confidence = 0.72; }
+          else if (atrPct > 0.75) { regime = "HIGH_VOL_EXPANSION"; confidence = 0.70; }
+          else { regime = "RANGE"; confidence = 0.55; }
+
+          return { regime, confidence, trend: adxApprox, atrPct, ema8: ema8[n], ema21: ema21[n], ema55: ema55[n], atr: atr[n], direction };
+        }
+
+        function runBotSimulation() {
+          const bars = generateSyntheticV10(250);
+          const trades = [];
+          let balance = 1000;
+          let inTrade = null;
+          let winrate = 0;
+          const balanceHistory = [1000];
+          const regimeHistory = [];
+
+          for (let i = 80; i < bars.length; i++) {
+            const window = bars.slice(0, i + 1);
+            const regime = detectRegime(window);
+            regimeHistory.push(regime.regime);
+
+            if (inTrade) {
+              const pos = inTrade;
+              const bar = bars[i];
+              const risk = Math.abs(pos.entry - pos.sl);
+              let closed = false;
+              let pnlR = 0;
+              let reason = "";
+
+              if (pos.dir === "LONG") {
+                if (bar.l <= pos.sl) { pnlR = -1; reason = "SL"; closed = true; }
+                else if (bar.h >= pos.tp) { pnlR = pos.rr; reason = "TP"; closed = true; }
+                else if (i - pos.entryIdx > 20) { pnlR = (bar.c - pos.entry)/risk; reason = "TIMEOUT"; closed = true; }
+              } else {
+                if (bar.h >= pos.sl) { pnlR = -1; reason = "SL"; closed = true; }
+                else if (bar.l <= pos.tp) { pnlR = pos.rr; reason = "TP"; closed = true; }
+                else if (i - pos.entryIdx > 20) { pnlR = (pos.entry - bar.c)/risk; reason = "TIMEOUT"; closed = true; }
+              }
+
+              if (closed) {
+                const riskAmt = balance * 0.0075;
+                balance += pnlR * riskAmt;
+                trades.push({ ...pos, exitBar: i, pnlR, reason, exitPrice: bars[i].c, win: pnlR > 0 });
+                inTrade = null;
+                balanceHistory.push(Math.round(balance * 100) / 100);
+              }
+              continue;
+            }
+
+            if (!["STRONG_TREND_UP","STRONG_TREND_DOWN","WEAK_TREND_UP","WEAK_TREND_DOWN","COMPRESSION"].includes(regime.regime)) continue;
+
+            const closes = window.map(b => b.c);
+            const atr = calcATR(window);
+            const currATR = atr[atr.length - 1];
+            const roc5 = (closes[closes.length-1] - closes[closes.length-6]) / closes[closes.length-6] * 100;
+
+            let dir = null;
+            let signalType = "";
+            if ((regime.regime.includes("UP") || (regime.regime === "COMPRESSION" && roc5 > 0)) && roc5 > 0.02) {
+              dir = "LONG"; signalType = regime.regime === "COMPRESSION" ? "COMPRESSION_BO" : "BREAKOUT";
+            } else if ((regime.regime.includes("DOWN") || (regime.regime === "COMPRESSION" && roc5 < 0)) && roc5 < -0.02) {
+              dir = "SHORT"; signalType = regime.regime === "COMPRESSION" ? "COMPRESSION_BO" : "BREAKOUT";
+            }
+
+            if (!dir) continue;
+
+            const entry = bars[i].c;
+            const sl = dir === "LONG" ? entry - currATR * 1.5 : entry + currATR * 1.5;
+            const tp = dir === "LONG" ? entry + currATR * 2.5 : entry - currATR * 2.5;
+            const rr = Math.abs(tp - entry) / Math.abs(entry - sl);
+            if (rr < 1.5) continue;
+
+            inTrade = { dir, entry, sl, tp, rr, signalType, regime: regime.regime, entryIdx: i, entryBar: i, confidence: regime.confidence };
+          }
+
+          const wins = trades.filter(t => t.win).length;
+          winrate = trades.length > 0 ? wins / trades.length : 0;
+          const pf = trades.reduce((a,t) => t.win ? a + t.pnlR : a, 0) /
+                     (trades.reduce((a,t) => !t.win ? a + Math.abs(t.pnlR) : a, 0) || 1);
+          const expectancy = trades.reduce((a,t) => a + t.pnlR, 0) / (trades.length || 1);
+
+          const cumulativeR = trades.reduce((acc, t) => {
+            const last = acc.length > 0 ? acc[acc.length-1] : 0;
+            return [...acc, +(last + t.pnlR).toFixed(3)];
+          }, []);
+
+          return { trades, balance: Math.round(balance*100)/100, winrate, pf, expectancy, balanceHistory, cumulativeR, bars, regimeHistory };
+        }
+
+        const REGIME_COLORS = {
+          STRONG_TREND_UP: "#00e5a0",
+          STRONG_TREND_DOWN: "#ff4d6d",
+          WEAK_TREND_UP: "#4dffb4",
+          WEAK_TREND_DOWN: "#ff8fa3",
+          COMPRESSION: "#f5c518",
+          HIGH_VOL_EXPANSION: "#7b5ea7",
+          RANGE: "#607080",
+          WARMING_UP: "#445566",
+        };
+
+        function CandleChart({ bars, trades, width = 600, height = 160 }) {
+          if (!bars || bars.length < 5) return null;
+
+          const displayBars = bars.slice(-80);
+          const n = displayBars.length;
+          const padding = { l: 8, r: 8, t: 12, b: 8 };
+          const chartW = width - padding.l - padding.r;
+          const chartH = height - padding.t - padding.b;
+
+          const allH = displayBars.map(b => b.h);
+          const allL = displayBars.map(b => b.l);
+          const minP = Math.min(...allL);
+          const maxP = Math.max(...allH);
+          const pRange = maxP - minP || 1;
+
+          const barW = Math.max(2, (chartW / n) - 1);
+          const xOf = (i) => padding.l + (i + 0.5) * (chartW / n);
+          const yOf = (p) => padding.t + chartH - ((p - minP) / pRange) * chartH;
+
+          const closes = displayBars.map(b => b.c);
+          const ema8 = calcEMA(closes, 8);
+          const ema21 = calcEMA(closes, 21);
+
+          const emaPath = (ema) => ema.map((v, i) => v > 0 ? `${i === 0 || ema[i-1] === 0 ? 'M' : 'L'}${xOf(i).toFixed(1)},${yOf(v).toFixed(1)}` : '').join(' ');
+
+          return (
+            <svg width={width} height={height} style={{ display: "block" }}>
+              <rect width={width} height={height} fill="#0d1117" rx="4" />
+              {[0.25, 0.5, 0.75].map(f => (
+                <line key={f} x1={padding.l} x2={width-padding.r}
+                  y1={padding.t + chartH * f} y2={padding.t + chartH * f}
+                  stroke="#1e2a38" strokeWidth="1" />
+              ))}
+              <path d={emaPath(ema8)} fill="none" stroke="#f5c518" strokeWidth="1" opacity="0.7" />
+              <path d={emaPath(ema21)} fill="none" stroke="#4dabf7" strokeWidth="1" opacity="0.6" />
+              {displayBars.map((b, i) => {
+                const bull = b.c >= b.o;
+                const col = bull ? "#00e5a0" : "#ff4d6d";
+                const x = xOf(i);
+                const yH = yOf(b.h);
+                const yL = yOf(b.l);
+                const yO = yOf(b.o);
+                const yC = yOf(b.c);
+                const bodyTop = Math.min(yO, yC);
+                const bodyH = Math.max(Math.abs(yO - yC), 1);
+                return (
+                  <g key={i}>
+                    <line x1={x} x2={x} y1={yH} y2={yL} stroke={col} strokeWidth="1" opacity="0.7" />
+                    <rect x={x - barW/2} y={bodyTop} width={barW} height={bodyH}
+                      fill={bull ? col : col} opacity="0.85" />
+                  </g>
+                );
+              })}
+              <circle cx={padding.l + 8} cy={height - 10} r="3" fill="#f5c518" />
+              <text x={padding.l + 15} y={height - 7} fill="#f5c518" fontSize="9" opacity="0.8">EMA8</text>
+              <circle cx={padding.l + 55} cy={height - 10} r="3" fill="#4dabf7" />
+              <text x={padding.l + 62} y={height - 7} fill="#4dabf7" fontSize="9" opacity="0.8">EMA21</text>
+            </svg>
+          );
+        }
+
+        function EquityCurve({ data, width = 380, height = 100 }) {
+          if (!data || data.length < 2) return null;
+          const padding = { l: 10, r: 10, t: 10, b: 10 };
+          const cW = width - padding.l - padding.r;
+          const cH = height - padding.t - padding.b;
+          const min = Math.min(...data);
+          const max = Math.max(...data);
+          const range = max - min || 1;
+          const pts = data.map((v, i) => `${padding.l + (i / (data.length-1)) * cW},${padding.t + cH - ((v-min)/range)*cH}`).join(" ");
+          const last = data[data.length - 1];
+          const first = data[0];
+          const isUp = last >= first;
+
+          return (
+            <svg width={width} height={height} style={{ display: "block" }}>
+              <rect width={width} height={height} fill="transparent" />
+              <polyline points={pts} fill="none" stroke={isUp ? "#00e5a0" : "#ff4d6d"} strokeWidth="1.5" />
+              <line x1={padding.l} x2={width-padding.r} y1={padding.t + cH - ((first-min)/range)*cH}
+                y2={padding.t + cH - ((first-min)/range)*cH}
+                stroke="#445566" strokeWidth="1" strokeDasharray="3,3" />
+            </svg>
+          );
+        }
+
+        function RegimeBadge({ regime }) {
+          const color = REGIME_COLORS[regime] || "#607080";
+          const short = {
+            STRONG_TREND_UP: "▲▲ STRONG UP",
+            STRONG_TREND_DOWN: "▼▼ STRONG DOWN",
+            WEAK_TREND_UP: "▲ WEAK UP",
+            WEAK_TREND_DOWN: "▼ WEAK DOWN",
+            COMPRESSION: "⬡ COMPRESSION",
+            HIGH_VOL_EXPANSION: "⚡ HIGH VOL",
+            RANGE: "↔ RANGE",
+            WARMING_UP: "⏳ WARMING UP",
+          }[regime] || regime;
+
+          return (
+            <span style={{
+              display: "inline-block",
+              padding: "3px 10px",
+              borderRadius: "4px",
+              border: `1px solid ${color}40`,
+              background: `${color}18`,
+              color,
+              fontFamily: "'JetBrains Mono', monospace",
+              fontSize: "11px",
+              fontWeight: 700,
+              letterSpacing: "0.05em",
+            }}>
+              {short}
+            </span>
+          );
+        }
+
+        function TradeRow({ trade, idx }) {
+          const isWin = trade.win;
+          return (
+            <tr style={{ borderBottom: "1px solid #1a2332" }}>
+              <td style={{ padding: "5px 8px", color: "#607080", fontSize: "11px" }}>#{idx+1}</td>
+              <td style={{ padding: "5px 8px" }}>
+                <span style={{ color: trade.dir === "LONG" ? "#00e5a0" : "#ff4d6d", fontSize: "11px", fontWeight: 700 }}>
+                  {trade.dir === "LONG" ? "▲" : "▼"} {trade.dir}
+                </span>
+              </td>
+              <td style={{ padding: "5px 8px", fontSize: "11px", color: "#8899aa" }}>{trade.signalType}</td>
+              <td style={{ padding: "5px 8px" }}><RegimeBadge regime={trade.regime} /></td>
+              <td style={{ padding: "5px 8px", fontSize: "11px", color: "#8899aa" }}>{trade.entry?.toFixed(2)}</td>
+              <td style={{ padding: "5px 8px", fontSize: "12px", fontWeight: 700, color: isWin ? "#00e5a0" : "#ff4d6d" }}>
+                {trade.pnlR > 0 ? "+" : ""}{trade.pnlR?.toFixed(2)}R
+              </td>
+              <td style={{ padding: "5px 8px", fontSize: "11px", color: "#607080" }}>{trade.reason}</td>
+            </tr>
+          );
+        }
+
+        function Dashboard() {
+          const [sim, setSim] = useState(null);
+          const [activeSymbol, setActiveSymbol] = useState("V10");
+          const [livePrice, setLivePrice] = useState(null);
+          const [isLive, setIsLive] = useState(false);
+          const [liveInterval, setLiveIntervalState] = useState(null);
+          const [currentRegime, setCurrentRegime] = useState("RANGE");
+
+          useEffect(() => {
+            const result = runBotSimulation();
+            setSim(result);
+            if (result.bars.length > 0) {
+              const last = result.bars[result.bars.length - 1];
+              setLivePrice(last.c);
+              const r = detectRegime(result.bars);
+              setCurrentRegime(r.regime);
+            }
+          }, [activeSymbol]);
+
+          const toggleLive = useCallback(() => {
+            if (isLive) {
+              if (liveInterval) clearInterval(liveInterval);
+              setIsLive(false);
+            } else {
+              const iv = setInterval(() => {
+                setSim(prev => {
+                  if (!prev) return prev;
+                  const lastBar = prev.bars[prev.bars.length - 1];
+                  const change = (Math.random() - 0.499) * lastBar.c * 0.0015;
+                  const newPrice = Math.max(lastBar.c + change, 1);
+                  const newBar = {
+                    t: Date.now(),
+                    o: lastBar.c,
+                    h: Math.max(lastBar.c, newPrice) + Math.random() * lastBar.c * 0.0004,
+                    l: Math.min(lastBar.c, newPrice) - Math.random() * lastBar.c * 0.0004,
+                    c: newPrice,
+                    v: Math.max(10, Math.round(150 + (Math.random()-0.5)*60)),
+                  };
+                  const newBars = [...prev.bars.slice(-249), newBar];
+                  const r = detectRegime(newBars);
+                  setCurrentRegime(r.regime);
+                  setLivePrice(newPrice);
+                  return { ...prev, bars: newBars };
+                });
+              }, 1200);
+              setLiveIntervalState(iv);
+              setIsLive(true);
+            }
+          }, [isLive, liveInterval]);
+
+          useEffect(() => () => { if (liveInterval) clearInterval(liveInterval); }, [liveInterval]);
+
+          if (!sim) return (
+            <div style={{ display:"flex",alignItems:"center",justifyContent:"center",height:"100vh",background:"#070d14",color:"#00e5a0",fontFamily:"monospace" }}>
+              Initializing simulation...
+            </div>
+          );
+
+          const { trades, balance, winrate, pf, expectancy, balanceHistory, bars } = sim;
+          const wins = trades.filter(t => t.win).length;
+          const losses = trades.length - wins;
+          const totalR = trades.reduce((a, t) => a + t.pnlR, 0);
+          const regimeDist = trades.reduce((acc, t) => { acc[t.regime] = (acc[t.regime]||0)+1; return acc; }, {});
+
+          const statCard = (label, value, color = "#c9d6e6", sub = null) => (
+            <div style={{
+              background: "#0d1a27",
+              border: "1px solid #1a2d42",
+              borderRadius: "8px",
+              padding: "14px 16px",
+              minWidth: "130px",
+              flex: "1",
+            }}>
+              <div style={{ color: "#4a6070", fontSize: "10px", fontFamily: "'JetBrains Mono',monospace", letterSpacing: "0.08em", textTransform:"uppercase", marginBottom: "6px" }}>{label}</div>
+              <div style={{ color, fontSize: "22px", fontWeight: 800, fontFamily: "'JetBrains Mono',monospace", lineHeight: 1 }}>{value}</div>
+              {sub && <div style={{ color: "#4a6070", fontSize: "10px", marginTop: "4px" }}>{sub}</div>}
+            </div>
+          );
+
+          return (
+            <div style={{
+              minHeight: "100vh",
+              background: "#070d14",
+              color: "#c9d6e6",
+              fontFamily: "'Inter', 'Segoe UI', sans-serif",
+              padding: "20px",
+              boxSizing: "border-box",
+            }}>
+              {/* Header */}
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "20px" }}>
+                <div>
+                  <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+                    <div style={{
+                      width: "36px", height: "36px", borderRadius: "8px",
+                      background: "linear-gradient(135deg,#00e5a0,#0099cc)",
+                      display: "flex", alignItems: "center", justifyContent: "center",
+                      fontSize: "18px",
+                    }}>⚡</div>
+                    <div>
+                      <div style={{ fontSize: "18px", fontWeight: 800, letterSpacing: "-0.02em", color: "#e8f0fe" }}>
+                        DerivAdaptiveBot
+                      </div>
+                      <div style={{ fontSize: "11px", color: "#4a6070", fontFamily: "monospace" }}>
+                        V10/V25 · M1 · Adaptive Engine v1.0
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                <div style={{ display: "flex", gap: "10px", alignItems: "center" }}>
+                  {["V10","V25"].map(s => (
+                    <button key={s} onClick={() => setActiveSymbol(s)} style={{
+                      padding: "6px 16px",
+                      borderRadius: "6px",
+                      border: activeSymbol===s ? "1px solid #00e5a0" : "1px solid #1a2d42",
+                      background: activeSymbol===s ? "#00e5a020" : "transparent",
+                      color: activeSymbol===s ? "#00e5a0" : "#4a6070",
+                      cursor: "pointer",
+                      fontFamily: "monospace",
+                      fontSize: "13px",
+                      fontWeight: 700,
+                    }}>{s}</button>
+                  ))}
+                  <button onClick={toggleLive} style={{
+                    padding: "6px 16px",
+                    borderRadius: "6px",
+                    border: `1px solid ${isLive ? "#f5c518" : "#1a2d42"}`,
+                    background: isLive ? "#f5c51818" : "transparent",
+                    color: isLive ? "#f5c518" : "#4a6070",
+                    cursor: "pointer",
+                    fontFamily: "monospace",
+                    fontSize: "12px",
+                  }}>
+                    {isLive ? "⏸ PAUSE" : "▶ LIVE SIM"}
+                  </button>
+                </div>
+              </div>
+
+              {/* Live Price Bar */}
+              <div style={{
+                background: "#0d1a27",
+                border: "1px solid #1a2d42",
+                borderRadius: "8px",
+                padding: "12px 16px",
+                marginBottom: "16px",
+                display: "flex",
+                alignItems: "center",
+                gap: "20px",
+                flexWrap: "wrap",
+              }}>
+                <div>
+                  <span style={{ color: "#4a6070", fontSize: "10px", fontFamily: "monospace", textTransform: "uppercase" }}>Price</span>
+                  <div style={{ fontSize: "24px", fontWeight: 800, color: "#e8f0fe", fontFamily: "monospace" }}>
+                    {livePrice?.toFixed(3) || "—"}
+                  </div>
+                </div>
+                <div style={{ width: "1px", height: "40px", background: "#1a2d42" }} />
+                <div>
+                  <span style={{ color: "#4a6070", fontSize: "10px", fontFamily: "monospace", textTransform: "uppercase" }}>Regime</span>
+                  <div style={{ marginTop: "4px" }}>
+                    <RegimeBadge regime={currentRegime} />
+                  </div>
+                </div>
+                <div style={{ width: "1px", height: "40px", background: "#1a2d42" }} />
+                <div>
+                  <span style={{ color: "#4a6070", fontSize: "10px", fontFamily: "monospace", textTransform: "uppercase" }}>Balance</span>
+                  <div style={{ fontSize: "20px", fontWeight: 700, color: balance >= 1000 ? "#00e5a0" : "#ff4d6d", fontFamily: "monospace" }}>
+                    ${balance.toFixed(2)}
+                  </div>
+                </div>
+                <div style={{ marginLeft: "auto", fontSize: "11px", color: isLive ? "#f5c518" : "#2a3a4a", fontFamily: "monospace" }}>
+                  {isLive ? "● LIVE" : "○ PAUSED"}
+                </div>
+              </div>
+
+              {/* Chart */}
+              <div style={{ background: "#0d1a27", border: "1px solid #1a2d42", borderRadius: "8px", padding: "12px", marginBottom: "16px" }}>
+                <div style={{ fontSize: "11px", color: "#4a6070", fontFamily: "monospace", marginBottom: "8px", textTransform: "uppercase" }}>
+                  {activeSymbol} · M1 · Last 80 Bars
+                </div>
+                <div style={{ overflowX: "auto" }}>
+                  <CandleChart bars={bars} trades={trades} width={Math.min(window.innerWidth - 80, 900)} height={160} />
+                </div>
+              </div>
+
+              {/* Stats Row */}
+              <div style={{ display: "flex", gap: "10px", marginBottom: "16px", flexWrap: "wrap" }}>
+                {statCard("Winrate", `${(winrate*100).toFixed(1)}%`, winrate >= 0.5 ? "#00e5a0" : "#ff4d6d", `${wins}W / ${losses}L`)}
+                {statCard("Profit Factor", pf.toFixed(2), pf >= 1.5 ? "#00e5a0" : pf >= 1.0 ? "#f5c518" : "#ff4d6d")}
+                {statCard("Expectancy", `${expectancy >= 0 ? "+" : ""}${expectancy.toFixed(3)}R`, expectancy >= 0 ? "#00e5a0" : "#ff4d6d")}
+                {statCard("Total R", `${totalR >= 0 ? "+" : ""}${totalR.toFixed(2)}R`, totalR >= 0 ? "#00e5a0" : "#ff4d6d", `${trades.length} trades`)}
+                {statCard("P&L", `${((balance-1000)/1000*100).toFixed(2)}%`, balance >= 1000 ? "#00e5a0" : "#ff4d6d", `$${(balance-1000).toFixed(2)}`)}
+              </div>
+
+              {/* Bottom Grid */}
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px", marginBottom: "16px" }}>
+                {/* Equity Curve */}
+                <div style={{ background: "#0d1a27", border: "1px solid #1a2d42", borderRadius: "8px", padding: "14px" }}>
+                  <div style={{ fontSize: "11px", color: "#4a6070", fontFamily: "monospace", textTransform: "uppercase", marginBottom: "10px" }}>
+                    Equity Curve
+                  </div>
+                  <EquityCurve data={balanceHistory} width={340} height={100} />
+                  <div style={{ display: "flex", justifyContent: "space-between", marginTop: "8px" }}>
+                    <span style={{ fontSize: "10px", color: "#4a6070", fontFamily: "monospace" }}>$1000.00 start</span>
+                    <span style={{ fontSize: "10px", color: balance >= 1000 ? "#00e5a0" : "#ff4d6d", fontFamily: "monospace" }}>${balance.toFixed(2)} now</span>
+                  </div>
+                </div>
+
+                {/* Regime Distribution */}
+                <div style={{ background: "#0d1a27", border: "1px solid #1a2d42", borderRadius: "8px", padding: "14px" }}>
+                  <div style={{ fontSize: "11px", color: "#4a6070", fontFamily: "monospace", textTransform: "uppercase", marginBottom: "10px" }}>
+                    Trades by Regime
+                  </div>
+                  {Object.entries(regimeDist).map(([r, count]) => {
+                    const regTrades = trades.filter(t => t.regime === r);
+                    const regWR = regTrades.filter(t => t.win).length / regTrades.length;
+                    const col = REGIME_COLORS[r] || "#607080";
+                    const pct = (count / trades.length) * 100;
+                    return (
+                      <div key={r} style={{ marginBottom: "8px" }}>
+                        <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "2px" }}>
+                          <span style={{ fontSize: "10px", color: col, fontFamily: "monospace" }}>{r.replace(/_/g," ")}</span>
+                          <span style={{ fontSize: "10px", color: "#4a6070", fontFamily: "monospace" }}>
+                            {count} · WR {(regWR*100).toFixed(0)}%
+                          </span>
+                        </div>
+                        <div style={{ height: "4px", background: "#1a2d42", borderRadius: "2px" }}>
+                          <div style={{ height: "100%", width: `${pct}%`, background: col, borderRadius: "2px", opacity: 0.7 }} />
+                        </div>
+                      </div>
+                    );
+                  })}
+                  {trades.length === 0 && <div style={{ color: "#4a6070", fontSize: "12px" }}>No trades yet</div>}
+                </div>
+              </div>
+
+              {/* Trade Log */}
+              <div style={{ background: "#0d1a27", border: "1px solid #1a2d42", borderRadius: "8px", padding: "14px" }}>
+                <div style={{ fontSize: "11px", color: "#4a6070", fontFamily: "monospace", textTransform: "uppercase", marginBottom: "12px" }}>
+                  Trade Log · Last {Math.min(trades.length, 20)} trades
+                </div>
+                <div style={{ overflowX: "auto" }}>
+                  <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "12px" }}>
+                    <thead>
+                      <tr style={{ borderBottom: "1px solid #1a2d42" }}>
+                        {["#","Dir","Setup","Regime","Entry","P&L","Exit"].map(h => (
+                          <th key={h} style={{ padding: "5px 8px", textAlign: "left", color: "#4a6070", fontSize: "10px", fontFamily: "monospace", fontWeight: 600, textTransform: "uppercase" }}>{h}</th>
+                        ))}
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {trades.slice(-20).reverse().map((t, i) => (
+                        <TradeRow key={i} trade={t} idx={trades.length - 1 - i} />
+                      ))}
+                    </tbody>
+                  </table>
+                  {trades.length === 0 && (
+                    <div style={{ textAlign: "center", padding: "24px", color: "#4a6070", fontSize: "12px" }}>
+                      No trades in simulation. Waiting for regime + signal confluence...
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Footer */}
+              <div style={{ marginTop: "20px", padding: "12px", border: "1px solid #1a2d42", borderRadius: "8px", background: "#0d1a27" }}>
+                <div style={{ fontSize: "10px", color: "#2a3a4a", fontFamily: "monospace", textAlign: "center", lineHeight: 1.8 }}>
+                  ⚠ DEMO SIMULATION ONLY — NOT CONNECTED TO LIVE DERIV ACCOUNT
+                  <br />
+                  This bot requires connection to Deriv WebSocket API for live operation.
+                  <br />
+                  Always backtest thoroughly before deploying real capital. Past performance ≠ future results.
+                </div>
+              </div>
+            </div>
+          );
+        }
+
+        // Renderizar el dashboard
+        ReactDOM.createRoot(document.getElementById('root')).render(<Dashboard />);
+    </script>
+
+    <!-- Script para cambiar pestañas de código Python -->
+    <script>
+        function switchTab(tabId) {
+            // Ocultar todas las secciones
+            document.querySelectorAll('.code-section').forEach(el => el.classList.remove('active'));
+            // Desactivar todos los botones
+            document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+            // Mostrar la seleccionada
+            document.getElementById('code-' + tabId).classList.add('active');
+            // Activar el botón correspondiente
+            event.target.classList.add('active');
+        }
+    </script>
 </body>
 </html>
