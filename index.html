@@ -1,783 +1,954 @@
-<!DOCTYPE html>
-<html lang="es">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>DerivAdaptiveBot — V10/V25 M1 (Binary Trend Hybrid)</title>
-    <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
-    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
-    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-    <style>
-        :root {
-            --bg: #0a0c14;
-            --surface: #111622;
-            --border: #1e2940;
-            --text: #d0d8e8;
-            --muted: #5a6880;
-            --accent: #00d4aa;
-            --buy: #00e5a0;
-            --sell: #ff4d6d;
-            --warning: #f0b90b;
-            --badge-bg: rgba(0,229,160,0.12);
-            --font: 'Inter', 'Segoe UI', system-ui, sans-serif;
-            --mono: 'JetBrains Mono', 'Cascadia Code', monospace;
-        }
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        body {
-            background: var(--bg);
-            color: var(--text);
-            font-family: var(--font);
-            display: flex;
-            flex-direction: column;
-            min-height: 100vh;
-            padding: 20px;
-        }
-        header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 12px 20px;
-            background: var(--surface);
-            border: 1px solid var(--border);
-            border-radius: 12px;
-            margin-bottom: 20px;
-        }
-        h1 {
-            font-size: 1.5rem;
-            font-weight: 700;
-            background: linear-gradient(135deg, #00d4aa, #00b4d8);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-        }
-        .controls {
-            display: flex;
-            gap: 12px;
-            align-items: center;
-            flex-wrap: wrap;
-        }
-        button {
-            background: #1c2840;
-            border: 1px solid var(--border);
-            color: var(--text);
-            padding: 8px 16px;
-            border-radius: 6px;
-            cursor: pointer;
-            font-weight: 600;
-            font-size: 0.85rem;
-            transition: all 0.2s;
-        }
-        button:hover:not(:disabled) { background: #253550; }
-        button:disabled { opacity: 0.4; cursor: default; }
-        button.primary { background: var(--accent); color: #000; border: none; font-weight: 700; }
-        button.danger { background: var(--sell); color: #fff; border: none; }
-        input, select {
-            background: #0f1322;
-            border: 1px solid var(--border);
-            color: var(--text);
-            padding: 8px 12px;
-            border-radius: 6px;
-            font-family: var(--mono);
-            font-size: 0.85rem;
-            outline: none;
-        }
-        input:focus, select:focus { border-color: var(--accent); }
-        .dashboard {
-            display: grid;
-            grid-template-columns: 280px 1fr 320px;
-            gap: 16px;
-            flex: 1;
-        }
-        .panel {
-            background: var(--surface);
-            border: 1px solid var(--border);
-            border-radius: 12px;
-            padding: 16px;
-        }
-        .status-row {
-            display: flex;
-            justify-content: space-between;
-            padding: 6px 0;
-            font-size: 0.9rem;
-            border-bottom: 1px solid rgba(255,255,255,0.05);
-        }
-        .label { color: var(--muted); }
-        .value { font-weight: 600; font-family: var(--mono); }
-        .badge {
-            display: inline-block;
-            padding: 3px 10px;
-            border-radius: 4px;
-            font-size: 0.75rem;
-            font-weight: 700;
-            text-transform: uppercase;
-        }
-        .badge-buy { background: rgba(0,229,160,0.2); color: var(--buy); }
-        .badge-sell { background: rgba(255,77,109,0.2); color: var(--sell); }
-        .trade-list {
-            max-height: 450px;
-            overflow-y: auto;
-            font-size: 0.8rem;
-        }
-        .trade-item {
-            padding: 8px;
-            border-bottom: 1px solid rgba(255,255,255,0.05);
-            display: flex;
-            justify-content: space-between;
-        }
-        .win { color: var(--buy); }
-        .loss { color: var(--sell); }
-        .chart-container {
-            display: flex;
-            flex-direction: column;
-            gap: 8px;
-        }
-        .regime-indicator {
-            font-size: 1.1rem;
-            font-weight: 700;
-            padding: 6px 12px;
-            border-radius: 6px;
-            display: inline-block;
-        }
-        .log-area {
-            background: #050812;
-            border: 1px solid var(--border);
-            border-radius: 8px;
-            padding: 10px;
-            font-family: var(--mono);
-            font-size: 0.7rem;
-            max-height: 200px;
-            overflow-y: auto;
-            color: #8b9bb4;
-        }
-    </style>
-</head>
-<body>
-<div id="root"></div>
+#!/usr/bin/env python3
+"""
+DerivAdaptiveBot — Single-File Multi-Asset Trading System (Sniper Mode)
+Symbols: R_10, R_25, R_50, R_75, R_100
+WebSocket: wss://ws.deriv.com/websockets/v3
+Version: 2.2.0 — Ultra-low-exposure, high-selectivity, anti-fragile
+"""
 
-<script type="text/babel">
-const { useState, useEffect, useCallback, useRef } = React;
+import os, sys, json, time, uuid, logging, threading, math
+from typing import Dict, List, Optional, Tuple, Any
+from enum import Enum
+from collections import deque
+from dataclasses import dataclass, field
+import numpy as np
+import websocket
 
-// ======================== CONFIGURACIÓN ========================
-const DEFAULT_CONFIG = {
-    appId: 1089,
-    symbol: "R_10",
-    riskPercent: 0.2,                // 0.2% por trade
-    maxDailyTrades: 30,             // máximo 30 trades diarios
-    maxDailyLoss: 0.05,             // 5% pérdida diaria
-    explorationRate: 0.1,
-    decayFactor: 0.99,
-    persistenceBars: 3,             // confirmación 3 velas
-    heartbeatInterval: 30,
-    minConfidence: 0.7,             // confianza mínima para operar
-    cooldownBars: 3,
-    maxLatencyMs: 300,              // latencia máxima permitida
-    maxPriceChangePct: 0.05,        // 0.05% cambio máximo antes de ejecutar
-};
+# ─── Global Configuration (Ultra-conservative) ──────────────────────────
+DEFAULT_CONFIG = {
+    "symbols": ["R_10", "R_25", "R_50", "R_75", "R_100"],
+    "timeframe": "M1",
+    "atr_period": 14,
+    "atr_slow_period": 50,
+    "ema_fast": 8,
+    "ema_medium": 21,
+    "ema_slow": 55,
+    "momentum_period": 5,
+    "roc_threshold": 0.018,
+    "micro_range_period": 8,
+    "sl_atr_mult": 1.5,
+    "tp_atr_mult": 2.5,
+    "min_rr": 1.5,
+    "false_breakout_lookback": 5,
+    "fb_rejection_threshold": 0.4,
+    "rolling_window": 30,
+    "partial_reset_bars": 500,
+    "base_risk_pct": 0.2,
+    "max_risk_pct": 0.5,
+    "min_risk_pct": 0.1,
+    "defensive_dd_pct": 5.0,
+    "pause_dd_pct": 10.0,
+    "winrate_aggressive": 0.62,
+    "winrate_defensive": 0.42,
+    "trailing_activation_r": 1.0,
+    "trailing_atr_mult": 1.0,
+    "momentum_exit_period": 3,
+    "daily_stop_loss_pct": 3.0,
+    "initial_balance": 1000.0,
+    "min_bars_required": 80,
+    "log_level": "INFO",
+    "log_file": "deriv_bot.log",
+    "state_file": "bot_state.json",
+    "api_token": os.environ.get("DERIV_API_TOKEN", ""),
 
-// ======================== UTILIDADES ========================
-const calcEMA = (arr, period) => {
-    const ema = new Array(arr.length).fill(0);
-    if (arr.length < period) return ema;
-    const k = 2 / (period + 1);
-    ema[period - 1] = arr.slice(0, period).reduce((a, b) => a + b, 0) / period;
-    for (let i = period; i < arr.length; i++) {
-        ema[i] = arr[i] * k + ema[i - 1] * (1 - k);
-    }
-    return ema;
-};
-
-const calcATR = (bars, period = 14) => {
-    const tr = [];
-    for (let i = 1; i < bars.length; i++) {
-        const h = bars[i].h, l = bars[i].l, pc = bars[i-1].c;
-        tr.push(Math.max(h - l, Math.abs(h - pc), Math.abs(l - pc)));
-    }
-    if (tr.length < period) return new Array(bars.length).fill(0);
-    const atr = new Array(bars.length).fill(0);
-    atr[period] = tr.slice(0, period).reduce((a,b) => a + b, 0) / period;
-    for (let i = period + 1; i < bars.length; i++) {
-        atr[i] = (atr[i-1] * (period - 1) + tr[i-1]) / period;
-    }
-    return atr;
-};
-
-// ======================== VELAS & AGREGADOR ========================
-class Candle {
-    constructor(open, startTime) {
-        this.o = open; this.h = open; this.l = open; this.c = open;
-        this.ticks = 0; this.start = startTime;
-    }
-    update(price) {
-        this.h = Math.max(this.h, price);
-        this.l = Math.min(this.l, price);
-        this.c = price;
-        this.ticks++;
-    }
+    # ── Nuevos filtros ultra estrictos ──
+    "market_efficiency_threshold": 0.7,          # era 0.6
+    "setup_score_threshold": 0.75,               # era 0.7
+    "max_market_exposure_pct": 0.08,             # era 0.15 → 8%
+    "cooldown_after_close_bars": 8,              # 8 velas mínimo entre trades
+    "post_win_cooldown_bars": 5,                 # cooldown extra tras ganar
+    "liquidity_sweep_lookback": 6,
+    "rejection_strength_min": 0.7,               # era 0.6 → 0.7
+    "atr_grey_zone_low": 0.4,
+    "atr_grey_zone_high": 0.6,
+    "sniper_mode_max_trades": 3,
+    "sniper_setup_threshold": 0.8,
+    "ultra_early_exit_bars": 3,
+    "ultra_early_exit_r_threshold": 0.3,
 }
 
-class TickAggregator {
-    constructor(timeframeSec = 60) {
-        this.timeframeMs = timeframeSec * 1000;
-        this.current = null;
-        this.candles = [];
-        this.onCandleComplete = null;
-    }
-    addTick(timestampMs, price) {
-        const start = Math.floor(timestampMs / this.timeframeMs) * this.timeframeMs;
-        if (this.current && this.current.start === start) {
-            this.current.update(price);
-            return null;
-        } else {
-            const completed = this.current;
-            if (completed) {
-                this.candles.push(completed);
-                if (this.candles.length > 500) this.candles.shift();
-                if (this.onCandleComplete) this.onCandleComplete(completed);
+ASSET_SPECIFIC_CONFIG = {
+    "R_10": {"sl_atr_mult": 1.5, "tp_atr_mult": 2.5, "roc_threshold": 0.018, "strong_trend_adx": 28},
+    "R_25": {"sl_atr_mult": 1.8, "tp_atr_mult": 3.0, "roc_threshold": 0.025, "strong_trend_adx": 25},
+    "R_50": {"sl_atr_mult": 2.0, "tp_atr_mult": 3.5, "roc_threshold": 0.03, "strong_trend_adx": 22},
+    "R_75": {"sl_atr_mult": 2.2, "tp_atr_mult": 4.0, "roc_threshold": 0.035, "strong_trend_adx": 20},
+    "R_100": {"sl_atr_mult": 2.5, "tp_atr_mult": 4.5, "roc_threshold": 0.04, "strong_trend_adx": 18},
+}
+
+# ─── Logging Setup ─────────────────────────────────────────────────────
+def setup_logging(log_level: str = "INFO", log_file: Optional[str] = None):
+    handlers = [logging.StreamHandler(sys.stdout)]
+    if log_file:
+        handlers.append(logging.FileHandler(log_file))
+    logging.basicConfig(
+        level=getattr(logging, log_level.upper(), logging.INFO),
+        format="%(asctime)s | %(name)-20s | %(levelname)-8s | %(message)s",
+        datefmt="%Y-%m-%d %H:%M:%S",
+        handlers=handlers,
+    )
+    logging.getLogger("websocket").setLevel(logging.WARNING)
+
+logger = logging.getLogger("DerivAdaptiveBot")
+
+# ─── Enums & Dataclasses ────────────────────────────────────────────────
+class Regime(Enum):
+    STRONG_TREND_UP = "STRONG_TREND_UP"
+    STRONG_TREND_DOWN = "STRONG_TREND_DOWN"
+    WEAK_TREND_UP = "WEAK_TREND_UP"
+    WEAK_TREND_DOWN = "WEAK_TREND_DOWN"
+    COMPRESSION = "COMPRESSION"
+    HIGH_VOL_EXPANSION = "HIGH_VOL_EXPANSION"
+    RANGE = "RANGE"
+    NOISE = "NOISE"
+
+class SignalType(Enum):
+    LONG = "LONG"
+    SHORT = "SHORT"
+    NO_SIGNAL = "NO_SIGNAL"
+
+class TrendDuration(Enum):
+    MICRO = 60
+    MEDIUM = 300
+    NONE = 0
+
+class ExitReason(Enum):
+    TAKE_PROFIT = "TP"
+    STOP_LOSS = "SL"
+    TRAILING_STOP = "TRAILING"
+    MOMENTUM_LOSS = "MOMENTUM_LOSS"
+    REVERSAL = "REVERSAL"
+    TIMEOUT = "TIMEOUT"
+    EFFICIENCY_LOSS = "EFFICIENCY_LOSS"
+    ABSORPTION = "ABSORPTION"
+    ULTRA_EARLY = "ULTRA_EARLY"            # Salida si no alcanza +0.3R en 2-3 velas
+
+@dataclass
+class Bar:
+    timestamp: float
+    open: float
+    high: float
+    low: float
+    close: float
+    tick_volume: float = 0.0
+
+@dataclass
+class Tick:
+    timestamp: float
+    price: float
+
+@dataclass
+class RegimeState:
+    regime: Regime
+    confidence: float
+    atr_normalized: float
+    atr_percentile: float
+    trend_strength: float
+    structure: str
+    compression_score: float
+
+@dataclass
+class SignalResult:
+    signal: SignalType
+    confidence: float
+    entry_price: float
+    stop_loss: float
+    take_profit: float
+    confluence_score: float
+    momentum_score: float
+    breakout_quality: float
+    is_false_breakout_risk: bool
+    reasoning: List[str] = field(default_factory=list)
+    swept_liquidity: bool = False
+    rejection_strength: float = 0.0
+
+@dataclass
+class Position:
+    trade_id: str
+    direction: str
+    entry_price: float
+    stop_loss: float
+    take_profit: float
+    size: float
+    entry_bar: int
+    atr_at_entry: float
+    trailing_active: bool = False
+    trailing_stop: float = 0.0
+    highest_favorable: float = 0.0
+    current_r: float = 0.0
+    duration: int = 60
+    efficiency_at_entry: float = 0.0
+
+@dataclass
+class TradeRecord:
+    trade_id: str
+    symbol: str
+    signal_type: str
+    regime: str
+    entry_price: float
+    exit_price: float
+    stop_loss: float
+    take_profit: float
+    pnl_r: float
+    duration_bars: int
+    was_winner: bool
+    exit_reason: str
+    duration_seconds: int
+    confidence: float
+    timestamp: float = field(default_factory=time.time)
+    efficiency_at_entry: float = 0.0
+
+@dataclass
+class AdaptiveParams:
+    risk_per_trade_pct: float = 0.2
+    min_confluence: float = 0.75
+    min_confidence: float = 0.75
+    sl_atr_mult: float = 1.5
+    tp_atr_mult: float = 2.5
+    mode: str = "NORMAL"          # NORMAL, DEFENSIVE, AGGRESSIVE, SNIPER, PAUSED
+    cooldown_after_loss: int = 2
+    max_trades_per_session: int = 15
+
+# ─── TickAggregator ────────────────────────────────────────────────────
+class TickAggregator:
+    def __init__(self, symbol: str):
+        self.symbol = symbol
+        self.bars: List[Bar] = []
+        self.current_bar: Optional[Bar] = None
+        self.lock = threading.Lock()
+
+    def add_tick(self, tick: Tick):
+        with self.lock:
+            minute = tick.timestamp // 60 * 60
+            if self.current_bar is None or self.current_bar.timestamp != minute:
+                if self.current_bar is not None:
+                    self.bars.append(self.current_bar)
+                self.current_bar = Bar(
+                    timestamp=minute, open=tick.price, high=tick.price,
+                    low=tick.price, close=tick.price, tick_volume=1.0)
+            else:
+                self.current_bar.high = max(self.current_bar.high, tick.price)
+                self.current_bar.low = min(self.current_bar.low, tick.price)
+                self.current_bar.close = tick.price
+                self.current_bar.tick_volume += 1.0
+            if len(self.bars) > 300:
+                self.bars = self.bars[-250:]
+
+    def get_bars(self) -> List[Bar]:
+        with self.lock:
+            if self.current_bar:
+                return self.bars + [self.current_bar]
+            return self.bars.copy()
+
+# ─── MarketRegimeDetector ──────────────────────────────────────────────
+class MarketRegimeDetector:
+    def __init__(self, config: dict, symbol_config: dict):
+        self.cfg = config
+        self.sc = symbol_config
+        self.atr_period = config.get("atr_period", 14)
+        self.atr_slow_period = config.get("atr_slow_period", 50)
+        self.ema_fast = config.get("ema_fast", 8)
+        self.ema_medium = config.get("ema_medium", 21)
+        self.ema_slow = config.get("ema_slow", 55)
+        self.strong_trend_adx = self.sc.get("strong_trend_adx", 28)
+        self.weak_trend_adx = 16
+        self.compression_threshold = 0.3
+        self.high_vol_threshold = 0.7
+
+    def detect(self, bars: List[Bar]) -> RegimeState:
+        if len(bars) < 60:
+            return RegimeState(regime=Regime.NOISE, confidence=0.0, atr_normalized=0.0, atr_percentile=0.5, trend_strength=0.0, structure="MIXED", compression_score=0.5)
+        closes = np.array([b.close for b in bars])
+        highs = np.array([b.high for b in bars])
+        lows = np.array([b.low for b in bars])
+        return self._detect(closes, highs, lows)
+
+    def _detect(self, closes, highs, lows) -> RegimeState:
+        atr = self._calc_atr(highs, lows, closes, self.atr_period)
+        current_atr = atr[-1]
+        price = closes[-1]
+        atr_normalized = current_atr / (price + 1e-10)
+        atr_history = atr[-100:]
+        atr_percentile = np.mean(atr_history <= current_atr)
+
+        ema_f = self._calc_ema(closes, self.ema_fast)
+        ema_m = self._calc_ema(closes, self.ema_medium)
+        ema_s = self._calc_ema(closes, self.ema_slow)
+        ema_aligned_up = ema_f[-1] > ema_m[-1] > ema_s[-1]
+        ema_aligned_down = ema_f[-1] < ema_m[-1] < ema_s[-1]
+
+        structure = self._price_structure(highs, lows, closes)
+        adx, pdi, mdi = self._calc_adx(highs, lows, closes, 14)
+        trend_strength = adx[-1]
+        bull_strength = pdi[-1] > mdi[-1]
+        compression = self._calc_compression(highs, lows, current_atr)
+
+        regime = Regime.NOISE
+        confidence = 0.5
+
+        if atr_percentile > self.high_vol_threshold and trend_strength > 20:
+            if ema_aligned_up and structure == "HH_HL":
+                regime = Regime.STRONG_TREND_UP; confidence = 0.85
+            elif ema_aligned_down and structure == "LH_LL":
+                regime = Regime.STRONG_TREND_DOWN; confidence = 0.85
+            else:
+                regime = Regime.HIGH_VOL_EXPANSION; confidence = 0.65
+        elif trend_strength >= self.strong_trend_adx:
+            if bull_strength and (ema_aligned_up or structure == "HH_HL"):
+                regime = Regime.STRONG_TREND_UP; confidence = 0.80
+            elif not bull_strength and (ema_aligned_down or structure == "LH_LL"):
+                regime = Regime.STRONG_TREND_DOWN; confidence = 0.80
+            else:
+                regime = Regime.WEAK_TREND_UP if bull_strength else Regime.WEAK_TREND_DOWN; confidence = 0.65
+        elif trend_strength >= self.weak_trend_adx:
+            if bull_strength:
+                regime = Regime.WEAK_TREND_UP; confidence = 0.60
+            else:
+                regime = Regime.WEAK_TREND_DOWN; confidence = 0.60
+        elif compression >= self.compression_threshold:
+            regime = Regime.COMPRESSION; confidence = compression
+        else:
+            if atr_percentile < 0.3:
+                regime = Regime.RANGE; confidence = 0.70
+            else:
+                regime = Regime.NOISE; confidence = 0.50
+
+        return RegimeState(regime=regime, confidence=confidence, atr_normalized=atr_normalized, atr_percentile=atr_percentile, trend_strength=trend_strength, structure=structure, compression_score=compression)
+
+    def market_efficiency_score(self, bars: List[Bar]) -> float:
+        if len(bars) < 20:
+            return 0.5
+        closes = np.array([b.close for b in bars[-20:]])
+        net_change = abs(closes[-1] - closes[0])
+        total_path = np.sum(np.abs(np.diff(closes)))
+        if total_path == 0:
+            return 0.0
+        efficiency = net_change / total_path
+        compression = self._calc_compression(np.array([b.high for b in bars]), np.array([b.low for b in bars]), efficiency)
+        return min(1.0, efficiency * (1.0 - compression * 0.5))
+
+    def _calc_atr(self, h, l, c, period):
+        n = len(c); tr = np.zeros(n)
+        for i in range(1, n):
+            tr[i] = max(h[i]-l[i], abs(h[i]-c[i-1]), abs(l[i]-c[i-1]))
+        tr[0] = h[0]-l[0]
+        atr = np.zeros(n)
+        if n >= period:
+            atr[period-1] = np.mean(tr[:period])
+            for i in range(period, n):
+                atr[i] = (atr[i-1]*(period-1)+tr[i])/period
+        return atr
+
+    def _calc_ema(self, data, period):
+        ema = np.zeros(len(data))
+        if len(data) < period: return ema
+        k = 2/(period+1); ema[period-1] = np.mean(data[:period])
+        for i in range(period, len(data)):
+            ema[i] = data[i]*k + ema[i-1]*(1-k)
+        return ema
+
+    def _calc_adx(self, h, l, c, period=14):
+        n = len(c); plus_dm=np.zeros(n); minus_dm=np.zeros(n); tr=np.zeros(n)
+        for i in range(1, n):
+            up=h[i]-h[i-1]; down=l[i-1]-l[i]
+            plus_dm[i]=up if (up>down and up>0) else 0
+            minus_dm[i]=down if (down>up and down>0) else 0
+            tr[i]=max(h[i]-l[i], abs(h[i]-c[i-1]), abs(l[i]-c[i-1]))
+        tr[0]=h[0]-l[0]
+        def smooth(arr, p):
+            s=np.zeros(len(arr))
+            if len(arr)>p:
+                s[p]=np.sum(arr[1:p+1])
+                for i in range(p+1, len(arr)): s[i]=s[i-1]-(s[i-1]/p)+arr[i]
+            return s
+        atr_s=smooth(tr, period); pdm_s=smooth(plus_dm, period); mdm_s=smooth(minus_dm, period)
+        pdi=np.where(atr_s>0,100*pdm_s/atr_s,0); mdi=np.where(atr_s>0,100*mdm_s/atr_s,0)
+        dx=np.where((pdi+mdi)>0,100*np.abs(pdi-mdi)/(pdi+mdi),0); adx=np.zeros(n)
+        if n>period*2:
+            adx[period*2-1]=np.mean(dx[period:period*2])
+            for i in range(period*2, n): adx[i]=(adx[i-1]*(period-1)+dx[i])/period
+        return adx, pdi, mdi
+
+    def _price_structure(self, highs, lows, closes):
+        n=min(10, len(closes))
+        if n<4: return "MIXED"
+        recent_h=highs[-n:]; recent_l=lows[-n:]
+        pivots_h=[recent_h[i] for i in range(1,n-1) if recent_h[i]>recent_h[i-1] and recent_h[i]>recent_h[i+1]]
+        pivots_l=[recent_l[i] for i in range(1,n-1) if recent_l[i]<recent_l[i-1] and recent_l[i]<recent_l[i+1]]
+        if len(pivots_h)>=2 and len(pivots_l)>=2:
+            hh=pivots_h[-1]>pivots_h[-2]; hl=pivots_l[-1]>pivots_l[-2]
+            lh=pivots_h[-1]<pivots_h[-2]; ll=pivots_l[-1]<pivots_l[-2]
+            if hh and hl: return "HH_HL"
+            if lh and ll: return "LH_LL"
+        x=np.arange(n); slope=np.polyfit(x, closes[-n:],1)[0]; norm_slope=slope/closes[-1]*100
+        if norm_slope>0.05: return "HH_HL"
+        elif norm_slope<-0.05: return "LH_LL"
+        return "MIXED"
+
+    def _calc_compression(self, highs, lows, atr, period=20):
+        if len(highs)<period or atr<=0: return 0.5
+        recent_range=np.max(highs[-period:])-np.min(lows[-period:])
+        expected_range=atr*math.sqrt(period)*0.5
+        return max(0, min(1.0, 1 - recent_range/(expected_range+1e-10)))
+
+# ─── SignalEngine (Re-weighted confluence) ────────────────────────────
+class SignalEngine:
+    def __init__(self, config: dict, symbol: str):
+        self.cfg = config; self.symbol = symbol
+        self.min_confluence = 0.75          # override to hard minimum
+        self.momentum_period = config.get("momentum_period", 5)
+        self.roc_threshold = config.get("roc_threshold", 0.018)
+        self.micro_range_period = config.get("micro_range_period", 8)
+        self.liquidity_sweep_lookback = config.get("liquidity_sweep_lookback", 6)
+
+    def generate_signal(self, bars: List[Bar], regime_state: RegimeState,
+                        adaptive_params: AdaptiveParams, market_efficiency: float) -> SignalResult:
+        no_signal = SignalResult(signal=SignalType.NO_SIGNAL, confidence=0, entry_price=bars[-1].close, stop_loss=0, take_profit=0, confluence_score=0, momentum_score=0, breakout_quality=0, is_false_breakout_risk=False)
+        if len(bars) < 60 or regime_state.regime in [Regime.NOISE, Regime.RANGE]:
+            return no_signal
+        closes = np.array([b.close for b in bars])
+        highs = np.array([b.high for b in bars])
+        lows = np.array([b.low for b in bars])
+        opens = np.array([b.open for b in bars])
+        atr_arr = self._calc_atr(highs, lows, closes, 14)
+        atr = atr_arr[-1]; price = closes[-1]
+
+        direction = None
+        if regime_state.regime in [Regime.STRONG_TREND_UP, Regime.WEAK_TREND_UP]:
+            direction = "LONG"
+        elif regime_state.regime in [Regime.STRONG_TREND_DOWN, Regime.WEAK_TREND_DOWN]:
+            direction = "SHORT"
+        elif regime_state.regime == Regime.COMPRESSION:
+            range_high, range_low = self._micro_range(highs, lows)
+            if price > range_high * 1.001: direction = "LONG"
+            elif price < range_low * 0.999: direction = "SHORT"
+        if not direction: return no_signal
+
+        swept, rejection_strength = self._detect_liquidity_sweep(highs, lows, closes, direction, atr)
+        liquidity_score = (1.0 if swept else 0.0) * 0.6 + rejection_strength * 0.4  # 0-1
+
+        mom_score = self._score_momentum(closes, direction)
+        bo_quality = self._breakout_quality(opens, closes, highs, lows, direction)
+
+        struct_score = 1.0 if (direction == "LONG" and regime_state.structure == "HH_HL") or \
+                            (direction == "SHORT" and regime_state.structure == "LH_LL") else 0.5
+
+        # Nuevo cálculo de concurrencia con pesos estrictos
+        confluence = (liquidity_score * 0.40 +
+                      struct_score * 0.25 +
+                      mom_score * 0.20 +
+                      bo_quality * 0.15)
+        if confluence < 0.75 or mom_score < 0.5 or bo_quality < 0.6:
+            return no_signal
+
+        if not self._three_candle_confirmation(closes, direction):
+            return no_signal
+
+        sl_mult = adaptive_params.sl_atr_mult; tp_mult = adaptive_params.tp_atr_mult
+        sl = price - atr * sl_mult if direction == "LONG" else price + atr * sl_mult
+        tp = price + atr * tp_mult if direction == "LONG" else price - atr * tp_mult
+
+        return SignalResult(
+            signal=SignalType.LONG if direction == "LONG" else SignalType.SHORT,
+            confidence=confluence,  # ahora confluence en 0-1
+            entry_price=price, stop_loss=sl, take_profit=tp,
+            confluence_score=confluence, momentum_score=mom_score,
+            breakout_quality=bo_quality, is_false_breakout_risk=False,
+            reasoning=[f"{direction} entry, sweep={swept}, liq={liquidity_score:.2f}, eff={market_efficiency:.2f}"],
+            swept_liquidity=swept, rejection_strength=rejection_strength
+        )
+
+    def _detect_liquidity_sweep(self, highs, lows, closes, direction, atr) -> Tuple[bool, float]:
+        lookback = self.liquidity_sweep_lookback
+        if len(highs) < lookback + 1: return False, 0.0
+        recent_high = np.max(highs[-lookback:-1])
+        recent_low = np.min(lows[-lookback:-1])
+        current_high = highs[-1]; current_low = lows[-1]; current_close = closes[-1]
+        rejection_strength = 0.0; swept = False
+        if direction == "LONG":
+            if current_low < recent_low and current_close > recent_low + atr * 0.2:
+                swept = True
+                candle_range = highs[-1] - lows[-1]
+                if candle_range > 0:
+                    rejection_strength = (current_close - lows[-1]) / candle_range
+        else:
+            if current_high > recent_high and current_close < recent_high - atr * 0.2:
+                swept = True
+                candle_range = highs[-1] - lows[-1]
+                if candle_range > 0:
+                    rejection_strength = (highs[-1] - current_close) / candle_range
+        return swept, min(1.0, rejection_strength)
+
+    @staticmethod
+    def _calc_atr(h, l, c, period):
+        n = len(c); tr = np.zeros(n)
+        for i in range(1, n): tr[i] = max(h[i]-l[i], abs(h[i]-c[i-1]), abs(l[i]-c[i-1]))
+        tr[0] = h[0]-l[0]; atr = np.zeros(n)
+        if n >= period:
+            atr[period-1] = np.mean(tr[:period])
+            for i in range(period, n): atr[i] = (atr[i-1]*(period-1)+tr[i])/period
+        return atr
+
+    def _score_momentum(self, closes, direction):
+        if len(closes) <= self.momentum_period: return 0
+        roc = (closes[-1] - closes[-self.momentum_period]) / (closes[-self.momentum_period] + 1e-10) * 100
+        return min(1.0, max(0.0, roc/(self.roc_threshold*100))) if direction=="LONG" else min(1.0, max(0.0, -roc/(self.roc_threshold*100)))
+
+    def _micro_range(self, highs, lows):
+        return np.max(highs[-self.micro_range_period-1:-1]), np.min(lows[-self.micro_range_period-1:-1])
+
+    def _breakout_quality(self, opens, closes, highs, lows, direction):
+        body = abs(closes[-1]-opens[-1]); candle_range = highs[-1]-lows[-1]
+        if candle_range == 0: return 0.0
+        if direction=="LONG":
+            quality = (body/candle_range)*0.6 + ((closes[-1]-lows[-1])/candle_range)*0.4
+        else:
+            quality = (body/candle_range)*0.6 + ((highs[-1]-closes[-1])/candle_range)*0.4
+        return min(1.0, quality)
+
+    def _three_candle_confirmation(self, closes, direction):
+        if len(closes)<4: return False
+        last3 = closes[-3:]
+        return (last3[0]<=last3[1]<=last3[2]) if direction=="LONG" else (last3[0]>=last3[1]>=last3[2])
+
+# ─── ExitManager (Ultra-early exit) ───────────────────────────────────
+class ExitManager:
+    def __init__(self, config: dict):
+        self.trailing_activation_r = config.get("trailing_activation_r", 1.0)
+        self.trailing_atr_mult = config.get("trailing_atr_mult", 1.0)
+        self.max_trade_bars = config.get("max_trade_bars", {"MICRO": 5, "MEDIUM": 20})
+        self.breakeven_r = config.get("breakeven_r", 0.8)
+        self.ultra_early_bars = config.get("ultra_early_exit_bars", 3)
+        self.ultra_early_r_threshold = config.get("ultra_early_exit_r_threshold", 0.3)
+
+    def update_position(self, pos: Position, current_price: float, current_atr: float, bar_index: int):
+        risk = abs(pos.entry_price - pos.stop_loss)
+        if risk <= 0: return pos
+        if pos.direction == "LONG":
+            pos.current_r = (current_price - pos.entry_price) / risk
+            if current_price > pos.highest_favorable: pos.highest_favorable = current_price
+        else:
+            pos.current_r = (pos.entry_price - current_price) / risk
+            if current_price < pos.highest_favorable: pos.highest_favorable = current_price
+
+        if pos.current_r >= self.trailing_activation_r and not pos.trailing_active:
+            pos.trailing_active = True
+            trail_dist = current_atr * self.trailing_atr_mult
+            pos.trailing_stop = current_price - trail_dist if pos.direction == "LONG" else current_price + trail_dist
+        if pos.trailing_active:
+            trail_dist = current_atr * self.trailing_atr_mult
+            if pos.direction == "LONG":
+                new_trail = current_price - trail_dist
+                if new_trail > pos.trailing_stop: pos.trailing_stop = new_trail; pos.stop_loss = new_trail
+            else:
+                new_trail = current_price + trail_dist
+                if new_trail < pos.trailing_stop: pos.trailing_stop = new_trail; pos.stop_loss = new_trail
+
+        if pos.current_r >= self.breakeven_r and not pos.trailing_active:
+            be_offset = current_atr * 0.1
+            if pos.direction == "LONG":
+                be_sl = pos.entry_price + be_offset
+                if be_sl > pos.stop_loss: pos.stop_loss = be_sl
+            else:
+                be_sl = pos.entry_price - be_offset
+                if be_sl < pos.stop_loss: pos.stop_loss = be_sl
+        return pos
+
+    def check_exit(self, pos: Position, bar_index: int, bars: List[Bar],
+                   current_atr: float, market_efficiency: float) -> Optional[ExitReason]:
+        current = bars[-1].close
+        # SL / TP
+        if pos.direction == "LONG" and bars[-1].low <= pos.stop_loss: return ExitReason.STOP_LOSS
+        if pos.direction == "SHORT" and bars[-1].high >= pos.stop_loss: return ExitReason.STOP_LOSS
+        if pos.direction == "LONG" and bars[-1].high >= pos.take_profit: return ExitReason.TAKE_PROFIT
+        if pos.direction == "SHORT" and bars[-1].low <= pos.take_profit: return ExitReason.TAKE_PROFIT
+        if pos.trailing_active:
+            if pos.direction == "LONG" and bars[-1].low <= pos.trailing_stop: return ExitReason.TRAILING_STOP
+            if pos.direction == "SHORT" and bars[-1].high >= pos.trailing_stop: return ExitReason.TRAILING_STOP
+        # Ultra early exit
+        bars_open = bar_index - pos.entry_bar
+        if bars_open >= self.ultra_early_bars and pos.current_r < self.ultra_early_r_threshold:
+            return ExitReason.ULTRA_EARLY
+        # Efficiency loss
+        if bars_open > 3 and pos.current_r > 0.3 and market_efficiency < pos.efficiency_at_entry * 0.8:
+            return ExitReason.EFFICIENCY_LOSS
+        # Timeout
+        max_bars = self.max_trade_bars.get("MEDIUM", 20)  # MICRO ya no se usa
+        if bars_open >= max_bars:
+            return ExitReason.TIMEOUT
+        return None
+
+# ─── AdaptiveSystem (Sniper mode, post-win cooldown) ──────────────────
+class AdaptiveSystem:
+    def __init__(self, config: dict, symbol: str):
+        self.config = config; self.symbol = symbol
+        self.window_size = config.get("rolling_window", 30)
+        self.base_risk = config.get("base_risk_pct", 0.2)
+        self.max_risk = config.get("max_risk_pct", 0.5); self.min_risk = config.get("min_risk_pct", 0.1)
+        self.defensive_dd = config.get("defensive_dd_pct", 5.0); self.pause_dd = config.get("pause_dd_pct", 10.0)
+        self.winrate_aggressive = config.get("winrate_aggressive", 0.62)
+        self.winrate_defensive = config.get("winrate_defensive", 0.42)
+        self.params = AdaptiveParams()
+        self.trade_history: deque = deque(maxlen=self.window_size)
+        self.all_trades: List[TradeRecord] = []
+        self.setup_scores: Dict[str, List[float]] = {}
+        self.session_trades = 0; self.session_pnl_r = 0.0; self.cumulative_pnl_r = 0.0
+        self.peak_pnl_r = 0.0; self.bars_since_loss = 999; self.bar_count = 0
+        self.daily_pnl_pct = 0.0; self.initial_balance = config.get("initial_balance", 1000.0)
+        self.balance = self.initial_balance
+        self.bars_since_last_close = 999
+        self.bars_since_last_win = 999   # separado para post-win cooldown
+        self.market_exposure_time = 0
+        self.session_start_bar = 0
+
+    def record_trade(self, trade: TradeRecord):
+        self.trade_history.append(trade); self.all_trades.append(trade)
+        self.session_trades += 1; self.session_pnl_r += trade.pnl_r
+        self.cumulative_pnl_r += trade.pnl_r
+        if self.cumulative_pnl_r > self.peak_pnl_r: self.peak_pnl_r = self.cumulative_pnl_r
+        if not trade.was_winner:
+            self.bars_since_loss = 0
+        else:
+            self.bars_since_loss += 10
+            self.bars_since_last_win = 0   # reiniciar cooldown de victoria
+        self.bars_since_last_close = 0
+        self.market_exposure_time += trade.duration_bars
+        self.balance += trade.pnl_r * (self.balance * self.params.risk_per_trade_pct / 100)
+        self.daily_pnl_pct += (trade.pnl_r * self.params.risk_per_trade_pct / 100)
+        key = f"{trade.signal_type}_{trade.regime}"
+        if key not in self.setup_scores: self.setup_scores[key] = []
+        self.setup_scores[key].append(trade.pnl_r)
+        if len(self.setup_scores[key]) > 20: self.setup_scores[key].pop(0)
+        self._adapt()
+        logger.info(f"[{self.symbol}] Trade {trade.trade_id}: {'WIN' if trade.was_winner else 'LOSS'} {trade.pnl_r:+.2f}R | Mode: {self.params.mode} | WR: {self.winrate():.1%} | Max trades: {self.params.max_trades_per_session}")
+
+    def on_bar(self):
+        self.bar_count += 1; self.bars_since_loss += 1
+        self.bars_since_last_close += 1; self.bars_since_last_win += 1
+        if self.bar_count % 500 == 0:
+            self._partial_reset()
+
+    def winrate(self) -> float:
+        if not self.trade_history: return 0.5
+        return sum(1 for t in self.trade_history if t.was_winner) / len(self.trade_history)
+
+    def _adapt(self):
+        trades = list(self.trade_history); n = len(trades)
+        if n < 5: self.params.mode = "LEARNING"; return
+        winrate = sum(1 for t in trades if t.was_winner) / n
+        winners = [t.pnl_r for t in trades if t.was_winner]
+        losers = [t.pnl_r for t in trades if not t.was_winner]
+        gross_profit = sum(winners) if winners else 0; gross_loss = abs(sum(losers)) if losers else 1e-10
+        pf = gross_profit / gross_loss
+        current_dd_r = self.peak_pnl_r - self.cumulative_pnl_r
+        dd_pct = current_dd_r * self.params.risk_per_trade_pct
+        if dd_pct >= self.pause_dd: self.params.mode = "PAUSED"; return
+        if dd_pct >= self.defensive_dd: self.params.mode = "DEFENSIVE"; self.params.risk_per_trade_pct = self.min_risk; return
+
+        # Modo Sniper (prioridad máxima)
+        if winrate > 0.60 and pf > 1.8 and n >= 15:
+            self.params.mode = "SNIPER"
+            self.params.max_trades_per_session = self.config.get("sniper_mode_max_trades", 3)
+            self.params.min_confidence = 0.85
+        elif winrate >= self.winrate_aggressive and pf >= 1.8:
+            self.params.mode = "AGGRESSIVE"
+            self.params.risk_per_trade_pct = min(self.base_risk * 1.5, self.max_risk)
+            self.params.max_trades_per_session = 15
+        elif winrate <= self.winrate_defensive or pf < 0.9:
+            self.params.mode = "DEFENSIVE"
+            self.params.risk_per_trade_pct = max(self.base_risk * 0.5, self.min_risk)
+            self.params.max_trades_per_session = 10
+        else:
+            self.params.mode = "NORMAL"
+            self.params.risk_per_trade_pct = self.base_risk
+            self.params.max_trades_per_session = 10
+
+        # Ajuste de TP según expectancia
+        if n >= 10:
+            avg_win = np.mean(winners) if winners else 1.0; avg_loss = np.mean(losers) if losers else -1.0
+            if avg_win / abs(avg_loss) > 2.0: self.params.tp_atr_mult *= 1.02
+            else: self.params.tp_atr_mult *= 0.98
+            self.params.tp_atr_mult = max(1.5, min(5.0, self.params.tp_atr_mult))
+
+    def _partial_reset(self):
+        if len(self.trade_history) > self.window_size // 2:
+            recent = list(self.trade_history)[-self.window_size // 2:]
+            self.trade_history = deque(recent, maxlen=self.window_size)
+
+    def can_trade(self) -> Tuple[bool, str]:
+        if self.params.mode == "PAUSED": return False, "Drawdown limit"
+        if self.session_trades >= self.params.max_trades_per_session:
+            return False, f"Session limit ({self.params.max_trades_per_session})"
+
+        cooldown_close = self.config.get("cooldown_after_close_bars", 8)
+        if self.bars_since_last_close < cooldown_close:
+            return False, f"Post-trade cooldown ({cooldown_close - self.bars_since_last_close} bars left)"
+        post_win = self.config.get("post_win_cooldown_bars", 5)
+        if self.bars_since_last_win < post_win:
+            return False, f"Post-win cooldown ({post_win - self.bars_since_last_win} bars left)"
+        if self.bars_since_loss < self.params.cooldown_after_loss:
+            return False, f"Cooldown loss: {self.params.cooldown_after_loss - self.bars_since_loss} bars"
+
+        max_exposure = self.config.get("max_market_exposure_pct", 0.08)
+        if self.bar_count - self.session_start_bar > 60:
+            exposure_pct = self.market_exposure_time / (self.bar_count - self.session_start_bar)
+            if exposure_pct > max_exposure:
+                return False, f"Exposure limit ({exposure_pct:.1%} > {max_exposure:.1%})"
+        return True, "OK"
+
+    def get_setup_score(self, signal_type, regime):
+        key = f"{signal_type}_{regime}"
+        if key in self.setup_scores and len(self.setup_scores[key]) >= 3:
+            recent = self.setup_scores[key][-10:]
+            expectancy = np.mean(recent)
+            return min(0.95, max(0.1, 0.3 + expectancy * 0.3))
+        return 0.5
+
+# ─── RiskManager ────────────────────────────────────────────────────────
+class RiskManager:
+    def __init__(self, config: dict, symbol: str):
+        self.config = config; self.symbol = symbol
+        self.daily_profit_loss = 0.0
+        self.daily_stop_loss = config["daily_stop_loss_pct"] / 100.0
+        self.initial_balance = config["initial_balance"]; self.current_balance = self.initial_balance
+
+    def can_open_position(self, risk_pct: float) -> bool:
+        return self.current_balance > 0 and self.daily_profit_loss >= -self.daily_stop_loss * self.initial_balance
+
+    def update_balance(self, pnl_currency: float):
+        self.current_balance += pnl_currency; self.daily_profit_loss += pnl_currency
+
+# ─── TradeExecutor ─────────────────────────────────────────────────────
+class TradeExecutor:
+    def __init__(self, ws: websocket.WebSocket, symbol: str, token: Optional[str] = None):
+        self.ws = ws; self.symbol = symbol; self.token = token; self.msg_id = 0
+
+    def _send(self, request: dict) -> Optional[dict]:
+        self.msg_id += 1; request["req_id"] = self.msg_id
+        self.ws.send(json.dumps(request))
+        for _ in range(50):
+            try:
+                msg = json.loads(self.ws.recv())
+                if msg.get("req_id") == self.msg_id: return msg
+            except: break
+        return None
+
+    def buy(self, direction: str, duration: int, stake: float) -> Optional[dict]:
+        if self.token:
+            self.ws.send(json.dumps({"authorize": self.token})); self.ws.recv()
+        contract_type = "CALL" if direction == "LONG" else "PUT"
+        proposal = self._send({"proposal": 1, "amount": stake, "basis": "stake",
+                               "contract_type": contract_type, "currency": "USD",
+                               "duration": duration, "duration_unit": "s",
+                               "symbol": self.symbol})
+        if not proposal or "proposal" not in proposal: return None
+        return self._send({"buy": proposal["proposal"]["id"], "price": stake})
+
+# ─── Clasificación avanzada de tendencias (solo MICRO / NONE) ─────────
+def classify_trend_duration_advanced(bars: List[Bar], regime_state: RegimeState,
+                                     efficiency: float, atr_percentile: float) -> Tuple[TrendDuration, str]:
+    if regime_state.regime in [Regime.NOISE, Regime.RANGE] or efficiency < 0.65:
+        return TrendDuration.NONE, "low_quality"
+    if atr_percentile < 0.3 or (0.4 <= atr_percentile <= 0.6):
+        return TrendDuration.NONE, "grey_zone"
+    closes = np.array([b.close for b in bars[-10:]])
+    direction = 1 if "UP" in regime_state.regime.value else -1
+    consecutive = 0
+    for i in range(1, len(closes)):
+        diff = closes[i] - closes[i-1]
+        if (direction == 1 and diff > 0) or (direction == -1 and diff < 0):
+            consecutive += 1
+        else:
+            break
+    if consecutive >= 2 and efficiency > 0.65:
+        return TrendDuration.MICRO, "micro_trend"
+    return TrendDuration.NONE, "no_reliable_trend"
+
+# ─── DerivWebSocketClient ─────────────────────────────────────────────
+class DerivWebSocketClient:
+    def __init__(self, symbol: str, config: dict, bot_controller):
+        self.symbol = symbol; self.config = config; self.bot = bot_controller
+        self.ws: Optional[websocket.WebSocket] = None
+        self.aggregator = TickAggregator(symbol)
+        self.trade_executor: Optional[TradeExecutor] = None
+        self.connected = False; self.thread: Optional[threading.Thread] = None
+
+    def start(self):
+        self.thread = threading.Thread(target=self._run, daemon=True)
+        self.thread.start()
+
+    def _run(self):
+        self.ws = websocket.WebSocket()
+        while True:
+            try:
+                self.ws.connect("wss://ws.deriv.com/websockets/v3")
+                self.connected = True
+                logger.info(f"[{self.symbol}] WebSocket connected")
+                self.ws.send(json.dumps({"ticks": self.symbol, "subscribe": 1}))
+                self.trade_executor = TradeExecutor(self.ws, self.symbol, self.config.get("api_token"))
+                for msg in iter(self.ws.recv, None):
+                    try: data = json.loads(msg)
+                    except: continue
+                    if "tick" in data:
+                        tick = data["tick"]; price = tick["quote"]
+                        self.aggregator.add_tick(Tick(time.time(), price))
+                        self.bot.process_asset(self.symbol, self)
+                    elif "error" in data:
+                        logger.error(f"[{self.symbol}] Error: {data['error']}")
+            except Exception as e:
+                logger.error(f"[{self.symbol}] Connection error: {e}, reconnecting in 10s..."); self.connected = False; time.sleep(10)
+
+# ─── FILTRO MAESTRO GLOBAL ─────────────────────────────────────────────
+def should_allow_trade(market_efficiency: float, setup_score: float,
+                       regime_confidence: float, rejection_strength: float,
+                       config: dict) -> Tuple[bool, str]:
+    if market_efficiency < 0.7:
+        return False, f"Efficiency low ({market_efficiency:.2f})"
+    if setup_score < 0.75:
+        return False, f"Setup score low ({setup_score:.2f})"
+    if regime_confidence < 0.75:
+        return False, f"Regime confidence low ({regime_confidence:.2f})"
+    if rejection_strength < 0.7:
+        return False, f"Rejection strength low ({rejection_strength:.2f})"
+    return True, "OK"
+
+# ─── Main Bot Orchestrator ────────────────────────────────────────────
+class DerivAdaptiveBot:
+    def __init__(self, config: Optional[dict] = None):
+        self.config = dict(DEFAULT_CONFIG)
+        if config: self.config.update(config)
+        setup_logging(self.config["log_level"], self.config.get("log_file"))
+        self.symbols = self.config["symbols"]
+        self.asset_states: Dict[str, dict] = {}
+        self.clients: Dict[str, DerivWebSocketClient] = {}
+        self.lock = threading.Lock()
+        for sym in self.symbols:
+            asset_config = {**self.config, **(ASSET_SPECIFIC_CONFIG.get(sym, {}))}
+            self.asset_states[sym] = {
+                "aggregator": TickAggregator(sym),
+                "regime_detector": MarketRegimeDetector(asset_config, ASSET_SPECIFIC_CONFIG.get(sym, {})),
+                "signal_engine": SignalEngine(asset_config, sym),
+                "adaptive_system": AdaptiveSystem(asset_config, sym),
+                "risk_manager": RiskManager(asset_config, sym),
+                "exit_manager": ExitManager(asset_config),
+                "position": None, "bar_count": 0, "last_signal": None, "last_regime": None,
             }
-            this.current = new Candle(price, start);
-            return completed;
-        }
-    }
-    getCandles(count = 300) {
-        const all = [...this.candles];
-        if (this.current && this.current.ticks > 0) all.push(this.current);
-        return all.slice(-count);
-    }
-}
 
-// ======================== DERIV WEBSOCKET CLIENT (BINARY) ========================
-class DerivAPI {
-    constructor(appId, token, symbol) {
-        this.appId = appId; this.token = token; this.symbol = symbol;
-        this.ws = null; this.aggregator = new TickAggregator();
-        this.onTick = null; this.onBalance = null;
-        this.latestPrice = 0; this.balance = 0; this.currency = "USD";
-        this.running = false; this.reqId = 0;
-        this.subscriptionId = null; this.authDone = false;
-        this.pendingRequests = new Map();
-    }
-    async connect() {
-        this.running = true;
-        const url = `wss://ws.deriv.com/websockets/v3?app_id=${this.appId}`;
-        while (this.running) {
-            try {
-                this.ws = new WebSocket(url);
-                await new Promise((resolve, reject) => {
-                    this.ws.onopen = resolve;
-                    this.ws.onerror = (e) => reject(e);
-                });
-                console.log("Deriv WS conectado");
-                if (this.token) await this.authorize();
-                await this.subscribeTicks();
-                this.startHeartbeat();
-                this.ws.onmessage = (msg) => this.handleMessage(JSON.parse(msg.data));
-                this.ws.onclose = () => setTimeout(() => this.running && this.connect(), 5000);
-                await new Promise(() => {});
-            } catch(e) {
-                console.error("Error conexión Deriv:", e);
-                await new Promise(r => setTimeout(r, 5000));
-            }
-        }
-    }
-    async authorize() {
-        const resp = await this.send({ authorize: this.token });
-        if (resp.error) { console.error("Auth falló:", resp.error.message); this.authDone = false; }
-        else {
-            console.log("Autorizado. Balance:", resp.authorize.balance);
-            this.balance = parseFloat(resp.authorize.balance);
-            this.currency = resp.authorize.currency || "USD";
-            this.authDone = true;
-            if (this.onBalance) this.onBalance(this.balance);
-        }
-    }
-    async subscribeTicks() {
-        const resp = await this.send({ ticks: this.symbol, subscribe: 1 });
-        if (resp.subscription) {
-            this.subscriptionId = resp.subscription.id;
-            console.log("Suscrito a ticks", this.subscriptionId);
-        }
-    }
-    startHeartbeat() {
-        this.heartbeatTimer = setInterval(() => {
-            if (this.ws && this.ws.readyState === WebSocket.OPEN) this.ws.send(JSON.stringify({ ping: 1 }));
-        }, 30000);
-    }
-    async send(request) {
-        return new Promise((resolve) => {
-            this.reqId++;
-            request.req_id = this.reqId;
-            this.pendingRequests.set(this.reqId, resolve);
-            this.ws.send(JSON.stringify(request));
-        });
-    }
-    handleMessage(data) {
-        if (data.tick) {
-            const tick = data.tick;
-            const price = parseFloat(tick.quote);
-            const epoch = parseInt(tick.epoch) * 1000;
-            this.latestPrice = price;
-            this.aggregator.addTick(epoch, price);
-            if (this.onTick) this.onTick(price);
-        } else if (data.authorize) {
-            this.balance = parseFloat(data.authorize.balance);
-            if (this.onBalance) this.onBalance(this.balance);
-        } else if (data.error) {
-            console.error("Deriv error:", data.error.message);
-        }
-        if (data.req_id && this.pendingRequests.has(data.req_id)) {
-            this.pendingRequests.get(data.req_id)(data);
-            this.pendingRequests.delete(data.req_id);
-        }
-    }
-    // Contratos binarios: CALL/PUT con duración
-    async buyContract(contractType, stake, duration) {
-        const resp = await this.send({
-            buy: 1,
-            price: this.latestPrice,
-            parameters: {
-                amount: stake,
-                basis: "stake",
-                contract_type: contractType,
-                currency: this.currency,
-                duration: duration,
-                duration_unit: "s",
-                symbol: this.symbol,
-            }
-        });
-        return resp;
-    }
-    disconnect() {
-        this.running = false;
-        if (this.heartbeatTimer) clearInterval(this.heartbeatTimer);
-        if (this.ws) this.ws.close();
-    }
-}
+    def process_asset(self, symbol: str, client: DerivWebSocketClient):
+        with self.lock:
+            state = self.asset_states[symbol]
+            bars = client.aggregator.get_bars()
+            if len(bars) < self.config["min_bars_required"]: return
+            state["bar_count"] = len(bars)
+            regime_state = state["regime_detector"].detect(bars)
+            state["last_regime"] = regime_state
+            efficiency = state["regime_detector"].market_efficiency_score(bars)
 
-// ======================== RÉGIMEN DE MERCADO (MEJORADO) ========================
-class MarketRegimeDetector {
-    constructor() { this.atrHistory = []; }
-    detect(candles) {
-        if (candles.length < 50) return { regime: "WARMING_UP", confidence: 0, direction: 0, tradeType: null };
-        const closes = candles.map(c => c.c);
-        const highs = candles.map(c => c.h);
-        const lows = candles.map(c => c.l);
-        const roc10 = (closes[closes.length-1] - closes[closes.length-11]) / closes[closes.length-11] * 100;
-        const atrVals = calcATR(candles);
-        const curATR = atrVals[atrVals.length-1];
-        this.atrHistory.push(curATR);
-        if (this.atrHistory.length > 200) this.atrHistory.shift();
-        const sorted = [...this.atrHistory].sort((a,b)=>a-b);
-        const atrPct = sorted.filter(v => v <= curATR).length / sorted.length;
-        const structure = this.detectStructure(highs, lows);
-        const adx = Math.abs(roc10) * 8;
-        let regime = "RANGE", conf = 0.5, dir = 0, tradeType = null;
+            adap = state["adaptive_system"]
+            adap.on_bar()
 
-        // Clasificación refinada para binarios
-        if (atrPct < 0.25 && structure === "CONTRACTION") {
-            regime = "COMPRESSION"; conf = 0.75;
-        } else if (atrPct > 0.75 && structure.includes("BREAKOUT")) {
-            regime = "EXPANSION"; conf = 0.7; dir = structure === "BREAKOUT_UP" ? 1 : -1;
-        } else if (adx > 24) {  // Fuerte tendencia
-            regime = "MEDIUM_TREND"; conf = 0.85; dir = roc10 > 0 ? 1 : -1;
-            tradeType = "MEDIUM_TREND";
-        } else if (adx > 12) {  // Tendencia débil
-            regime = "MICRO_TREND"; conf = 0.7; dir = roc10 > 0 ? 1 : -1;
-            tradeType = "MICRO_TREND";
-        } else {
-            regime = "RANGE"; conf = 0.5;
-        }
-        return { regime, confidence: conf, direction: dir, atr: curATR, atrPct, roc10, tradeType };
-    }
-    detectStructure(highs, lows) {
-        const w = Math.min(20, highs.length);
-        const hSeg = highs.slice(-w), lSeg = lows.slice(-w);
-        const range = Math.max(...hSeg) - Math.min(...lSeg);
-        if (range === 0) return "FLAT";
-        const prevHigh = Math.max(...hSeg.slice(0, -3));
-        const prevLow = Math.min(...lSeg.slice(0, -3));
-        if (hSeg[hSeg.length-1] > prevHigh) return "BREAKOUT_UP";
-        if (lSeg[lSeg.length-1] < prevLow) return "BREAKOUT_DOWN";
-        if (range < 0.6 * (Math.max(...highs.slice(-30)) - Math.min(...lows.slice(-30)))) return "CONTRACTION";
-        return "NEUTRAL";
-    }
-}
+            # Posición abierta
+            pos = state["position"]
+            if pos is not None:
+                current_atr = state["regime_detector"]._calc_atr(
+                    np.array([b.high for b in bars]), np.array([b.low for b in bars]),
+                    np.array([b.close for b in bars]), 14)[-1]
+                pos = state["exit_manager"].update_position(pos, bars[-1].close, current_atr, len(bars))
+                exit_reason = state["exit_manager"].check_exit(pos, len(bars), bars, current_atr, efficiency)
+                if exit_reason:
+                    self._close_position(symbol, pos, exit_reason, bars[-1].close)
+                    state["position"] = None
+                else:
+                    state["position"] = pos
+                return
 
-// ======================== MOTOR DE SEÑALES (BINARY, SIN RRR) ========================
-class SignalEngine {
-    constructor(persistence = 3) { this.persistence = persistence; }
-    evaluate(candles, regime, params = {}) {
-        if (candles.length < 60) return null;
-        // Solo operar en MICRO_TREND o MEDIUM_TREND, no RANGE
-        if (regime.tradeType !== "MICRO_TREND" && regime.tradeType !== "MEDIUM_TREND") return null;
-        if (regime.confidence < DEFAULT_CONFIG.minConfidence) return null;
+            # Solo duración MICRO (ya no MEDIUM)
+            duration, dur_reason = classify_trend_duration_advanced(bars, regime_state, efficiency, regime_state.atr_percentile)
+            if duration == TrendDuration.NONE:
+                return
 
-        const closes = candles.map(c => c.c);
-        const highs = candles.map(c => c.h);
-        const lows = candles.map(c => c.l);
-        const direction = regime.direction > 0 ? "LONG" : "SHORT";
+            # ATR grey zone filter
+            if 0.4 <= regime_state.atr_percentile <= 0.6:
+                logger.debug(f"[{symbol}] TRADE BLOCKED: ATR grey zone ({regime_state.atr_percentile:.2f})")
+                return
 
-        // Filtro anti-ruido: confirmación con últimas 3 velas
-        if (!this.confirmTrend(closes, direction)) return null;
+            # Eficiencia mínima extra
+            if efficiency < 0.65:
+                logger.debug(f"[{symbol}] TRADE BLOCKED: Efficiency below 0.65 ({efficiency:.2f})")
+                return
 
-        // Validación de volatilidad mínima (no operar en velas con spread excesivo)
-        const atrVals = calcATR(candles, 14);
-        const curATR = atrVals[atrVals.length-1];
-        if (curATR < params.minATR || 0) return null;
+            can_trade, reason = adap.can_trade()
+            if not can_trade:
+                logger.debug(f"[{symbol}] TRADE BLOCKED: {reason}")
+                return
 
-        // Definir duración según tipo de tendencia
-        const duration = regime.tradeType === "MICRO_TREND" ? 60 : 300;
+            signal = state["signal_engine"].generate_signal(bars, regime_state, adap.params, efficiency)
+            if signal.signal == SignalType.NO_SIGNAL:
+                return
+            # Filtro maestro
+            setup_score = adap.get_setup_score(signal.signal.value, regime_state.regime.value)
+            if adap.params.mode == "SNIPER":
+                required_setup = self.config.get("sniper_setup_threshold", 0.8)
+            else:
+                required_setup = self.config.get("setup_score_threshold", 0.75)
+            if setup_score < required_setup:
+                logger.debug(f"[{symbol}] TRADE BLOCKED: Setup score {setup_score:.2f} < {required_setup}")
+                return
 
-        return {
-            direction,
-            entry: closes[closes.length-1],
-            setup_type: regime.tradeType,
-            duration,
-            atr: curATR,
-            confidence: regime.confidence,
-        };
-    }
-    confirmTrend(closes, direction) {
-        if (closes.length < 4) return false;
-        const last3 = closes.slice(-3);
-        if (direction === "LONG") {
-            return last3[0] < last3[1] && last3[1] < last3[2];
-        } else {
-            return last3[0] > last3[1] && last3[1] > last3[2];
-        }
-    }
-}
+            allow, block_reason = should_allow_trade(
+                efficiency, setup_score, regime_state.confidence,
+                signal.rejection_strength, self.config)
+            if not allow:
+                logger.info(f"[{symbol}] TRADE BLOCKED by master filter: {block_reason}")
+                return
 
-// ======================== SISTEMA ADAPTATIVO (BINARIO, WINRATE) ========================
-class AdaptiveSystem {
-    constructor(decay = 0.99, explore = 0.1) {
-        this.setups = {};  // { "MICRO_TREND": { count, wins }, ... }
-        this.history = [];
-        this.decay = decay;
-        this.explore = explore;
-        this.dailyTrades = 0;
-    }
-    getScore(setup) {
-        const s = this.setups[setup];
-        if (!s || s.count < 5) return 0.5; // neutro
-        return s.wins / s.count;
-    }
-    shouldEnter(setup) {
-        const s = this.setups[setup];
-        if (!s || s.count < 3) return true; // explorar
-        if (Math.random() < this.explore) return true;
-        return (s.wins / s.count) >= 0.5;
-    }
-    recordTrade(setup, win, regime) {
-        if (!this.setups[setup]) this.setups[setup] = { count: 0, wins: 0 };
-        const s = this.setups[setup];
-        s.count++; if (win) s.wins++;
-        // Decaimiento
-        for (let key in this.setups) {
-            this.setups[key].count = Math.max(1, Math.floor(this.setups[key].count * this.decay));
-            this.setups[key].wins = Math.floor(this.setups[key].wins * this.decay);
-        }
-        this.history.push({ setup, win, regime });
-        if (this.history.length > 200) this.history.shift();
-        this.dailyTrades++;
-    }
-    winStreak() {
-        let streak = 0;
-        for (let i = this.history.length - 1; i >= 0; i--) {
-            if (this.history[i].win) streak++; else break;
-        }
-        return streak;
-    }
-    recentWinRate(n = 20) {
-        const slice = this.history.slice(-n);
-        if (slice.length === 0) return 0;
-        return slice.filter(t => t.win).length / slice.length;
-    }
-}
+            current_atr = state["regime_detector"]._calc_atr(
+                np.array([b.high for b in bars]), np.array([b.low for b in bars]),
+                np.array([b.close for b in bars]), 14)[-1]
+            direction = "LONG" if signal.signal == SignalType.LONG else "SHORT"
+            stake = adap.params.risk_per_trade_pct / 100.0 * state["risk_manager"].current_balance
+            if not state["risk_manager"].can_open_position(adap.params.risk_per_trade_pct):
+                return
 
-// ======================== AUTO-OPTIMIZADOR (ADAPTADO A WINRATE) ========================
-class AutoOptimizer {
-    constructor() {
-        this.params = { minATR: 0.00005, entry_threshold: 0.2 };
-    }
-    optimize(adaptiveSys, lookback = 20) {
-        const recent = adaptiveSys.history.slice(-lookback);
-        if (recent.length < 5) return this.params;
-        const winRate = adaptiveSys.recentWinRate(lookback);
-        const streak = adaptiveSys.winStreak();
-        // Ajustar parámetros según racha
-        if (winRate > 0.6 && streak >= 3) {
-            // Mercado favorable: reducir filtros
-            this.params.minATR = Math.max(0.00002, this.params.minATR - 0.00001);
-        } else if (winRate < 0.4) {
-            // Desfavorable: aumentar filtros
-            this.params.minATR = Math.min(0.0001, this.params.minATR + 0.00002);
-        }
-        return this.params;
-    }
-}
+            exec_resp = client.trade_executor.buy(direction, TrendDuration.MICRO.value, stake)
+            if exec_resp and "buy" in exec_resp:
+                trade_id = str(uuid.uuid4())[:8]
+                position = Position(
+                    trade_id=trade_id, direction=direction, entry_price=bars[-1].close,
+                    stop_loss=signal.stop_loss, take_profit=signal.take_profit,
+                    size=stake, entry_bar=len(bars), atr_at_entry=current_atr,
+                    duration=TrendDuration.MICRO.value, efficiency_at_entry=efficiency
+                )
+                state["position"] = position; state["last_signal"] = signal
+                logger.info(f"[{symbol}] ENTRADA VALIDADA (MASTER): {direction} MICRO | Entry={bars[-1].close:.5f} | Eff={efficiency:.2f} | Setup={setup_score:.2f} | Sweep={signal.swept_liquidity}")
+            else:
+                logger.warning(f"[{symbol}] Trade execution failed")
 
-// ======================== GESTIÓN DE RIESGO (0.2%, 30 trades) ========================
-class RiskManager {
-    constructor(baseRiskPct = 0.002, maxDailyLoss = 0.05, maxDailyTrades = 30) {
-        this.baseRisk = baseRiskPct; // 0.2%
-        this.maxLoss = maxDailyLoss;
-        this.maxTrades = maxDailyTrades;
-        this.startBalance = 0;
-    }
-    calculateStake(balance, adaptive) {
-        if (!this.startBalance) this.startBalance = balance;
-        const dailyPnl = (balance - this.startBalance) / this.startBalance;
-        if (dailyPnl < -this.maxLoss || adaptive.dailyTrades >= this.maxTrades) return 0;
-        let mult = 1.0;
-        const dd = 1 - (balance / Math.max(this.startBalance, balance));
-        if (dd > 0.15) mult = 0.5;
-        else if (dd > 0.10) mult = 0.75;
-        if (adaptive.winStreak() >= 5) mult = Math.min(mult * 1.2, 1.5);
-        const riskAmount = balance * this.baseRisk * mult;
-        // Para binarios, stake = risk amount aproximadamente, pero Deriv requiere un mínimo
-        return Math.max(0.35, Math.min(riskAmount, balance * 0.02)); // mínimo 0.35 USD
-    }
-}
+    def _close_position(self, symbol: str, pos: Position, exit_reason: ExitReason, exit_price: float):
+        state = self.asset_states[symbol]
+        risk = abs(pos.entry_price - pos.stop_loss)
+        pnl_r = (exit_price - pos.entry_price)/risk if pos.direction=="LONG" else (pos.entry_price - exit_price)/risk
+        pnl_currency = pnl_r * pos.size
+        state["risk_manager"].update_balance(pnl_currency)
+        trade = TradeRecord(
+            trade_id=pos.trade_id, symbol=symbol,
+            signal_type=state["last_signal"].signal.value if state["last_signal"] else "UNKNOWN",
+            regime=state["last_regime"].regime.value if state["last_regime"] else "UNKNOWN",
+            entry_price=pos.entry_price, exit_price=exit_price, stop_loss=pos.stop_loss,
+            take_profit=pos.take_profit, pnl_r=pnl_r, duration_bars=state["bar_count"] - pos.entry_bar,
+            was_winner=pnl_r>0, exit_reason=exit_reason.value, duration_seconds=pos.duration,
+            confidence=state["last_signal"].confidence if state["last_signal"] else 0,
+            efficiency_at_entry=pos.efficiency_at_entry
+        )
+        state["adaptive_system"].record_trade(trade)
+        logger.info(f"[{symbol}] CLOSED {pos.direction} {exit_reason.value}: {pnl_r:+.2f}R | Balance: ${state['risk_manager'].current_balance:.2f}")
 
-// ======================== COMPONENTE REACT ========================
-function App() {
-    const [token, setToken] = useState("");
-    const [connected, setConnected] = useState(false);
-    const [running, setRunning] = useState(false);
-    const [price, setPrice] = useState(0);
-    const [balance, setBalance] = useState(0);
-    const [regime, setRegime] = useState({ regime: "DISCONNECTED", confidence: 0, direction: 0 });
-    const [openTrade, setOpenTrade] = useState(null);
-    const [trades, setTrades] = useState([]);
-    const [log, setLog] = useState([]);
-    const [symbol, setSymbol] = useState("R_10");
+    def run(self):
+        logger.info(f"Starting DerivAdaptiveBot (Sniper) for symbols: {self.symbols}")
+        for sym in self.symbols:
+            client = DerivWebSocketClient(sym, self.config, self)
+            self.clients[sym] = client; client.start()
+        while True: time.sleep(1)
 
-    const apiRef = useRef(null);
-    const botRef = useRef({
-        regimeDetector: new MarketRegimeDetector(),
-        signalEngine: new SignalEngine(),
-        adaptive: new AdaptiveSystem(),
-        optimizer: new AutoOptimizer(),
-        risk: new RiskManager(0.002, 0.05, 30),
-        candles: [],
-        currentTrade: null,
-        cooldown: 0,
-        trades: [],
-    });
-
-    const addLog = (msg) => setLog(prev => [...prev.slice(-200), `[${new Date().toLocaleTimeString()}] ${msg}`]);
-
-    const handleConnect = async () => {
-        if (connected) {
-            apiRef.current?.disconnect();
-            setConnected(false); setRunning(false);
-            addLog("Desconectado");
-            return;
-        }
-        if (!token) { alert("Ingrese API Token"); return; }
-        const api = new DerivAPI(DEFAULT_CONFIG.appId, token, symbol);
-        api.onTick = (p) => setPrice(p);
-        api.onBalance = (b) => {
-            setBalance(b);
-            if (!botRef.current.risk.startBalance) botRef.current.risk.startBalance = b;
-        };
-        apiRef.current = api;
-        api.connect().then(() => {}).catch(console.error);
-        setConnected(true);
-        addLog("Conectado a Deriv");
-    };
-
-    // Lógica al completar una vela M1
-    useEffect(() => {
-        if (!apiRef.current || !running) return;
-        const aggregator = apiRef.current.aggregator;
-        aggregator.onCandleComplete = (candle) => {
-            const bot = botRef.current;
-            const candles = aggregator.getCandles(100);
-            if (candles.length < 60) return;
-            bot.candles = candles;
-            const regimeData = bot.regimeDetector.detect(candles);
-            setRegime(regimeData);
-            if (bot.cooldown > 0) { bot.cooldown--; return; }
-
-            // Si no hay trade abierto, evaluar entrada
-            if (!bot.currentTrade && bot.adaptive.dailyTrades < 30) {
-                const signal = bot.signalEngine.evaluate(candles, regimeData, bot.optimizer.params);
-                if (signal) {
-                    const stake = bot.risk.calculateStake(balance, bot.adaptive);
-                    if (stake > 0) {
-                        executeTrade(signal, stake, regimeData);
-                    }
-                }
-            }
-
-            // Optimización periódica
-            if (bot.trades.length % 20 === 0 && bot.trades.length > 0) {
-                bot.optimizer.optimize(bot.adaptive);
-            }
-        };
-        return () => { aggregator.onCandleComplete = null; };
-    }, [running, price, balance]);
-
-    const executeTrade = async (signal, stake, regime) => {
-        const api = apiRef.current;
-        if (!api || !api.authDone) return;
-        // Control de latencia: medir tiempo antes de enviar
-        const startTime = Date.now();
-        const initialPrice = api.latestPrice;
-        // Espera corta para verificar estabilidad
-        await new Promise(r => setTimeout(r, 50));
-        const latencia = Date.now() - startTime;
-        const currentPrice = api.latestPrice;
-        const pctChange = Math.abs(currentPrice - initialPrice) / initialPrice * 100;
-        if (latencia > DEFAULT_CONFIG.maxLatencyMs) {
-            addLog(`Trade abortado: latencia ${latencia}ms > ${DEFAULT_CONFIG.maxLatencyMs}ms`);
-            return;
-        }
-        if (pctChange > DEFAULT_CONFIG.maxPriceChangePct) {
-            addLog(`Trade abortado: cambio precio ${pctChange.toFixed(2)}% > ${DEFAULT_CONFIG.maxPriceChangePct}%`);
-            return;
-        }
-
-        const contractType = signal.direction === "LONG" ? "CALL" : "PUT";
-        const duration = signal.duration; // 60 o 300
-        addLog(`Abriendo ${contractType} ${duration}s (${regime.tradeType}) stake=${stake.toFixed(2)}`);
-
-        try {
-            const resp = await api.buyContract(contractType, stake, duration);
-            if (resp.error) {
-                addLog(`Error buy: ${resp.error.message}`);
-                return;
-            }
-            // Registrar trade abierto (local, sin seguimiento de cierre en binarios)
-            const tradeId = resp.buy?.contract_id || Date.now().toString();
-            botRef.current.currentTrade = {
-                id: tradeId,
-                direction: signal.direction,
-                entry: currentPrice,
-                setup_type: signal.setup_type,
-                duration,
-                stake,
-                openTime: Date.now(),
-            };
-            setOpenTrade(botRef.current.currentTrade);
-            addLog(`Trade abierto (${contractType} ${duration}s)`);
-            // Programar cierre estimado (en realidad Deriv cierra automáticamente)
-            setTimeout(() => handleTradeOutcome(tradeId, botRef.current.currentTrade), duration * 1000 + 5000);
-        } catch(e) {
-            addLog(`Error ejecutando: ${e.message}`);
-        }
-    };
-
-    const handleTradeOutcome = (tradeId, tradeRef) => {
-        const bot = botRef.current;
-        // En producción real, usarías proposal_open_contract para resultado exacto.
-        // Aquí simulamos con precio actual vs entrada para determinar ganancia.
-        const currentPrice = apiRef.current?.latestPrice || tradeRef.entry;
-        const direction = tradeRef.direction === "LONG" ? 1 : -1;
-        const win = direction * (currentPrice - tradeRef.entry) > 0;
-        const payout = win ? tradeRef.stake * 1.8 : 0; // típico 80% payout
-        const profit = win ? payout - tradeRef.stake : -tradeRef.stake;
-        const tradeRecord = {
-            ...tradeRef,
-            exitPrice: currentPrice,
-            win,
-            profit,
-            reason: "BINARY_EXPIRY",
-            streak: bot.adaptive.winStreak(),
-        };
-        bot.trades.push(tradeRecord);
-        setTrades([...bot.trades]);
-        bot.adaptive.recordTrade(tradeRef.setup_type, win, tradeRef.setup_type);
-        bot.currentTrade = null;
-        setOpenTrade(null);
-        bot.cooldown = DEFAULT_CONFIG.cooldownBars;
-        addLog(`Trade finalizado: ${win ? "GANANCIA" : "PÉRDIDA"} ${profit.toFixed(2)} USD`);
-    };
-
-    const toggleRunning = () => {
-        if (!connected) return alert("Conecte primero");
-        setRunning(!running);
-        addLog(running ? "Bot PAUSADO" : "Bot ACTIVADO");
-    };
-
-    const wins = trades.filter(t => t.win).length;
-    const winRate = trades.length ? (wins / trades.length * 100).toFixed(1) : 0;
-    const pnl = trades.reduce((a,b) => a + (b.profit || 0), 0);
-    const expectancy = trades.length ? (pnl / trades.length).toFixed(2) : 0;
-
-    return (
-        <div>
-            <header>
-                <h1>⚡ DerivAdaptiveBot Binary Hybrid</h1>
-                <div className="controls">
-                    <input type="text" placeholder="API Token" value={token}
-                           onChange={e => setToken(e.target.value)} style={{width: 200}} />
-                    <select value={symbol} onChange={e => setSymbol(e.target.value)}>
-                        <option value="R_10">V10 (R_10)</option>
-                        <option value="R_25">V25 (R_25)</option>
-                    </select>
-                    <button onClick={handleConnect} className={connected ? "danger" : "primary"}>
-                        {connected ? "Desconectar" : "Conectar"}
-                    </button>
-                    <button onClick={toggleRunning} disabled={!connected}
-                            className={running ? "danger" : "primary"}>
-                        {running ? "⏹️ STOP" : "▶️ START"}
-                    </button>
-                </div>
-            </header>
-            <div className="dashboard">
-                <div className="panel">
-                    <h3>💰 Cuenta</h3>
-                    <div className="status-row"><span className="label">Balance:</span><span className="value">{balance.toFixed(2)}</span></div>
-                    <div className="status-row"><span className="label">Precio:</span><span className="value">{price.toFixed(5)}</span></div>
-                    <div className="status-row"><span className="label">Régimen:</span>
-                        <span className="badge" style={{background: regimeColor(regime.regime)}}>{regime.regime}</span>
-                    </div>
-                    <div className="status-row"><span className="label">Trades hoy:</span><span className="value">{botRef.current.adaptive.dailyTrades}/30</span></div>
-                    <div className="status-row"><span className="label">Racha:</span><span className="value">{botRef.current.adaptive.winStreak()}</span></div>
-                </div>
-                <div className="panel chart-container">
-                    <h3>📊 Actividad</h3>
-                    {openTrade ? (
-                        <div style={{padding: '10px', background: '#1a2436', borderRadius: 8}}>
-                            <div>Trade activo: <span className={`badge ${openTrade.direction==='LONG'?'badge-buy':'badge-sell'}`}>{openTrade.direction}</span></div>
-                            <div>Duración: {openTrade.duration}s | Stake: {openTrade.stake?.toFixed(2)}</div>
-                        </div>
-                    ) : <div style={{color: '#5a6880'}}>Sin posición abierta</div>}
-                    <div className="log-area">
-                        {log.slice(-15).map((l,i) => <div key={i}>{l}</div>)}
-                    </div>
-                </div>
-                <div className="panel">
-                    <h3>📈 Historial</h3>
-                    <div className="status-row"><span>Winrate:</span><span>{winRate}%</span></div>
-                    <div className="status-row"><span>P&L:</span><span>{pnl.toFixed(2)}</span></div>
-                    <div className="status-row"><span>Promedio:</span><span>{expectancy}</span></div>
-                    <div className="trade-list">
-                        {trades.slice().reverse().map((t,i) => (
-                            <div key={i} className="trade-item">
-                                <span className={t.win ? "win" : "loss"}>{t.win ? "✅" : "❌"} {t.direction}</span>
-                                <span>{t.setup_type} {t.duration}s</span>
-                                <span>{t.profit?.toFixed(2)}</span>
-                            </div>
-                        ))}
-                    </div>
-                </div>
-            </div>
-        </div>
-    );
-}
-
-function regimeColor(regime) {
-    const map = {
-        MICRO_TREND: '#4dffb4', MEDIUM_TREND: '#00e5a0', RANGE: '#607080',
-        COMPRESSION: '#f0b90b', EXPANSION: '#7b5ea7', WARMING_UP: '#445566',
-        DISCONNECTED: '#ff4d6d',
-    };
-    return map[regime] || '#607080';
-}
-
-ReactDOM.createRoot(document.getElementById('root')).render(<App />);
-</script>
-</body>
-</html>
+if __name__ == "__main__":
+    bot = DerivAdaptiveBot()
+    bot.run()
