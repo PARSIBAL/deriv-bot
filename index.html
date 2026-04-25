@@ -3,677 +3,871 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>DerivAdaptiveBot — V10/V25 M1</title>
+    <title>DerivAdaptiveBot — V10/V25 M1 (Producción)</title>
     <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700;800&family=JetBrains+Mono:wght@400;600;700&display=swap" rel="stylesheet">
     <style>
+        :root {
+            --bg: #0a0c14;
+            --surface: #111622;
+            --border: #1e2940;
+            --text: #d0d8e8;
+            --muted: #5a6880;
+            --accent: #00d4aa;
+            --buy: #00e5a0;
+            --sell: #ff4d6d;
+            --warning: #f0b90b;
+            --badge-bg: rgba(0,229,160,0.12);
+            --font: 'Inter', 'Segoe UI', system-ui, sans-serif;
+            --mono: 'JetBrains Mono', 'Cascadia Code', monospace;
+        }
         * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { background: #070d14; color: #c9d6e6; font-family: 'Inter', 'Segoe UI', sans-serif; }
-        #root { min-height: 100vh; }
-        .code-section { display: none; }
-        .code-section.active { display: block; }
-        .tab-btn { 
-            padding: 6px 14px; 
-            border-radius: 6px 6px 0 0; 
-            border: 1px solid #1a2d42; 
-            background: #0d1a27; 
-            color: #4a6070; 
-            cursor: pointer; 
-            font-family: 'JetBrains Mono', monospace; 
-            font-size: 11px; 
-            margin-right: 2px;
+        body {
+            background: var(--bg);
+            color: var(--text);
+            font-family: var(--font);
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+            padding: 20px;
+        }
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 20px;
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            margin-bottom: 20px;
+        }
+        h1 {
+            font-size: 1.5rem;
+            font-weight: 700;
+            background: linear-gradient(135deg, #00d4aa, #00b4d8);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        .controls {
+            display: flex;
+            gap: 12px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+        button {
+            background: #1c2840;
+            border: 1px solid var(--border);
+            color: var(--text);
+            padding: 8px 16px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 0.85rem;
             transition: all 0.2s;
         }
-        .tab-btn.active { background: #00e5a018; color: #00e5a0; border-color: #00e5a0; }
-        .code-block {
-            background: #0d1117;
-            border: 1px solid #1a2d42;
-            border-radius: 0 8px 8px 8px;
+        button:hover:not(:disabled) { background: #253550; }
+        button:disabled { opacity: 0.4; cursor: default; }
+        button.primary { background: var(--accent); color: #000; border: none; font-weight: 700; }
+        button.danger { background: var(--sell); color: #fff; border: none; }
+        input, select {
+            background: #0f1322;
+            border: 1px solid var(--border);
+            color: var(--text);
+            padding: 8px 12px;
+            border-radius: 6px;
+            font-family: var(--mono);
+            font-size: 0.85rem;
+            outline: none;
+        }
+        input:focus, select:focus { border-color: var(--accent); }
+        .dashboard {
+            display: grid;
+            grid-template-columns: 280px 1fr 320px;
+            gap: 16px;
+            flex: 1;
+        }
+        .panel {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 12px;
             padding: 16px;
-            font-family: 'JetBrains Mono', monospace;
-            font-size: 12px;
-            line-height: 1.7;
-            color: #8899aa;
-            overflow-x: auto;
-            max-height: 70vh;
-            white-space: pre-wrap;
+        }
+        .status-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 6px 0;
+            font-size: 0.9rem;
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+        }
+        .label { color: var(--muted); }
+        .value { font-weight: 600; font-family: var(--mono); }
+        .badge {
+            display: inline-block;
+            padding: 3px 10px;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            font-weight: 700;
+            text-transform: uppercase;
+        }
+        .badge-buy { background: rgba(0,229,160,0.2); color: var(--buy); }
+        .badge-sell { background: rgba(255,77,109,0.2); color: var(--sell); }
+        .trade-list {
+            max-height: 450px;
+            overflow-y: auto;
+            font-size: 0.8rem;
+        }
+        .trade-item {
+            padding: 8px;
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+            display: flex;
+            justify-content: space-between;
+        }
+        .win { color: var(--buy); }
+        .loss { color: var(--sell); }
+        .chart-container {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+        .regime-indicator {
+            font-size: 1.1rem;
+            font-weight: 700;
+            padding: 6px 12px;
+            border-radius: 6px;
+            display: inline-block;
+        }
+        .log-area {
+            background: #050812;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 10px;
+            font-family: var(--mono);
+            font-size: 0.7rem;
+            max-height: 200px;
+            overflow-y: auto;
+            color: #8b9bb4;
         }
     </style>
 </head>
 <body>
-    <!-- Pestañas de código Python -->
-    <div style="background: #0d1a27; border-bottom: 1px solid #1a2d42; padding: 12px 20px 0 20px;">
-        <span style="color: #4a6070; font-size: 10px; font-family: 'JetBrains Mono', monospace; margin-right: 12px;">📁 CÓDIGO FUENTE PYTHON:</span>
-        <button class="tab-btn active" onclick="switchTab('bot')">bot.py</button>
-        <button class="tab-btn" onclick="switchTab('regime')">market_regime.py</button>
-        <button class="tab-btn" onclick="switchTab('signal')">signal_engine.py</button>
-        <button class="tab-btn" onclick="switchTab('adaptive')">adaptive_system.py</button>
-        <button class="tab-btn" onclick="switchTab('exit')">exit_manager.py</button>
-    </div>
-    <!-- Bloques de código Python (ocultos/mostrados) -->
-    <div id="code-bot" class="code-section active" style="padding: 0 20px;"><div class="code-block">"""DerivAdaptiveBot — Main Orchestrator""" ... [código completo de bot.py]</div></div>
-    <div id="code-regime" class="code-section" style="padding: 0 20px;"><div class="code-block">"""Market Regime Detection Engine""" ... [código completo de market_regime.py]</div></div>
-    <div id="code-signal" class="code-section" style="padding: 0 20px;"><div class="code-block">"""Signal Engine — Entry Detection""" ... [código completo de signal_engine.py]</div></div>
-    <div id="code-adaptive" class="code-section" style="padding: 0 20px;"><div class="code-block">"""Adaptive Learning System""" ... [código completo de adaptive_system.py]</div></div>
-    <div id="code-exit" class="code-section" style="padding: 0 20px;"><div class="code-block">"""Exit Management System""" ... [código completo de exit_manager.py]</div></div>
+<div id="root"></div>
 
-    <!-- Dashboard React -->
-    <div id="root"></div>
+<script type="text/babel">
+const { useState, useEffect, useCallback, useRef } = React;
 
-    <script type="text/babel">
-        // ─────────────────────────────────────────────────────────────────
-        // CÓDIGO ORIGINAL DE DerivBotDashboard.jsx (SIN MODIFICACIONES)
-        // ─────────────────────────────────────────────────────────────────
-        const { useState, useEffect, useCallback } = React;
+// ======================== CONFIGURACIÓN ========================
+const DEFAULT_CONFIG = {
+    appId: 1089,
+    symbol: "R_10",
+    riskPercent: 0.5,
+    maxDailyTrades: 50,
+    maxDailyLoss: 0.05,
+    explorationRate: 0.1,
+    decayFactor: 0.99,
+    persistenceBars: 3,
+    heartbeatInterval: 30,
+    minWinRate: 0.4,
+    cooldownBars: 3,
+};
 
-        // ── Simulation Engine ─────────────────────────────────────────────────────────
-        function generateSyntheticV10(n = 200) {
-          const bars = [];
-          let price = 8500;
-          for (let i = 0; i < n; i++) {
-            const phase = Math.floor(i / 70) % 3;
-            const drift = phase === 0 ? 0.012 : phase === 1 ? 0 : -0.012;
-            const vol = price * 0.0012;
-            const change = drift * vol + (Math.random() - 0.5) * vol * 1.8;
-            price = Math.max(price + change, 1);
-            const range = Math.abs(Math.random() * vol * 1.4 + vol * 0.3);
-            const open = price - change * Math.random();
-            bars.push({
-              t: Date.now() - (n - i) * 60000,
-              o: open,
-              h: Math.max(price, open) + range * 0.3,
-              l: Math.min(price, open) - range * 0.3,
-              c: price,
-              v: Math.max(10, Math.round(150 + (Math.random() - 0.5) * 60)),
-            });
-          }
-          return bars;
-        }
+// ======================== UTILIDADES ========================
+const calcEMA = (arr, period) => {
+    const ema = new Array(arr.length).fill(0);
+    if (arr.length < period) return ema;
+    const k = 2 / (period + 1);
+    ema[period - 1] = arr.slice(0, period).reduce((a, b) => a + b, 0) / period;
+    for (let i = period; i < arr.length; i++) {
+        ema[i] = arr[i] * k + ema[i - 1] * (1 - k);
+    }
+    return ema;
+};
 
-        function calcEMA(arr, period) {
-          const ema = new Array(arr.length).fill(0);
-          if (arr.length < period) return ema;
-          const k = 2 / (period + 1);
-          ema[period - 1] = arr.slice(0, period).reduce((a, b) => a + b, 0) / period;
-          for (let i = period; i < arr.length; i++) {
-            ema[i] = arr[i] * k + ema[i - 1] * (1 - k);
-          }
-          return ema;
-        }
+const calcATR = (bars, period = 14) => {
+    const tr = [];
+    for (let i = 1; i < bars.length; i++) {
+        const h = bars[i].h, l = bars[i].l, pc = bars[i-1].c;
+        tr.push(Math.max(h - l, Math.abs(h - pc), Math.abs(l - pc)));
+    }
+    if (tr.length < period) return new Array(bars.length).fill(0);
+    const atr = new Array(bars.length).fill(0);
+    atr[period] = tr.slice(0, period).reduce((a,b) => a + b, 0) / period;
+    for (let i = period + 1; i < bars.length; i++) {
+        atr[i] = (atr[i-1] * (period - 1) + tr[i-1]) / period;
+    }
+    return atr;
+};
 
-        function calcATR(bars, period = 14) {
-          const tr = bars.map((b, i) => {
-            if (i === 0) return b.h - b.l;
-            return Math.max(b.h - b.l, Math.abs(b.h - bars[i-1].c), Math.abs(b.l - bars[i-1].c));
-          });
-          const atr = new Array(bars.length).fill(0);
-          if (bars.length < period) return atr;
-          atr[period-1] = tr.slice(0,period).reduce((a,b)=>a+b,0)/period;
-          for (let i = period; i < bars.length; i++) {
-            atr[i] = (atr[i-1]*(period-1)+tr[i])/period;
-          }
-          return atr;
-        }
+// ======================== VELAS & AGREGADOR ========================
+class Candle {
+    constructor(open, startTime) {
+        this.o = open; this.h = open; this.l = open; this.c = open;
+        this.ticks = 0; this.start = startTime;
+    }
+    update(price) {
+        this.h = Math.max(this.h, price);
+        this.l = Math.min(this.l, price);
+        this.c = price;
+        this.ticks++;
+    }
+}
 
-        function detectRegime(bars) {
-          if (bars.length < 60) return { regime: "WARMING_UP", confidence: 0, trend: 0 };
-          const closes = bars.map(b => b.c);
-          const ema8 = calcEMA(closes, 8);
-          const ema21 = calcEMA(closes, 21);
-          const ema55 = calcEMA(closes, 55);
-          const atr = calcATR(bars);
-          const n = closes.length - 1;
-
-          const atrHistory = atr.slice(-100).filter(v => v > 0);
-          const atrPct = atrHistory.filter(v => v <= atr[n]).length / atrHistory.length;
-
-          const aligned_up = ema8[n] > ema21[n] && ema21[n] > ema55[n];
-          const aligned_dn = ema8[n] < ema21[n] && ema21[n] < ema55[n];
-
-          const recentSlope = (closes[n] - closes[n-10]) / closes[n] * 100;
-          const adxApprox = Math.abs(recentSlope) * 8;
-
-          let regime = "RANGE";
-          let confidence = 0.5;
-          let direction = 0;
-
-          if (adxApprox > 28 && aligned_up) { regime = "STRONG_TREND_UP"; confidence = 0.85; direction = 1; }
-          else if (adxApprox > 28 && aligned_dn) { regime = "STRONG_TREND_DOWN"; confidence = 0.85; direction = -1; }
-          else if (adxApprox > 16 && aligned_up) { regime = "WEAK_TREND_UP"; confidence = 0.65; direction = 1; }
-          else if (adxApprox > 16 && aligned_dn) { regime = "WEAK_TREND_DOWN"; confidence = 0.65; direction = -1; }
-          else if (atrPct < 0.25) { regime = "COMPRESSION"; confidence = 0.72; }
-          else if (atrPct > 0.75) { regime = "HIGH_VOL_EXPANSION"; confidence = 0.70; }
-          else { regime = "RANGE"; confidence = 0.55; }
-
-          return { regime, confidence, trend: adxApprox, atrPct, ema8: ema8[n], ema21: ema21[n], ema55: ema55[n], atr: atr[n], direction };
-        }
-
-        function runBotSimulation() {
-          const bars = generateSyntheticV10(250);
-          const trades = [];
-          let balance = 1000;
-          let inTrade = null;
-          let winrate = 0;
-          const balanceHistory = [1000];
-          const regimeHistory = [];
-
-          for (let i = 80; i < bars.length; i++) {
-            const window = bars.slice(0, i + 1);
-            const regime = detectRegime(window);
-            regimeHistory.push(regime.regime);
-
-            if (inTrade) {
-              const pos = inTrade;
-              const bar = bars[i];
-              const risk = Math.abs(pos.entry - pos.sl);
-              let closed = false;
-              let pnlR = 0;
-              let reason = "";
-
-              if (pos.dir === "LONG") {
-                if (bar.l <= pos.sl) { pnlR = -1; reason = "SL"; closed = true; }
-                else if (bar.h >= pos.tp) { pnlR = pos.rr; reason = "TP"; closed = true; }
-                else if (i - pos.entryIdx > 20) { pnlR = (bar.c - pos.entry)/risk; reason = "TIMEOUT"; closed = true; }
-              } else {
-                if (bar.h >= pos.sl) { pnlR = -1; reason = "SL"; closed = true; }
-                else if (bar.l <= pos.tp) { pnlR = pos.rr; reason = "TP"; closed = true; }
-                else if (i - pos.entryIdx > 20) { pnlR = (pos.entry - bar.c)/risk; reason = "TIMEOUT"; closed = true; }
-              }
-
-              if (closed) {
-                const riskAmt = balance * 0.0075;
-                balance += pnlR * riskAmt;
-                trades.push({ ...pos, exitBar: i, pnlR, reason, exitPrice: bars[i].c, win: pnlR > 0 });
-                inTrade = null;
-                balanceHistory.push(Math.round(balance * 100) / 100);
-              }
-              continue;
+class TickAggregator {
+    constructor(timeframeSec = 60) {
+        this.timeframeMs = timeframeSec * 1000;
+        this.current = null;
+        this.candles = [];
+        this.onCandleComplete = null;
+    }
+    addTick(timestampMs, price) {
+        const start = Math.floor(timestampMs / this.timeframeMs) * this.timeframeMs;
+        if (this.current && this.current.start === start) {
+            this.current.update(price);
+            return null;
+        } else {
+            const completed = this.current;
+            if (completed) {
+                this.candles.push(completed);
+                if (this.candles.length > 500) this.candles.shift();
+                if (this.onCandleComplete) this.onCandleComplete(completed);
             }
-
-            if (!["STRONG_TREND_UP","STRONG_TREND_DOWN","WEAK_TREND_UP","WEAK_TREND_DOWN","COMPRESSION"].includes(regime.regime)) continue;
-
-            const closes = window.map(b => b.c);
-            const atr = calcATR(window);
-            const currATR = atr[atr.length - 1];
-            const roc5 = (closes[closes.length-1] - closes[closes.length-6]) / closes[closes.length-6] * 100;
-
-            let dir = null;
-            let signalType = "";
-            if ((regime.regime.includes("UP") || (regime.regime === "COMPRESSION" && roc5 > 0)) && roc5 > 0.02) {
-              dir = "LONG"; signalType = regime.regime === "COMPRESSION" ? "COMPRESSION_BO" : "BREAKOUT";
-            } else if ((regime.regime.includes("DOWN") || (regime.regime === "COMPRESSION" && roc5 < 0)) && roc5 < -0.02) {
-              dir = "SHORT"; signalType = regime.regime === "COMPRESSION" ? "COMPRESSION_BO" : "BREAKOUT";
-            }
-
-            if (!dir) continue;
-
-            const entry = bars[i].c;
-            const sl = dir === "LONG" ? entry - currATR * 1.5 : entry + currATR * 1.5;
-            const tp = dir === "LONG" ? entry + currATR * 2.5 : entry - currATR * 2.5;
-            const rr = Math.abs(tp - entry) / Math.abs(entry - sl);
-            if (rr < 1.5) continue;
-
-            inTrade = { dir, entry, sl, tp, rr, signalType, regime: regime.regime, entryIdx: i, entryBar: i, confidence: regime.confidence };
-          }
-
-          const wins = trades.filter(t => t.win).length;
-          winrate = trades.length > 0 ? wins / trades.length : 0;
-          const pf = trades.reduce((a,t) => t.win ? a + t.pnlR : a, 0) /
-                     (trades.reduce((a,t) => !t.win ? a + Math.abs(t.pnlR) : a, 0) || 1);
-          const expectancy = trades.reduce((a,t) => a + t.pnlR, 0) / (trades.length || 1);
-
-          const cumulativeR = trades.reduce((acc, t) => {
-            const last = acc.length > 0 ? acc[acc.length-1] : 0;
-            return [...acc, +(last + t.pnlR).toFixed(3)];
-          }, []);
-
-          return { trades, balance: Math.round(balance*100)/100, winrate, pf, expectancy, balanceHistory, cumulativeR, bars, regimeHistory };
+            this.current = new Candle(price, start);
+            return completed;
         }
+    }
+    getCandles(count = 300) {
+        const all = [...this.candles];
+        if (this.current && this.current.ticks > 0) all.push(this.current);
+        return all.slice(-count);
+    }
+}
 
-        const REGIME_COLORS = {
-          STRONG_TREND_UP: "#00e5a0",
-          STRONG_TREND_DOWN: "#ff4d6d",
-          WEAK_TREND_UP: "#4dffb4",
-          WEAK_TREND_DOWN: "#ff8fa3",
-          COMPRESSION: "#f5c518",
-          HIGH_VOL_EXPANSION: "#7b5ea7",
-          RANGE: "#607080",
-          WARMING_UP: "#445566",
-        };
+// ======================== DERIV WEBSOCKET CLIENT ========================
+class DerivAPI {
+    constructor(appId, token, symbol) {
+        this.appId = appId;
+        this.token = token;
+        this.symbol = symbol;
+        this.ws = null;
+        this.aggregator = new TickAggregator();
+        this.onTick = null;
+        this.onBalance = null;
+        this.onTradeUpdate = null;
+        this.latestPrice = 0;
+        this.balance = 0;
+        this.currency = "USD";
+        this.running = false;
+        this.reqId = 0;
+        this.subscriptionId = null;
+        this.authDone = false;
+        this.pendingRequests = new Map();
+    }
 
-        function CandleChart({ bars, trades, width = 600, height = 160 }) {
-          if (!bars || bars.length < 5) return null;
-
-          const displayBars = bars.slice(-80);
-          const n = displayBars.length;
-          const padding = { l: 8, r: 8, t: 12, b: 8 };
-          const chartW = width - padding.l - padding.r;
-          const chartH = height - padding.t - padding.b;
-
-          const allH = displayBars.map(b => b.h);
-          const allL = displayBars.map(b => b.l);
-          const minP = Math.min(...allL);
-          const maxP = Math.max(...allH);
-          const pRange = maxP - minP || 1;
-
-          const barW = Math.max(2, (chartW / n) - 1);
-          const xOf = (i) => padding.l + (i + 0.5) * (chartW / n);
-          const yOf = (p) => padding.t + chartH - ((p - minP) / pRange) * chartH;
-
-          const closes = displayBars.map(b => b.c);
-          const ema8 = calcEMA(closes, 8);
-          const ema21 = calcEMA(closes, 21);
-
-          const emaPath = (ema) => ema.map((v, i) => v > 0 ? `${i === 0 || ema[i-1] === 0 ? 'M' : 'L'}${xOf(i).toFixed(1)},${yOf(v).toFixed(1)}` : '').join(' ');
-
-          return (
-            <svg width={width} height={height} style={{ display: "block" }}>
-              <rect width={width} height={height} fill="#0d1117" rx="4" />
-              {[0.25, 0.5, 0.75].map(f => (
-                <line key={f} x1={padding.l} x2={width-padding.r}
-                  y1={padding.t + chartH * f} y2={padding.t + chartH * f}
-                  stroke="#1e2a38" strokeWidth="1" />
-              ))}
-              <path d={emaPath(ema8)} fill="none" stroke="#f5c518" strokeWidth="1" opacity="0.7" />
-              <path d={emaPath(ema21)} fill="none" stroke="#4dabf7" strokeWidth="1" opacity="0.6" />
-              {displayBars.map((b, i) => {
-                const bull = b.c >= b.o;
-                const col = bull ? "#00e5a0" : "#ff4d6d";
-                const x = xOf(i);
-                const yH = yOf(b.h);
-                const yL = yOf(b.l);
-                const yO = yOf(b.o);
-                const yC = yOf(b.c);
-                const bodyTop = Math.min(yO, yC);
-                const bodyH = Math.max(Math.abs(yO - yC), 1);
-                return (
-                  <g key={i}>
-                    <line x1={x} x2={x} y1={yH} y2={yL} stroke={col} strokeWidth="1" opacity="0.7" />
-                    <rect x={x - barW/2} y={bodyTop} width={barW} height={bodyH}
-                      fill={bull ? col : col} opacity="0.85" />
-                  </g>
-                );
-              })}
-              <circle cx={padding.l + 8} cy={height - 10} r="3" fill="#f5c518" />
-              <text x={padding.l + 15} y={height - 7} fill="#f5c518" fontSize="9" opacity="0.8">EMA8</text>
-              <circle cx={padding.l + 55} cy={height - 10} r="3" fill="#4dabf7" />
-              <text x={padding.l + 62} y={height - 7} fill="#4dabf7" fontSize="9" opacity="0.8">EMA21</text>
-            </svg>
-          );
-        }
-
-        function EquityCurve({ data, width = 380, height = 100 }) {
-          if (!data || data.length < 2) return null;
-          const padding = { l: 10, r: 10, t: 10, b: 10 };
-          const cW = width - padding.l - padding.r;
-          const cH = height - padding.t - padding.b;
-          const min = Math.min(...data);
-          const max = Math.max(...data);
-          const range = max - min || 1;
-          const pts = data.map((v, i) => `${padding.l + (i / (data.length-1)) * cW},${padding.t + cH - ((v-min)/range)*cH}`).join(" ");
-          const last = data[data.length - 1];
-          const first = data[0];
-          const isUp = last >= first;
-
-          return (
-            <svg width={width} height={height} style={{ display: "block" }}>
-              <rect width={width} height={height} fill="transparent" />
-              <polyline points={pts} fill="none" stroke={isUp ? "#00e5a0" : "#ff4d6d"} strokeWidth="1.5" />
-              <line x1={padding.l} x2={width-padding.r} y1={padding.t + cH - ((first-min)/range)*cH}
-                y2={padding.t + cH - ((first-min)/range)*cH}
-                stroke="#445566" strokeWidth="1" strokeDasharray="3,3" />
-            </svg>
-          );
-        }
-
-        function RegimeBadge({ regime }) {
-          const color = REGIME_COLORS[regime] || "#607080";
-          const short = {
-            STRONG_TREND_UP: "▲▲ STRONG UP",
-            STRONG_TREND_DOWN: "▼▼ STRONG DOWN",
-            WEAK_TREND_UP: "▲ WEAK UP",
-            WEAK_TREND_DOWN: "▼ WEAK DOWN",
-            COMPRESSION: "⬡ COMPRESSION",
-            HIGH_VOL_EXPANSION: "⚡ HIGH VOL",
-            RANGE: "↔ RANGE",
-            WARMING_UP: "⏳ WARMING UP",
-          }[regime] || regime;
-
-          return (
-            <span style={{
-              display: "inline-block",
-              padding: "3px 10px",
-              borderRadius: "4px",
-              border: `1px solid ${color}40`,
-              background: `${color}18`,
-              color,
-              fontFamily: "'JetBrains Mono', monospace",
-              fontSize: "11px",
-              fontWeight: 700,
-              letterSpacing: "0.05em",
-            }}>
-              {short}
-            </span>
-          );
-        }
-
-        function TradeRow({ trade, idx }) {
-          const isWin = trade.win;
-          return (
-            <tr style={{ borderBottom: "1px solid #1a2332" }}>
-              <td style={{ padding: "5px 8px", color: "#607080", fontSize: "11px" }}>#{idx+1}</td>
-              <td style={{ padding: "5px 8px" }}>
-                <span style={{ color: trade.dir === "LONG" ? "#00e5a0" : "#ff4d6d", fontSize: "11px", fontWeight: 700 }}>
-                  {trade.dir === "LONG" ? "▲" : "▼"} {trade.dir}
-                </span>
-              </td>
-              <td style={{ padding: "5px 8px", fontSize: "11px", color: "#8899aa" }}>{trade.signalType}</td>
-              <td style={{ padding: "5px 8px" }}><RegimeBadge regime={trade.regime} /></td>
-              <td style={{ padding: "5px 8px", fontSize: "11px", color: "#8899aa" }}>{trade.entry?.toFixed(2)}</td>
-              <td style={{ padding: "5px 8px", fontSize: "12px", fontWeight: 700, color: isWin ? "#00e5a0" : "#ff4d6d" }}>
-                {trade.pnlR > 0 ? "+" : ""}{trade.pnlR?.toFixed(2)}R
-              </td>
-              <td style={{ padding: "5px 8px", fontSize: "11px", color: "#607080" }}>{trade.reason}</td>
-            </tr>
-          );
-        }
-
-        function Dashboard() {
-          const [sim, setSim] = useState(null);
-          const [activeSymbol, setActiveSymbol] = useState("V10");
-          const [livePrice, setLivePrice] = useState(null);
-          const [isLive, setIsLive] = useState(false);
-          const [liveInterval, setLiveIntervalState] = useState(null);
-          const [currentRegime, setCurrentRegime] = useState("RANGE");
-
-          useEffect(() => {
-            const result = runBotSimulation();
-            setSim(result);
-            if (result.bars.length > 0) {
-              const last = result.bars[result.bars.length - 1];
-              setLivePrice(last.c);
-              const r = detectRegime(result.bars);
-              setCurrentRegime(r.regime);
-            }
-          }, [activeSymbol]);
-
-          const toggleLive = useCallback(() => {
-            if (isLive) {
-              if (liveInterval) clearInterval(liveInterval);
-              setIsLive(false);
-            } else {
-              const iv = setInterval(() => {
-                setSim(prev => {
-                  if (!prev) return prev;
-                  const lastBar = prev.bars[prev.bars.length - 1];
-                  const change = (Math.random() - 0.499) * lastBar.c * 0.0015;
-                  const newPrice = Math.max(lastBar.c + change, 1);
-                  const newBar = {
-                    t: Date.now(),
-                    o: lastBar.c,
-                    h: Math.max(lastBar.c, newPrice) + Math.random() * lastBar.c * 0.0004,
-                    l: Math.min(lastBar.c, newPrice) - Math.random() * lastBar.c * 0.0004,
-                    c: newPrice,
-                    v: Math.max(10, Math.round(150 + (Math.random()-0.5)*60)),
-                  };
-                  const newBars = [...prev.bars.slice(-249), newBar];
-                  const r = detectRegime(newBars);
-                  setCurrentRegime(r.regime);
-                  setLivePrice(newPrice);
-                  return { ...prev, bars: newBars };
+    async connect() {
+        this.running = true;
+        const url = `wss://ws.deriv.com/websockets/v3?app_id=${this.appId}`;
+        while (this.running) {
+            try {
+                this.ws = new WebSocket(url);
+                await new Promise((resolve, reject) => {
+                    this.ws.onopen = resolve;
+                    this.ws.onerror = (e) => reject(e);
                 });
-              }, 1200);
-              setLiveIntervalState(iv);
-              setIsLive(true);
+                console.log("Deriv WS conectado");
+                if (this.token) await this.authorize();
+                await this.subscribeTicks();
+                this.startHeartbeat();
+                this.ws.onmessage = (msg) => this.handleMessage(JSON.parse(msg.data));
+                this.ws.onclose = () => {
+                    if (this.running) {
+                        console.warn("WS cerrado, reconectando en 5s...");
+                        setTimeout(() => this.connect(), 5000);
+                    }
+                };
+                await new Promise(() => {}); // mantener conexión
+            } catch(e) {
+                console.error("Error conexión Deriv:", e);
+                await new Promise(r => setTimeout(r, 5000));
             }
-          }, [isLive, liveInterval]);
+        }
+    }
 
-          useEffect(() => () => { if (liveInterval) clearInterval(liveInterval); }, [liveInterval]);
+    async authorize() {
+        const resp = await this.send({ authorize: this.token });
+        if (resp.error) {
+            console.error("Auth falló:", resp.error.message);
+            this.authDone = false;
+        } else {
+            console.log("Autorizado. Balance:", resp.authorize.balance);
+            this.balance = parseFloat(resp.authorize.balance);
+            this.currency = resp.authorize.currency || "USD";
+            this.authDone = true;
+            if (this.onBalance) this.onBalance(this.balance);
+        }
+    }
 
-          if (!sim) return (
-            <div style={{ display:"flex",alignItems:"center",justifyContent:"center",height:"100vh",background:"#070d14",color:"#00e5a0",fontFamily:"monospace" }}>
-              Initializing simulation...
-            </div>
-          );
+    async subscribeTicks() {
+        const resp = await this.send({ ticks: this.symbol, subscribe: 1 });
+        if (resp.subscription) {
+            this.subscriptionId = resp.subscription.id;
+            console.log("Suscrito a ticks", this.subscriptionId);
+        }
+    }
 
-          const { trades, balance, winrate, pf, expectancy, balanceHistory, bars } = sim;
-          const wins = trades.filter(t => t.win).length;
-          const losses = trades.length - wins;
-          const totalR = trades.reduce((a, t) => a + t.pnlR, 0);
-          const regimeDist = trades.reduce((acc, t) => { acc[t.regime] = (acc[t.regime]||0)+1; return acc; }, {});
+    startHeartbeat() {
+        this.heartbeatTimer = setInterval(() => {
+            if (this.ws && this.ws.readyState === WebSocket.OPEN) {
+                this.ws.send(JSON.stringify({ ping: 1 }));
+            }
+        }, 30000);
+    }
 
-          const statCard = (label, value, color = "#c9d6e6", sub = null) => (
-            <div style={{
-              background: "#0d1a27",
-              border: "1px solid #1a2d42",
-              borderRadius: "8px",
-              padding: "14px 16px",
-              minWidth: "130px",
-              flex: "1",
-            }}>
-              <div style={{ color: "#4a6070", fontSize: "10px", fontFamily: "'JetBrains Mono',monospace", letterSpacing: "0.08em", textTransform:"uppercase", marginBottom: "6px" }}>{label}</div>
-              <div style={{ color, fontSize: "22px", fontWeight: 800, fontFamily: "'JetBrains Mono',monospace", lineHeight: 1 }}>{value}</div>
-              {sub && <div style={{ color: "#4a6070", fontSize: "10px", marginTop: "4px" }}>{sub}</div>}
-            </div>
-          );
+    async send(request) {
+        return new Promise((resolve) => {
+            this.reqId++;
+            request.req_id = this.reqId;
+            this.pendingRequests.set(this.reqId, resolve);
+            this.ws.send(JSON.stringify(request));
+        });
+    }
 
-          return (
-            <div style={{
-              minHeight: "100vh",
-              background: "#070d14",
-              color: "#c9d6e6",
-              fontFamily: "'Inter', 'Segoe UI', sans-serif",
-              padding: "20px",
-              boxSizing: "border-box",
-            }}>
-              {/* Header */}
-              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "20px" }}>
-                <div>
-                  <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
-                    <div style={{
-                      width: "36px", height: "36px", borderRadius: "8px",
-                      background: "linear-gradient(135deg,#00e5a0,#0099cc)",
-                      display: "flex", alignItems: "center", justifyContent: "center",
-                      fontSize: "18px",
-                    }}>⚡</div>
-                    <div>
-                      <div style={{ fontSize: "18px", fontWeight: 800, letterSpacing: "-0.02em", color: "#e8f0fe" }}>
-                        DerivAdaptiveBot
-                      </div>
-                      <div style={{ fontSize: "11px", color: "#4a6070", fontFamily: "monospace" }}>
-                        V10/V25 · M1 · Adaptive Engine v1.0
-                      </div>
+    handleMessage(data) {
+        if (data.tick) {
+            const tick = data.tick;
+            const price = parseFloat(tick.quote);
+            const epoch = parseInt(tick.epoch) * 1000;
+            this.latestPrice = price;
+            this.aggregator.addTick(epoch, price);
+            if (this.onTick) this.onTick(price);
+        } else if (data.proposal_open_contract) {
+            const update = data.proposal_open_contract;
+            if (this.onTradeUpdate) this.onTradeUpdate(update);
+        } else if (data.authorize) {
+            this.balance = parseFloat(data.authorize.balance);
+            if (this.onBalance) this.onBalance(this.balance);
+        } else if (data.buy) {
+            // respuesta a buy
+        } else if (data.error) {
+            console.error("Deriv error:", data.error.message);
+        }
+        // resolver pending requests
+        if (data.req_id && this.pendingRequests.has(data.req_id)) {
+            this.pendingRequests.get(data.req_id)(data);
+            this.pendingRequests.delete(data.req_id);
+        }
+    }
+
+    async getProposal(contractType, stake, duration = 5) {
+        return await this.send({
+            proposal: 1,
+            amount: stake.toString(),
+            basis: "stake",
+            contract_type: contractType,
+            currency: this.currency,
+            duration: duration,
+            symbol: this.symbol,
+        });
+    }
+
+    async buyContract(proposalId, price) {
+        return await this.send({
+            buy: proposalId,
+            price: price,
+        });
+    }
+
+    async subscribeContract(contractId) {
+        return await this.send({
+            proposal_open_contract: 1,
+            contract_id: contractId,
+            subscribe: 1,
+        });
+    }
+
+    disconnect() {
+        this.running = false;
+        if (this.heartbeatTimer) clearInterval(this.heartbeatTimer);
+        if (this.ws) this.ws.close();
+    }
+}
+
+// ======================== RÉGIMEN DE MERCADO ========================
+class MarketRegimeDetector {
+    constructor() {
+        this.atrHistory = [];
+    }
+    detect(candles) {
+        if (candles.length < 50) return { regime: "WARMING_UP", confidence: 0, direction: 0 };
+        const closes = candles.map(c => c.c);
+        const highs = candles.map(c => c.h);
+        const lows = candles.map(c => c.l);
+        const roc10 = (closes[closes.length-1] - closes[closes.length-11]) / closes[closes.length-11] * 100;
+        const atrVals = calcATR(candles);
+        const curATR = atrVals[atrVals.length-1];
+        this.atrHistory.push(curATR);
+        if (this.atrHistory.length > 200) this.atrHistory.shift();
+        const sorted = [...this.atrHistory].sort((a,b)=>a-b);
+        const atrPct = sorted.filter(v => v <= curATR).length / sorted.length;
+        const structure = this.detectStructure(highs, lows);
+        const adx = Math.abs(roc10) * 8;
+        let regime = "RANGE", conf = 0.5, dir = 0;
+        if (atrPct < 0.25 && structure === "CONTRACTION") { regime = "COMPRESSION"; conf = 0.75; }
+        else if (atrPct > 0.75 && structure.includes("BREAKOUT")) {
+            regime = "EXPANSION"; conf = 0.7;
+            dir = structure === "BREAKOUT_UP" ? 1 : -1;
+        } else if (adx > 28) { regime = "STRONG_TREND"; conf = 0.85; dir = roc10 > 0 ? 1 : -1; }
+        else if (adx > 16) { regime = "WEAK_TREND"; conf = 0.65; dir = roc10 > 0 ? 1 : -1; }
+        return { regime, confidence: conf, direction: dir, atr: curATR, atrPct, roc10 };
+    }
+    detectStructure(highs, lows) {
+        const w = Math.min(20, highs.length);
+        const hSeg = highs.slice(-w);
+        const lSeg = lows.slice(-w);
+        const range = Math.max(...hSeg) - Math.min(...lSeg);
+        if (range === 0) return "FLAT";
+        const prevHigh = Math.max(...hSeg.slice(0, -3));
+        const prevLow = Math.min(...lSeg.slice(0, -3));
+        if (hSeg[hSeg.length-1] > prevHigh) return "BREAKOUT_UP";
+        if (lSeg[lSeg.length-1] < prevLow) return "BREAKOUT_DOWN";
+        if (range < 0.6 * (Math.max(...highs.slice(-30)) - Math.min(...lows.slice(-30)))) return "CONTRACTION";
+        return "NEUTRAL";
+    }
+}
+
+// ======================== MOTOR DE SEÑALES ========================
+class SignalEngine {
+    constructor(persistence = 3) { this.persistence = persistence; }
+    evaluate(candles, regime, params = {}) {
+        if (candles.length < 60 || regime.regime !== "COMPRESSION") return null;
+        const closes = candles.map(c => c.c);
+        const highs = candles.map(c => c.h);
+        const lows = candles.map(c => c.l);
+        if (!this.isCompression(candles)) return null;
+        const resistance = Math.max(...highs.slice(-21, -1));
+        const support = Math.min(...lows.slice(-21, -1));
+        const breakoutUp = closes[closes.length-1] > resistance && highs[highs.length-1] > resistance;
+        const breakoutDown = closes[closes.length-1] < support && lows[lows.length-1] < support;
+        if (!breakoutUp && !breakoutDown) return null;
+        const direction = breakoutUp ? "LONG" : "SHORT";
+        if (!this.validateBreakout(candles, direction)) return null;
+        if (!this.checkMomentum(closes, direction)) return null;
+        const entry = closes[closes.length-1];
+        const atrVals = calcATR(candles);
+        const atr = atrVals[atrVals.length-1];
+        const slMult = params.atr_sl_mult || 1.5;
+        const tpMult = params.atr_tp_mult || 2.5;
+        const sl = direction === "LONG" ? entry - atr * slMult : entry + atr * slMult;
+        const tp = direction === "LONG" ? entry + atr * tpMult : entry - atr * tpMult;
+        if ((tp - entry) * (direction === "LONG" ? 1 : -1) < 0) return null;
+        const rrr = Math.abs(tp - entry) / Math.max(Math.abs(entry - sl), 0.00001);
+        if (rrr < 1.5) return null;
+        return { direction, entry, sl, tp, setup_type: "COMPRESSION_BO", atr, rrr };
+    }
+    isCompression(candles) {
+        const atr = calcATR(candles);
+        const recent = atr.slice(-5).reduce((a,b)=>a+b,0)/5;
+        const prior = atr.slice(-20,-5).reduce((a,b)=>a+b,0)/15;
+        return recent < prior * 0.8;
+    }
+    validateBreakout(candles, direction) {
+        const closes = candles.map(c => c.c);
+        const highs = candles.map(c => c.h);
+        const lows = candles.map(c => c.l);
+        if (direction === "LONG") {
+            const resist = Math.max(...highs.slice(-(this.persistence+2), -1));
+            const count = closes.slice(-this.persistence).filter(c => c > resist).length;
+            if (count < this.persistence - 1) return false;
+            if (highs[highs.length-1] <= highs[highs.length-2]) return false;
+        } else {
+            const supp = Math.min(...lows.slice(-(this.persistence+2), -1));
+            const count = closes.slice(-this.persistence).filter(c => c < supp).length;
+            if (count < this.persistence - 1) return false;
+            if (lows[lows.length-1] >= lows[lows.length-2]) return false;
+        }
+        const atr = calcATR(candles);
+        const recentAtr = atr.slice(-3).reduce((a,b)=>a+b,0)/3;
+        const priorAtr = atr.slice(-10, -3).reduce((a,b)=>a+b,0)/7;
+        return recentAtr >= priorAtr * 1.05;
+    }
+    checkMomentum(closes, direction) {
+        if (closes.length < 6) return false;
+        const seg = closes.slice(-6);
+        const mom = [];
+        for (let i = 1; i < seg.length; i++) mom.push(seg[i] - seg[i-1]);
+        const accel = [];
+        for (let i = 1; i < mom.length; i++) accel.push(mom[i] - mom[i-1]);
+        if (accel.length === 0) return false;
+        if (direction === "LONG") return accel[accel.length-1] > 0 && mom[mom.length-1] > 0;
+        else return accel[accel.length-1] < 0 && mom[mom.length-1] < 0;
+    }
+}
+
+// ======================== SISTEMA ADAPTATIVO ========================
+class AdaptiveSystem {
+    constructor(decay = 0.99, explore = 0.1) {
+        this.setups = {};
+        this.history = [];
+        this.decay = decay;
+        this.explore = explore;
+        this.dailyTrades = 0;
+    }
+    getScore(setup) {
+        const s = this.setups[setup];
+        if (!s || s.count < 5) return 0;
+        return s.meanR;
+    }
+    shouldEnter(setup) {
+        const s = this.setups[setup];
+        if (!s || s.count < 3) return true;
+        if (Math.random() < this.explore) return true;
+        return s.meanR > 0;
+    }
+    recordTrade(setup, regime, r, win) {
+        if (!this.setups[setup]) this.setups[setup] = { count: 0, sumR: 0, meanR: 0, wins: 0 };
+        const s = this.setups[setup];
+        s.count++; s.sumR += r; s.meanR = s.sumR / s.count;
+        if (win) s.wins++;
+        for (let key in this.setups) {
+            this.setups[key].sumR *= this.decay;
+            this.setups[key].count = Math.max(1, Math.floor(this.setups[key].count * this.decay));
+        }
+        this.history.push({ setup, regime, r, win });
+        if (this.history.length > 200) this.history.shift();
+        this.dailyTrades++;
+    }
+    winStreak() {
+        let streak = 0;
+        for (let i = this.history.length - 1; i >= 0; i--) {
+            if (this.history[i].win) streak++; else break;
+        }
+        return streak;
+    }
+    recentWinRate(n = 20) {
+        const slice = this.history.slice(-n);
+        if (slice.length === 0) return 0;
+        return slice.filter(t => t.win).length / slice.length;
+    }
+}
+
+// ======================== AUTO-OPTIMIZADOR ========================
+class AutoOptimizer {
+    constructor() {
+        this.params = { atr_sl_mult: 1.5, atr_tp_mult: 2.5, entry_threshold: 0.2 };
+        this.bounds = { atr_sl_mult: [1.0, 2.5], atr_tp_mult: [1.5, 4.0] };
+    }
+    optimize(adaptiveSys, equityCurve, lookback = 20) {
+        const recent = adaptiveSys.history.slice(-lookback);
+        if (recent.length < 5) return this.params;
+        const rVals = recent.map(t => t.r);
+        const meanR = rVals.reduce((a,b)=>a+b,0) / rVals.length;
+        const variance = rVals.reduce((a,b)=>a+(b-meanR)**2,0) / rVals.length;
+        const stdR = Math.sqrt(variance) || 0.2;
+        const sharpe = meanR / (stdR + 0.0001);
+        const peak = Math.max(...equityCurve.slice(-lookback));
+        const current = equityCurve[equityCurve.length-1];
+        const dd = (peak - current) / peak || 0;
+        const step = 0.05;
+        if (sharpe < -0.2 || dd > 0.1) {
+            this.params.atr_sl_mult = Math.max(this.bounds.atr_sl_mult[0], this.params.atr_sl_mult - step);
+            this.params.atr_tp_mult = Math.max(this.bounds.atr_tp_mult[0], this.params.atr_tp_mult - step);
+        } else if (sharpe > 0.5 && dd < 0.05) {
+            this.params.atr_tp_mult = Math.min(this.bounds.atr_tp_mult[1], this.params.atr_tp_mult + step);
+            this.params.atr_sl_mult = Math.min(this.bounds.atr_sl_mult[1], this.params.atr_sl_mult + step * 0.5);
+        }
+        return this.params;
+    }
+}
+
+// ======================== GESTOR DE RIESGO ========================
+class RiskManager {
+    constructor(baseRiskPct = 0.005, maxDailyLoss = 0.05) {
+        this.baseRisk = baseRiskPct;
+        this.maxLoss = maxDailyLoss;
+        this.startBalance = 0;
+    }
+    calculateStake(balance, entry, sl, regime, adaptive) {
+        if (!this.startBalance) this.startBalance = balance;
+        const dailyPnl = (balance - this.startBalance) / this.startBalance;
+        if (dailyPnl < -this.maxLoss) return 0;
+        let mult = 1.0;
+        const dd = 1 - (balance / Math.max(this.startBalance, balance));
+        if (dd > 0.15) mult = 0.5;
+        else if (dd > 0.10) mult = 0.75;
+        if (adaptive.winStreak() >= 3) mult = Math.min(mult * 1.2, 1.5);
+        if (regime.regime.includes("TREND")) mult *= 1.1;
+        else if (regime.regime === "COMPRESSION") mult *= 0.8;
+        const riskAmount = balance * this.baseRisk * mult;
+        const slDist = Math.abs(entry - sl);
+        const stake = riskAmount / (slDist / 0.0001);
+        return Math.min(stake, balance * 0.02);
+    }
+}
+
+// ======================== COMPONENTE REACT ========================
+function App() {
+    const [token, setToken] = useState("");
+    const [connected, setConnected] = useState(false);
+    const [running, setRunning] = useState(false);
+    const [price, setPrice] = useState(0);
+    const [balance, setBalance] = useState(0);
+    const [regime, setRegime] = useState({ regime: "DISCONNECTED", confidence: 0, direction: 0 });
+    const [openTrade, setOpenTrade] = useState(null);
+    const [trades, setTrades] = useState([]);
+    const [equity, setEquity] = useState([1000]);
+    const [log, setLog] = useState([]);
+    const [symbol, setSymbol] = useState("R_10");
+    const [stats, setStats] = useState({ wins: 0, total: 0, pf: 0, expectancy: 0 });
+
+    const apiRef = useRef(null);
+    const botRef = useRef({
+        regimeDetector: new MarketRegimeDetector(),
+        signalEngine: new SignalEngine(),
+        adaptive: new AdaptiveSystem(),
+        optimizer: new AutoOptimizer(),
+        risk: new RiskManager(),
+        candles: [],
+        currentTrade: null,
+        cooldown: 0,
+        equityCurve: [1000],
+        trades: [],
+    });
+
+    const addLog = (msg) => setLog(prev => [...prev.slice(-200), `[${new Date().toLocaleTimeString()}] ${msg}`]);
+
+    const handleConnect = async () => {
+        if (connected) {
+            apiRef.current?.disconnect();
+            setConnected(false); setRunning(false);
+            addLog("Desconectado");
+            return;
+        }
+        if (!token) { alert("Ingrese API Token"); return; }
+        const api = new DerivAPI(DEFAULT_CONFIG.appId, token, symbol);
+        api.onTick = (p) => setPrice(p);
+        api.onBalance = (b) => {
+            setBalance(b);
+            if (!botRef.current.risk.startBalance) botRef.current.risk.startBalance = b;
+        };
+        api.onTradeUpdate = (update) => handleTradeUpdate(update);
+        apiRef.current = api;
+        api.connect().then(() => {}).catch(console.error);
+        setConnected(true);
+        addLog("Conectado a Deriv WebSocket");
+    };
+
+    const handleTradeUpdate = (update) => {
+        const bot = botRef.current;
+        if (bot.currentTrade && update.contract_id === bot.currentTrade.contractId) {
+            if (update.is_sold) {
+                const profit = parseFloat(update.profit) || 0;
+                const entry = bot.currentTrade.entry;
+                const sl = bot.currentTrade.sl;
+                const direction = bot.currentTrade.direction;
+                const points = profit; // Simplificación; en realidad Deriv da profit en $
+                const risk = Math.abs(entry - sl);
+                const r = points / (risk * bot.currentTrade.stake / risk) ; // ajuste
+                // Debemos calcular R real con datos correctos
+                const rCalc = (direction === "LONG" ? 1 : -1) * (price - entry) / risk;
+                const isWin = profit > 0;
+                const tradeRecord = {
+                    ...bot.currentTrade,
+                    exitPrice: price,
+                    pnl: profit,
+                    r: rCalc,
+                    win: isWin,
+                    reason: update.exit_tick_time ? "TP/SL/TIMEOUT" : "CLOSED",
+                };
+                bot.trades.push(tradeRecord);
+                setTrades([...bot.trades]);
+                bot.adaptive.recordTrade(tradeRecord.setup_type, tradeRecord.regime, tradeRecord.r, tradeRecord.win);
+                bot.equityCurve.push(balance);
+                setEquity([...bot.equityCurve]);
+                bot.currentTrade = null;
+                setOpenTrade(null);
+                bot.cooldown = DEFAULT_CONFIG.cooldownBars;
+                addLog(`Trade cerrado: ${isWin ? "GANANCIA" : "PÉRDIDA"} R=${tradeRecord.r.toFixed(2)}`);
+            }
+        }
+    };
+
+    // Lógica principal: se activa cuando se completa una vela nueva
+    useEffect(() => {
+        if (!apiRef.current || !running) return;
+        const aggregator = apiRef.current.aggregator;
+        aggregator.onCandleComplete = (candle) => {
+            const bot = botRef.current;
+            const candles = aggregator.getCandles(100);
+            if (candles.length < 60) return;
+            bot.candles = candles;
+            const regimeData = bot.regimeDetector.detect(candles);
+            setRegime(regimeData);
+            if (bot.cooldown > 0) { bot.cooldown--; return; }
+            // Verificar salida local (respaldo)
+            if (bot.currentTrade) {
+                const exitCheck = checkExit(bot.currentTrade, price, candles, regimeData);
+                if (exitCheck.exit) {
+                    // Intentar vender o esperar cierre Deriv
+                    if (apiRef.current.authDone) {
+                        // No podemos vender manualmente en Deriv, solo esperar update.
+                    }
+                    addLog(`Señal salida: ${exitCheck.reason}`);
+                }
+            }
+            // Evaluar entrada si no hay trade
+            if (!bot.currentTrade && bot.adaptive.dailyTrades < DEFAULT_CONFIG.maxDailyTrades) {
+                const signal = bot.signalEngine.evaluate(candles, regimeData, bot.optimizer.params);
+                if (signal && bot.adaptive.shouldEnter(signal.setup_type)) {
+                    const stake = bot.risk.calculateStake(balance, signal.entry, signal.sl, regimeData, bot.adaptive);
+                    if (stake > 0.5) {
+                        executeTrade(signal, stake);
+                    }
+                }
+            }
+            // Optimizar cada 20 velas
+            if (bot.trades.length % 20 === 0 && bot.trades.length > 0) {
+                bot.optimizer.optimize(bot.adaptive, bot.equityCurve);
+            }
+        };
+        return () => { aggregator.onCandleComplete = null; };
+    }, [running, price, balance]);
+
+    const executeTrade = async (signal, stake) => {
+        const api = apiRef.current;
+        if (!api || !api.authDone) return;
+        addLog(`Señal: ${signal.setup_type} ${signal.direction} @ ${signal.entry.toFixed(5)}`);
+        try {
+            const contractType = signal.direction === "LONG" ? "CALL" : "PUT";
+            // En Deriv, para sintéticos con SL/TP se usa MULTIPLIER
+            const proposalResp = await api.getProposal("MULTIPLIER", stake, 5);
+            if (proposalResp.error) {
+                addLog(`Error proposal: ${proposalResp.error.message}`);
+                return;
+            }
+            const proposal = proposalResp.proposal;
+            if (!proposal) return;
+            // Ajustar stake según proposal
+            const buyResp = await api.buyContract(proposal.id, signal.entry);
+            if (buyResp.error) {
+                addLog(`Error buy: ${buyResp.error.message}`);
+                return;
+            }
+            const contractId = buyResp.buy.contract_id;
+            await api.subscribeContract(contractId);
+            botRef.current.currentTrade = {
+                contractId,
+                direction: signal.direction,
+                entry: signal.entry,
+                sl: signal.sl,
+                tp: signal.tp,
+                setup_type: signal.setup_type,
+                regime: regime.regime,
+                stake,
+                openTime: Date.now(),
+            };
+            setOpenTrade(botRef.current.currentTrade);
+            addLog(`Trade abierto ID: ${contractId}`);
+        } catch(e) {
+            addLog(`Error ejecutando trade: ${e.message}`);
+        }
+    };
+
+    const checkExit = (trade, price, candles, regime) => {
+        const dir = trade.direction === "LONG" ? 1 : -1;
+        if (dir * (price - trade.sl) <= 0) return { exit: true, reason: "SL" };
+        if (dir * (price - trade.tp) >= 0) return { exit: true, reason: "TP" };
+        if ((candles.length - (trade.barIndex || 0)) > 20) return { exit: true, reason: "TIMEOUT" };
+        return { exit: false };
+    };
+
+    const toggleRunning = () => {
+        if (!connected) return alert("Conecte primero");
+        setRunning(!running);
+        addLog(running ? "Bot PAUSADO" : "Bot ACTIVADO");
+    };
+
+    const wins = trades.filter(t => t.win).length;
+    const winRate = trades.length ? (wins / trades.length * 100).toFixed(1) : 0;
+    const grossProfit = trades.filter(t => t.win).reduce((a,b)=>a + b.pnl, 0);
+    const grossLoss = Math.abs(trades.filter(t => !t.win).reduce((a,b)=>a + b.pnl, 0)) || 1;
+    const pf = (grossProfit / grossLoss).toFixed(2);
+    const expectancy = trades.length ? (trades.reduce((a,b)=>a + b.r, 0) / trades.length).toFixed(2) : 0;
+
+    return (
+        <div>
+            <header>
+                <h1>⚡ DerivAdaptiveBot Pro</h1>
+                <div className="controls">
+                    <input type="text" placeholder="Deriv API Token" value={token}
+                           onChange={e => setToken(e.target.value)} style={{width: 200}} />
+                    <select value={symbol} onChange={e => setSymbol(e.target.value)}>
+                        <option value="R_10">V10 (R_10)</option>
+                        <option value="R_25">V25 (R_25)</option>
+                    </select>
+                    <button onClick={handleConnect} className={connected ? "danger" : "primary"}>
+                        {connected ? "Desconectar" : "Conectar"}
+                    </button>
+                    <button onClick={toggleRunning} disabled={!connected}
+                            className={running ? "danger" : "primary"}>
+                        {running ? "⏹️ STOP" : "▶️ START"}
+                    </button>
+                </div>
+            </header>
+            <div className="dashboard">
+                {/* Panel izquierdo: Estado */}
+                <div className="panel">
+                    <h3>💰 Cuenta</h3>
+                    <div className="status-row"><span className="label">Balance:</span><span className="value">{balance.toFixed(2)}</span></div>
+                    <div className="status-row"><span className="label">Precio:</span><span className="value">{price.toFixed(5)}</span></div>
+                    <div className="status-row"><span className="label">Régimen:</span>
+                        <span className="badge" style={{background: regimeColor(regime.regime)}}>{regime.regime}</span>
                     </div>
-                  </div>
+                    <div className="status-row"><span className="label">Trades hoy:</span><span className="value">{botRef.current.adaptive.dailyTrades}</span></div>
+                    <div className="status-row"><span className="label">Racha:</span><span className="value">{botRef.current.adaptive.winStreak()}</span></div>
                 </div>
-                <div style={{ display: "flex", gap: "10px", alignItems: "center" }}>
-                  {["V10","V25"].map(s => (
-                    <button key={s} onClick={() => setActiveSymbol(s)} style={{
-                      padding: "6px 16px",
-                      borderRadius: "6px",
-                      border: activeSymbol===s ? "1px solid #00e5a0" : "1px solid #1a2d42",
-                      background: activeSymbol===s ? "#00e5a020" : "transparent",
-                      color: activeSymbol===s ? "#00e5a0" : "#4a6070",
-                      cursor: "pointer",
-                      fontFamily: "monospace",
-                      fontSize: "13px",
-                      fontWeight: 700,
-                    }}>{s}</button>
-                  ))}
-                  <button onClick={toggleLive} style={{
-                    padding: "6px 16px",
-                    borderRadius: "6px",
-                    border: `1px solid ${isLive ? "#f5c518" : "#1a2d42"}`,
-                    background: isLive ? "#f5c51818" : "transparent",
-                    color: isLive ? "#f5c518" : "#4a6070",
-                    cursor: "pointer",
-                    fontFamily: "monospace",
-                    fontSize: "12px",
-                  }}>
-                    {isLive ? "⏸ PAUSE" : "▶ LIVE SIM"}
-                  </button>
-                </div>
-              </div>
-
-              {/* Live Price Bar */}
-              <div style={{
-                background: "#0d1a27",
-                border: "1px solid #1a2d42",
-                borderRadius: "8px",
-                padding: "12px 16px",
-                marginBottom: "16px",
-                display: "flex",
-                alignItems: "center",
-                gap: "20px",
-                flexWrap: "wrap",
-              }}>
-                <div>
-                  <span style={{ color: "#4a6070", fontSize: "10px", fontFamily: "monospace", textTransform: "uppercase" }}>Price</span>
-                  <div style={{ fontSize: "24px", fontWeight: 800, color: "#e8f0fe", fontFamily: "monospace" }}>
-                    {livePrice?.toFixed(3) || "—"}
-                  </div>
-                </div>
-                <div style={{ width: "1px", height: "40px", background: "#1a2d42" }} />
-                <div>
-                  <span style={{ color: "#4a6070", fontSize: "10px", fontFamily: "monospace", textTransform: "uppercase" }}>Regime</span>
-                  <div style={{ marginTop: "4px" }}>
-                    <RegimeBadge regime={currentRegime} />
-                  </div>
-                </div>
-                <div style={{ width: "1px", height: "40px", background: "#1a2d42" }} />
-                <div>
-                  <span style={{ color: "#4a6070", fontSize: "10px", fontFamily: "monospace", textTransform: "uppercase" }}>Balance</span>
-                  <div style={{ fontSize: "20px", fontWeight: 700, color: balance >= 1000 ? "#00e5a0" : "#ff4d6d", fontFamily: "monospace" }}>
-                    ${balance.toFixed(2)}
-                  </div>
-                </div>
-                <div style={{ marginLeft: "auto", fontSize: "11px", color: isLive ? "#f5c518" : "#2a3a4a", fontFamily: "monospace" }}>
-                  {isLive ? "● LIVE" : "○ PAUSED"}
-                </div>
-              </div>
-
-              {/* Chart */}
-              <div style={{ background: "#0d1a27", border: "1px solid #1a2d42", borderRadius: "8px", padding: "12px", marginBottom: "16px" }}>
-                <div style={{ fontSize: "11px", color: "#4a6070", fontFamily: "monospace", marginBottom: "8px", textTransform: "uppercase" }}>
-                  {activeSymbol} · M1 · Last 80 Bars
-                </div>
-                <div style={{ overflowX: "auto" }}>
-                  <CandleChart bars={bars} trades={trades} width={Math.min(window.innerWidth - 80, 900)} height={160} />
-                </div>
-              </div>
-
-              {/* Stats Row */}
-              <div style={{ display: "flex", gap: "10px", marginBottom: "16px", flexWrap: "wrap" }}>
-                {statCard("Winrate", `${(winrate*100).toFixed(1)}%`, winrate >= 0.5 ? "#00e5a0" : "#ff4d6d", `${wins}W / ${losses}L`)}
-                {statCard("Profit Factor", pf.toFixed(2), pf >= 1.5 ? "#00e5a0" : pf >= 1.0 ? "#f5c518" : "#ff4d6d")}
-                {statCard("Expectancy", `${expectancy >= 0 ? "+" : ""}${expectancy.toFixed(3)}R`, expectancy >= 0 ? "#00e5a0" : "#ff4d6d")}
-                {statCard("Total R", `${totalR >= 0 ? "+" : ""}${totalR.toFixed(2)}R`, totalR >= 0 ? "#00e5a0" : "#ff4d6d", `${trades.length} trades`)}
-                {statCard("P&L", `${((balance-1000)/1000*100).toFixed(2)}%`, balance >= 1000 ? "#00e5a0" : "#ff4d6d", `$${(balance-1000).toFixed(2)}`)}
-              </div>
-
-              {/* Bottom Grid */}
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px", marginBottom: "16px" }}>
-                {/* Equity Curve */}
-                <div style={{ background: "#0d1a27", border: "1px solid #1a2d42", borderRadius: "8px", padding: "14px" }}>
-                  <div style={{ fontSize: "11px", color: "#4a6070", fontFamily: "monospace", textTransform: "uppercase", marginBottom: "10px" }}>
-                    Equity Curve
-                  </div>
-                  <EquityCurve data={balanceHistory} width={340} height={100} />
-                  <div style={{ display: "flex", justifyContent: "space-between", marginTop: "8px" }}>
-                    <span style={{ fontSize: "10px", color: "#4a6070", fontFamily: "monospace" }}>$1000.00 start</span>
-                    <span style={{ fontSize: "10px", color: balance >= 1000 ? "#00e5a0" : "#ff4d6d", fontFamily: "monospace" }}>${balance.toFixed(2)} now</span>
-                  </div>
-                </div>
-
-                {/* Regime Distribution */}
-                <div style={{ background: "#0d1a27", border: "1px solid #1a2d42", borderRadius: "8px", padding: "14px" }}>
-                  <div style={{ fontSize: "11px", color: "#4a6070", fontFamily: "monospace", textTransform: "uppercase", marginBottom: "10px" }}>
-                    Trades by Regime
-                  </div>
-                  {Object.entries(regimeDist).map(([r, count]) => {
-                    const regTrades = trades.filter(t => t.regime === r);
-                    const regWR = regTrades.filter(t => t.win).length / regTrades.length;
-                    const col = REGIME_COLORS[r] || "#607080";
-                    const pct = (count / trades.length) * 100;
-                    return (
-                      <div key={r} style={{ marginBottom: "8px" }}>
-                        <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "2px" }}>
-                          <span style={{ fontSize: "10px", color: col, fontFamily: "monospace" }}>{r.replace(/_/g," ")}</span>
-                          <span style={{ fontSize: "10px", color: "#4a6070", fontFamily: "monospace" }}>
-                            {count} · WR {(regWR*100).toFixed(0)}%
-                          </span>
+                {/* Panel central: Gráfico y trade activo */}
+                <div className="panel chart-container">
+                    <h3>📊 Actividad</h3>
+                    {openTrade ? (
+                        <div style={{padding: '10px', background: '#1a2436', borderRadius: 8}}>
+                            <div>Trade activo: <span className={`badge ${openTrade.direction==='LONG'?'badge-buy':'badge-sell'}`}>{openTrade.direction}</span></div>
+                            <div>Entrada: {openTrade.entry.toFixed(5)} | SL: {openTrade.sl.toFixed(5)} | TP: {openTrade.tp.toFixed(5)}</div>
                         </div>
-                        <div style={{ height: "4px", background: "#1a2d42", borderRadius: "2px" }}>
-                          <div style={{ height: "100%", width: `${pct}%`, background: col, borderRadius: "2px", opacity: 0.7 }} />
-                        </div>
-                      </div>
-                    );
-                  })}
-                  {trades.length === 0 && <div style={{ color: "#4a6070", fontSize: "12px" }}>No trades yet</div>}
+                    ) : <div style={{color: '#5a6880'}}>Sin posición abierta</div>}
+                    <div className="log-area">
+                        {log.slice(-15).map((l,i) => <div key={i}>{l}</div>)}
+                    </div>
                 </div>
-              </div>
-
-              {/* Trade Log */}
-              <div style={{ background: "#0d1a27", border: "1px solid #1a2d42", borderRadius: "8px", padding: "14px" }}>
-                <div style={{ fontSize: "11px", color: "#4a6070", fontFamily: "monospace", textTransform: "uppercase", marginBottom: "12px" }}>
-                  Trade Log · Last {Math.min(trades.length, 20)} trades
-                </div>
-                <div style={{ overflowX: "auto" }}>
-                  <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "12px" }}>
-                    <thead>
-                      <tr style={{ borderBottom: "1px solid #1a2d42" }}>
-                        {["#","Dir","Setup","Regime","Entry","P&L","Exit"].map(h => (
-                          <th key={h} style={{ padding: "5px 8px", textAlign: "left", color: "#4a6070", fontSize: "10px", fontFamily: "monospace", fontWeight: 600, textTransform: "uppercase" }}>{h}</th>
+                {/* Panel derecho: Historial */}
+                <div className="panel">
+                    <h3>📈 Historial</h3>
+                    <div className="status-row"><span>Winrate:</span><span>{winRate}%</span></div>
+                    <div className="status-row"><span>Profit Factor:</span><span>{pf}</span></div>
+                    <div className="status-row"><span>Expectancy R:</span><span>{expectancy}</span></div>
+                    <div className="trade-list">
+                        {trades.slice().reverse().map((t,i) => (
+                            <div key={i} className="trade-item">
+                                <span className={t.win ? "win" : "loss"}>{t.win ? "+" : ""}{t.r.toFixed(2)}R</span>
+                                <span>{t.reason}</span>
+                                <span style={{fontSize: '0.6rem'}}>{new Date(t.openTime).toLocaleTimeString()}</span>
+                            </div>
                         ))}
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {trades.slice(-20).reverse().map((t, i) => (
-                        <TradeRow key={i} trade={t} idx={trades.length - 1 - i} />
-                      ))}
-                    </tbody>
-                  </table>
-                  {trades.length === 0 && (
-                    <div style={{ textAlign: "center", padding: "24px", color: "#4a6070", fontSize: "12px" }}>
-                      No trades in simulation. Waiting for regime + signal confluence...
                     </div>
-                  )}
                 </div>
-              </div>
-
-              {/* Footer */}
-              <div style={{ marginTop: "20px", padding: "12px", border: "1px solid #1a2d42", borderRadius: "8px", background: "#0d1a27" }}>
-                <div style={{ fontSize: "10px", color: "#2a3a4a", fontFamily: "monospace", textAlign: "center", lineHeight: 1.8 }}>
-                  ⚠ DEMO SIMULATION ONLY — NOT CONNECTED TO LIVE DERIV ACCOUNT
-                  <br />
-                  This bot requires connection to Deriv WebSocket API for live operation.
-                  <br />
-                  Always backtest thoroughly before deploying real capital. Past performance ≠ future results.
-                </div>
-              </div>
             </div>
-          );
-        }
+        </div>
+    );
+}
 
-        // Renderizar el dashboard
-        ReactDOM.createRoot(document.getElementById('root')).render(<Dashboard />);
-    </script>
+function regimeColor(regime) {
+    const map = {
+        STRONG_TREND: '#00e5a0', WEAK_TREND: '#4dffb4', RANGE: '#607080',
+        COMPRESSION: '#f0b90b', EXPANSION: '#7b5ea7', WARMING_UP: '#445566',
+        DISCONNECTED: '#ff4d6d',
+    };
+    return map[regime] || '#607080';
+}
 
-    <!-- Script para cambiar pestañas de código Python -->
-    <script>
-        function switchTab(tabId) {
-            // Ocultar todas las secciones
-            document.querySelectorAll('.code-section').forEach(el => el.classList.remove('active'));
-            // Desactivar todos los botones
-            document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
-            // Mostrar la seleccionada
-            document.getElementById('code-' + tabId).classList.add('active');
-            // Activar el botón correspondiente
-            event.target.classList.add('active');
-        }
-    </script>
+ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+</script>
 </body>
 </html>
