@@ -1,428 +1,820 @@
-<!DOCTYPE html>
-<html lang="es">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>BOT APEX v13</title>
-<style>
-@import url('https://fonts.googleapis.com/css2?family=Oxanium:wght@300;400;600;800&display=swap');
+// ════════════════════════════════════════════════
+//  DerivAdaptiveBot — Sniper Mode (JavaScript)
+//  Símbolos: R_10, R_25, R_50, R_75, R_100
+//  Versión Browser Console
+// ════════════════════════════════════════════════
 
-:root {
-  --g1: #00ffe0;
-  --g2: #00b4d8;
-  --red: #ff4757;
-  --gold: #feca57;
-  --win: #2ed573;
-  --bg0: #04080f;
-  --bg1: #080f1a;
-  --bg2: #0d1626;
-  --border: rgba(0,255,224,0.1);
-  --dim: #3d5a72;
-}
+// ─── TOKEN API ──
+// Pega aquí tu token o defínelo en consola antes de ejecutar
+const DERIV_API_TOKEN = typeof DERIV_API_TOKEN !== 'undefined' ? DERIV_API_TOKEN : '';
 
-*{box-sizing:border-box;margin:0;padding:0;}
-body{
-  background:var(--bg0);
-  font-family:'Oxanium',monospace;
-  min-height:100vh;
-  display:flex;align-items:center;justify-content:center;
-  padding:16px;
-}
+// ─── Configuración (idéntica a Python) ──
+const DEFAULT_CONFIG = {
+    symbols: ["R_10", "R_25", "R_50", "R_75", "R_100"],
+    timeframe: "M1",
+    atr_period: 14,
+    atr_slow_period: 50,
+    ema_fast: 8,
+    ema_medium: 21,
+    ema_slow: 55,
+    momentum_period: 5,
+    roc_threshold: 0.018,
+    micro_range_period: 8,
+    sl_atr_mult: 1.5,
+    tp_atr_mult: 2.5,
+    min_rr: 1.5,
+    false_breakout_lookback: 5,
+    fb_rejection_threshold: 0.4,
+    rolling_window: 30,
+    partial_reset_bars: 500,
+    base_risk_pct: 0.2,
+    max_risk_pct: 0.5,
+    min_risk_pct: 0.1,
+    defensive_dd_pct: 5.0,
+    pause_dd_pct: 10.0,
+    winrate_aggressive: 0.62,
+    winrate_defensive: 0.42,
+    trailing_activation_r: 1.0,
+    trailing_atr_mult: 1.0,
+    momentum_exit_period: 3,
+    daily_stop_loss_pct: 3.0,
+    initial_balance: 1000.0,
+    min_bars_required: 80,
+    log_level: "INFO",
+    log_file: null,
+    state_file: null,
+    api_token: DERIV_API_TOKEN,
 
-.wrap{width:100%;max-width:400px;}
-
-/* MODAL */
-.modal-overlay{position:fixed;inset:0;background:rgba(4,8,15,.96);display:flex;align-items:center;justify-content:center;z-index:999;backdrop-filter:blur(8px);transition:opacity .3s;}
-.modal-overlay.hidden{opacity:0;pointer-events:none;}
-.modal{background:var(--bg1);border:1px solid var(--border);border-radius:18px;padding:24px 22px;max-width:320px;width:92%;position:relative;}
-.modal::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,transparent,var(--g1),transparent);}
-.m-title{font-size:16px;font-weight:800;color:#fff;letter-spacing:3px;text-align:center;margin-bottom:16px;}
-.m-row{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px;}
-.m-group{}
-.m-lbl{font-size:9px;color:var(--dim);letter-spacing:1px;margin-bottom:6px;}
-.m-input{width:100%;background:var(--bg2);border:1px solid var(--dim);border-radius:10px;color:#fff;font-family:'Oxanium',monospace;font-size:18px;font-weight:800;padding:10px;outline:none;text-align:center;transition:border .2s;}
-.m-input:focus{border-color:var(--g1);}
-.m-presets{display:flex;gap:5px;margin-top:5px;flex-wrap:wrap;}
-.mp{font-size:9px;padding:4px 8px;border:1px solid var(--dim);border-radius:6px;color:var(--dim);background:var(--bg2);cursor:pointer;transition:all .2s;}
-.mp:hover{border-color:var(--g1);color:var(--g1);}
-.mp.on{border-color:var(--g1);color:#000;background:var(--g1);}
-.m-btn{width:100%;font-size:13px;font-weight:800;letter-spacing:3px;padding:14px;border:none;border-radius:12px;background:linear-gradient(135deg,#00b09b,#00ffe0);color:#000;cursor:pointer;margin-top:4px;transition:all .2s;}
-.m-btn:hover{box-shadow:0 4px 20px rgba(0,255,224,.4);}
-
-/* REPORTE */
-.rep-overlay{position:fixed;inset:0;background:rgba(4,8,15,.96);display:flex;align-items:center;justify-content:center;z-index:998;backdrop-filter:blur(8px);transition:opacity .3s;}
-.rep-overlay.hidden{opacity:0;pointer-events:none;}
-.rep{background:var(--bg1);border:1px solid var(--border);border-radius:18px;padding:22px 20px;max-width:320px;width:92%;}
-.rep::before{display:none;}
-.rep-title{font-size:15px;font-weight:800;color:#fff;letter-spacing:3px;text-align:center;margin-bottom:14px;}
-.rep-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px;}
-.rs{background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:12px 8px;text-align:center;}
-.rs-l{font-size:8px;color:var(--dim);letter-spacing:1px;margin-bottom:4px;}
-.rs-v{font-size:22px;font-weight:800;color:#fff;}
-.rs-v.up{color:var(--win);}.rs-v.dn{color:var(--red);}
-.rs-v.go{color:var(--gold);}.rs-v.cy{color:var(--g1);}
-.rep-ops{background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:10px;margin-bottom:12px;max-height:160px;overflow-y:auto;}
-.rep-ops-lbl{font-size:8px;color:var(--dim);letter-spacing:1px;margin-bottom:6px;}
-.op{display:flex;justify-content:space-between;font-size:10px;padding:3px 0;border-bottom:1px solid rgba(255,255,255,.04);}
-.op:last-child{border:none;}
-.op-w{color:var(--win);}.op-l{color:var(--red);}
-.rep-btn{width:100%;font-size:11px;font-weight:700;letter-spacing:2px;padding:11px;border:1px solid var(--dim);border-radius:10px;background:transparent;color:var(--dim);cursor:pointer;transition:all .2s;}
-.rep-btn:hover{border-color:var(--g1);color:var(--g1);}
-
-/* CARD PRINCIPAL */
-.card{background:var(--bg1);border:1px solid var(--border);border-radius:18px;overflow:hidden;}
-
-/* TOP */
-.top{padding:16px 18px 12px;border-bottom:1px solid var(--border);position:relative;}
-.top::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,transparent,var(--g2) 30%,var(--g1) 70%,transparent);}
-.top-row{display:flex;justify-content:space-between;align-items:center;}
-.brand{font-size:22px;font-weight:800;color:#fff;letter-spacing:4px;}
-.ver{font-size:8px;color:var(--dim);letter-spacing:2px;margin-top:2px;}
-.badge{font-size:9px;letter-spacing:2px;padding:4px 10px;border-radius:20px;border:1px solid var(--dim);color:var(--dim);transition:all .4s;}
-.badge.live{border-color:var(--win);color:var(--win);animation:glow 2s infinite;}
-@keyframes glow{0%,100%{box-shadow:0 0 6px rgba(46,213,115,.2);}50%{box-shadow:0 0 14px rgba(46,213,115,.5);}}
-.dot{display:inline-block;width:5px;height:5px;border-radius:50%;background:currentColor;margin-right:4px;vertical-align:middle;}
-.badge.live .dot{animation:blink 1s infinite;}
-@keyframes blink{0%,100%{opacity:1;}50%{opacity:.2;}}
-
-/* INFO ROW */
-.info-row{display:flex;gap:6px;margin-top:10px;}
-.ibox{flex:1;background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:7px 10px;}
-.il{font-size:8px;color:var(--dim);letter-spacing:1px;}
-.iv{font-size:12px;color:var(--gold);margin-top:2px;font-weight:700;}
-.sess-pill{font-size:8px;padding:2px 8px;border-radius:10px;border:1px solid var(--dim);color:var(--dim);display:inline-block;margin-top:2px;}
-.sess-pill.hot{border-color:var(--win);color:var(--win);}
-.sess-pill.warm{border-color:var(--gold);color:var(--gold);}
-.sess-pill.cold{border-color:var(--red);color:var(--red);}
-
-/* META */
-.meta{display:flex;margin-top:10px;background:var(--bg2);border:1px solid var(--border);border-radius:8px;overflow:hidden;}
-.mi{flex:1;padding:7px 6px;text-align:center;border-right:1px solid var(--border);}
-.mi:last-child{border-right:none;}
-.ml{font-size:8px;color:var(--dim);}
-.mv{font-size:13px;font-weight:800;color:#fff;margin-top:1px;}
-.mv.g{color:var(--win);}.mv.r{color:var(--red);}.mv.y{color:var(--gold);}
-.prog{height:3px;background:var(--border);margin-top:10px;border-radius:0;overflow:hidden;}
-.prog-fill{height:100%;width:0%;background:linear-gradient(90deg,var(--g2),var(--win));transition:width .5s;}
-
-/* Z-SCORE VISUAL — el corazón del bot */
-.zscore-display{
-  margin-top:10px;
-  background:var(--bg2);border:1px solid var(--border);border-radius:10px;
-  padding:10px 14px;display:flex;align-items:center;gap:12px;
-}
-.zs-lbl{font-size:8px;color:var(--dim);letter-spacing:1px;flex-shrink:0;}
-.zs-bar{flex:1;height:6px;background:rgba(255,255,255,.06);border-radius:3px;position:relative;overflow:visible;}
-.zs-center{position:absolute;top:-4px;left:50%;width:2px;height:14px;background:var(--dim);border-radius:1px;}
-.zs-fill{position:absolute;top:0;height:100%;border-radius:3px;transition:all .4s;}
-.zs-val{font-size:14px;font-weight:800;width:44px;text-align:right;flex-shrink:0;}
-
-/* BOTÓN TOGGLE */
-.btn-wrap{padding:12px 14px;background:var(--bg1);border-top:1px solid var(--border);}
-.btn-toggle{width:100%;font-size:14px;font-weight:800;letter-spacing:3px;padding:14px;border:none;border-radius:12px;cursor:pointer;transition:all .3s;}
-.btn-toggle.go{background:linear-gradient(135deg,#00b09b,#00ffe0);color:#000;}
-.btn-toggle.go:hover{box-shadow:0 4px 20px rgba(0,255,224,.4);}
-.btn-toggle.stop{background:linear-gradient(135deg,#b91c1c,#ff4757);color:#fff;}
-.btn-toggle.stop:hover{box-shadow:0 4px 20px rgba(255,71,87,.4);}
-.btn-toggle:active{transform:scale(.98);}
-
-/* STATS 2x2 */
-.stats{display:grid;grid-template-columns:1fr 1fr;gap:1px;background:var(--border);border-top:1px solid var(--border);}
-.st{background:var(--bg1);padding:12px 15px;}
-.sl{font-size:8px;color:var(--dim);letter-spacing:2px;text-transform:uppercase;margin-bottom:3px;}
-.sv{font-size:20px;font-weight:800;color:#fff;transition:color .3s;}
-.sv.up{color:var(--win);}.sv.dn{color:var(--red);}
-.sv.cy{color:var(--g1);}.sv.go{color:var(--gold);}
-
-/* HISTORIAL DOTS */
-.dots-row{background:var(--bg1);border-top:1px solid var(--border);padding:8px 15px;display:flex;gap:4px;align-items:center;}
-.dl{font-size:9px;color:var(--dim);letter-spacing:1px;margin-right:4px;}
-.d{width:9px;height:9px;border-radius:2px;background:var(--bg2);border:1px solid var(--dim);transition:all .3s;}
-.d.w{background:var(--win);border-color:var(--win);box-shadow:0 0 4px var(--win);}
-.d.l{background:var(--red);border-color:var(--red);}
-
-/* ESTADO */
-.state-row{background:var(--bg1);border-top:1px solid var(--border);padding:7px 15px;display:flex;justify-content:space-between;align-items:center;font-size:10px;color:var(--dim);}
-.chip{font-size:9px;letter-spacing:1px;padding:3px 8px;border-radius:5px;background:rgba(0,180,216,.1);color:var(--g2);border:1px solid rgba(0,180,216,.2);transition:all .3s;}
-.chip.act{background:rgba(0,255,224,.1);color:var(--g1);border-color:rgba(0,255,224,.3);}
-.chip.inv{background:rgba(255,71,87,.08);color:var(--red);border-color:rgba(255,71,87,.2);}
-.chip.wait{background:rgba(254,202,87,.08);color:var(--gold);border-color:rgba(254,202,87,.2);}
-
-/* CONTADORES */
-.count-row{background:var(--bg2);border-top:1px solid var(--border);padding:7px 15px;display:flex;justify-content:space-between;font-size:9px;color:var(--dim);letter-spacing:1px;}
-.cnt{font-family:'Oxanium',monospace;font-size:12px;color:var(--gold);}
-
-/* LOG */
-.log-wrap{background:var(--bg1);border-top:1px solid var(--border);padding:10px 12px;}
-.log{background:#020609;border:1px solid rgba(0,255,224,.07);border-radius:10px;height:150px;overflow-y:auto;padding:8px 10px;font-size:10px;line-height:1.9;scrollbar-width:thin;scrollbar-color:var(--border) transparent;}
-.log::-webkit-scrollbar{width:3px;}
-.log::-webkit-scrollbar-thumb{background:var(--border);}
-.le{display:flex;gap:6px;}
-.lt{color:var(--dim);font-size:9px;flex-shrink:0;}
-.lw{color:var(--win);}.ll{color:var(--red);}
-.li{color:var(--g2);}.lx{color:var(--gold);}
-.ls{color:var(--red);font-weight:700;}.linv{color:#3d5a72;font-style:italic;}
-.lg{color:var(--win);font-weight:700;}
-
-/* FOOTER */
-.ftr{background:var(--bg1);border-top:1px solid var(--border);padding:9px 15px 12px;display:flex;justify-content:space-between;align-items:center;font-size:9px;color:var(--dim);letter-spacing:1px;}
-.rep-link{font-size:9px;padding:4px 10px;border:1px solid var(--dim);border-radius:6px;background:transparent;color:var(--dim);cursor:pointer;transition:all .2s;letter-spacing:1px;}
-.rep-link:hover{border-color:var(--gold);color:var(--gold);}
-
-.spin{display:inline-block;width:7px;height:7px;border:1.5px solid transparent;border-top-color:var(--g1);border-radius:50%;animation:sp 1s linear infinite;margin-right:4px;vertical-align:middle;}
-@keyframes sp{to{transform:rotate(360deg);}}
-</style>
-</head>
-<body>
-
-<!-- MODAL CONFIG -->
-<div class="modal-overlay" id="mOverlay">
-  <div class="modal">
-    <div class="m-title">⚡ APEX v13</div>
-    <div class="m-row">
-      <div class="m-group">
-        <div class="m-lbl">💰 STAKE ($)</div>
-        <input class="m-input" type="number" id="iStake" value="0.35" min="0.35" max="100" step="0.05" oninput="refreshSummary()">
-        <div class="m-presets">
-          <div class="mp on"  onclick="sp2('stake',0.35)">0.35</div>
-          <div class="mp"     onclick="sp2('stake',0.50)">0.50</div>
-          <div class="mp"     onclick="sp2('stake',1.00)">1.00</div>
-          <div class="mp"     onclick="sp2('stake',2.00)">2.00</div>
-        </div>
-      </div>
-      <div class="m-group" style="display:flex;flex-direction:column;gap:8px;">
-        <div>
-          <div class="m-lbl">🎯 TAKE PROFIT ($)</div>
-          <input class="m-input" type="number" id="iTP" value="5" min="0.5" max="500" step="0.5" oninput="refreshSummary()">
-          <div class="m-presets">
-            <div class="mp on" onclick="sp2('tp',5)">$5</div>
-            <div class="mp"    onclick="sp2('tp',10)">$10</div>
-            <div class="mp"    onclick="sp2('tp',20)">$20</div>
-          </div>
-        </div>
-        <div>
-          <div class="m-lbl">🛡 STOP LOSS ($)</div>
-          <input class="m-input" type="number" id="iSL" value="3" min="0.5" max="500" step="0.5" oninput="refreshSummary()">
-          <div class="m-presets">
-            <div class="mp on" onclick="sp2('sl',3)">$3</div>
-            <div class="mp"    onclick="sp2('sl',5)">$5</div>
-            <div class="mp"    onclick="sp2('sl',10)">$10</div>
-          </div>
-        </div>
-      </div>
-    </div>
-    <button class="m-btn" onclick="launch()">▶ COMENZAR</button>
-  </div>
-</div>
-
-<!-- MODAL REPORTE -->
-<div class="rep-overlay hidden" id="rOverlay">
-  <div class="rep">
-    <div class="rep-title">📊 REPORTE DE SESIÓN</div>
-    <div class="rep-grid">
-      <div class="rs"><div class="rs-l">RESULTADO</div><div class="rs-v" id="rRes">$0.00</div></div>
-      <div class="rs"><div class="rs-l">WINRATE</div><div class="rs-v go" id="rWR">0%</div></div>
-      <div class="rs"><div class="rs-l">WINS ✅</div><div class="rs-v up" id="rW">0</div></div>
-      <div class="rs"><div class="rs-l">LOSSES ❌</div><div class="rs-v dn" id="rL">0</div></div>
-      <div class="rs"><div class="rs-l">TOTAL OPS</div><div class="rs-v cy" id="rT">0</div></div>
-      <div class="rs"><div class="rs-l">INVALIDADAS</div><div class="rs-v go" id="rI">0</div></div>
-    </div>
-    <div class="rep-ops">
-      <div class="rep-ops-lbl">ÚLTIMAS OPERACIONES</div>
-      <div id="rOps"></div>
-    </div>
-    <button class="rep-btn" onclick="closeRep()">✕ CERRAR</button>
-  </div>
-</div>
-
-<!-- MAIN -->
-<div class="wrap">
-<div class="card">
-
-  <!-- TOP -->
-  <div class="top">
-    <div class="top-row">
-      <div>
-        <div class="brand">⚡ APEX</div>
-        <div class="ver">v13 · R_50 · Z-SCORE · 3 TICKS</div>
-      </div>
-      <div class="badge" id="badge"><span class="dot"></span><span id="bTxt">OFFLINE</span></div>
-    </div>
-
-    <div class="info-row">
-      <div class="ibox">
-        <div class="il">COLOMBIA</div>
-        <div class="iv" id="clock">--:--</div>
-      </div>
-      <div class="ibox">
-        <div class="il">SESIÓN</div>
-        <div class="sess-pill" id="sessEl">--</div>
-      </div>
-      <div class="ibox">
-        <div class="il">STAKE</div>
-        <div class="iv" id="stakeEl">$0.35</div>
-      </div>
-    </div>
-
-    <div class="meta">
-      <div class="mi"><div class="ml">PROFIT</div><div class="mv g" id="mGoal">+$5</div></div>
-      <div class="mi"><div class="ml">HOY</div><div class="mv" id="mProg">$0.00</div></div>
-      <div class="mi"><div class="ml">STOP</div><div class="mv r" id="mStop">-$3</div></div>
-      <div class="mi"><div class="ml">OPS</div><div class="mv y" id="mOps">0/25</div></div>
-    </div>
-    <div class="prog"><div class="prog-fill" id="pFill"></div></div>
-
-    <!-- Z-SCORE VISUAL -->
-    <div class="zscore-display">
-      <div class="zs-lbl">Z-SCORE</div>
-      <div class="zs-bar">
-        <div class="zs-center"></div>
-        <div class="zs-fill" id="zFill"></div>
-      </div>
-      <div class="zs-val" id="zVal" style="color:var(--dim)">0.00</div>
-    </div>
-  </div>
-
-  <!-- BOTÓN TOGGLE -->
-  <div class="btn-wrap">
-    <button class="btn-toggle go" id="btnT" onclick="toggle()">▶ INICIAR</button>
-  </div>
-
-  <!-- STATS -->
-  <div class="stats">
-    <div class="st"><div class="sl">💰 Balance</div><div class="sv cy" id="bal">0.00</div></div>
-    <div class="st"><div class="sl">📈 Ganancia</div><div class="sv" id="prof">+0.00</div></div>
-    <div class="st"><div class="sl">🏆 Winrate</div><div class="sv" id="wr">0%</div></div>
-    <div class="st"><div class="sl">📉 Pérdidas</div><div class="sv dn" id="lossEl">$0.00</div></div>
-  </div>
-
-  <!-- HISTORIAL -->
-  <div class="dots-row">
-    <span class="dl">ÚLTIMAS</span>
-    <div id="dots"></div>
-  </div>
-
-  <!-- ESTADO -->
-  <div class="state-row">
-    <span id="stateInfo">Presiona INICIAR</span>
-    <span class="chip" id="chip">IDLE</span>
-  </div>
-
-  <!-- CONTADORES -->
-  <div class="count-row">
-    <span>🚫 INVALIDADAS <span class="cnt" id="invEl">0</span></span>
-    <span>✅ EJECUTADAS <span class="cnt" id="totEl">0</span></span>
-  </div>
-
-  <!-- LOG -->
-  <div class="log-wrap">
-    <div class="log" id="log"></div>
-  </div>
-
-  <!-- FOOTER -->
-  <div class="ftr">
-    <span id="ftrTxt">$0.35 · TP $5 · SL $3</span>
-    <button class="rep-link" onclick="showRep()">📊 REPORTE</button>
-  </div>
-
-</div>
-</div>
-
-<script>
-// ══════════════════════════════════
-// CONFIG
-// ══════════════════════════════════
-const TOKEN  = "e1lRgxNoxWwBkzx";
-const SYMBOL = "R_50";
-
-const CFG = {
-  TICKS:    5,
-  COOLDOWN: 7500,
-  PAUSE_MS: 45000,
-  MIN_BARS: 20,
-  HISTORY:  80,
-  // Rango de volatilidad óptimo para R_50
-  // Calibrado para capturar el 70% del tiempo de mercado activo
-  VOL_MIN:  0.0025,
-  VOL_MAX:  0.020,
-  // Z-score: umbral para detectar desviación estadística real
-  // 1.45 = señal moderada pero consistente
-  // La media revierte cuando Z > umbral
-  Z_MIN:    2.20,
-  MAX_OPS:  15,
+    market_efficiency_threshold: 0.7,
+    setup_score_threshold: 0.75,
+    max_market_exposure_pct: 0.08,
+    cooldown_after_close_bars: 8,
+    post_win_cooldown_bars: 5,
+    liquidity_sweep_lookback: 6,
+    rejection_strength_min: 0.7,
+    atr_grey_zone_low: 0.4,
+    atr_grey_zone_high: 0.6,
+    sniper_mode_max_trades: 3,
+    sniper_setup_threshold: 0.8,
+    ultra_early_exit_bars: 3,
+    ultra_early_exit_r_threshold: 0.3,
 };
 
-// ══════════════════════════════════
-// ESTADO
-// ══════════════════════════════════
-let ws;
-let bal=0, initBal=0;
-let running=false;
-let wins=0, lossC=0, total=0, profit=0, totalLoss=0;
-let lossStreak=0;
-let lastTrade=0, pauseUntil=0;
-let prices=[], recent=[], invC=0;
-let STAKE=0.35, TP=5, SL=3;
-let opLog=[];
+const ASSET_SPECIFIC_CONFIG = {
+    "R_10": { sl_atr_mult: 1.5, tp_atr_mult: 2.5, roc_threshold: 0.018, strong_trend_adx: 28 },
+    "R_25": { sl_atr_mult: 1.8, tp_atr_mult: 3.0, roc_threshold: 0.025, strong_trend_adx: 25 },
+    "R_50": { sl_atr_mult: 2.0, tp_atr_mult: 3.5, roc_threshold: 0.03, strong_trend_adx: 22 },
+    "R_75": { sl_atr_mult: 2.2, tp_atr_mult: 4.0, roc_threshold: 0.035, strong_trend_adx: 20 },
+    "R_100": { sl_atr_mult: 2.5, tp_atr_mult: 4.5, roc_threshold: 0.04, strong_trend_adx: 18 },
+};
 
-// ══════════════════════════════════
-// MODAL
-// ══════════════════════════════════
-function sp2(t,v){
-  if(t==="stake"){ document.getElementById("iStake").value=v; document.querySelectorAll(".m-presets .mp").forEach(b=>{ if(b.closest(".m-group")) b.className="mp"+(parseFloat(b.innerText)===v?" on":""); }); }
-  else if(t==="tp")  document.getElementById("iTP").value=v;
-  else               document.getElementById("iSL").value=v;
-  refreshSummary();
+// ─── Utilidades matemáticas ──
+function sum(arr) { return arr.reduce((a, b) => a + b, 0); }
+function mean(arr) { return arr.length ? sum(arr) / arr.length : 0; }
+function std(arr) {
+    const avg = mean(arr);
+    return Math.sqrt(arr.reduce((s, x) => s + (x - avg) ** 2, 0) / arr.length);
 }
-function refreshSummary(){}
-
-function launch(){
-  STAKE = Math.max(0.35, parseFloat(document.getElementById("iStake").value)||0.35);
-  TP    = parseFloat(document.getElementById("iTP").value)||5;
-  SL    = parseFloat(document.getElementById("iSL").value)||3;
-  document.getElementById("mOverlay").className="modal-overlay hidden";
-  document.getElementById("stakeEl").innerText="$"+STAKE.toFixed(2);
-  document.getElementById("mGoal").innerText="+$"+TP;
-  document.getElementById("mStop").innerText="-$"+SL;
-  document.getElementById("ftrTxt").innerText=`$${STAKE.toFixed(2)} · TP $${TP} · SL $${SL}`;
-  startBot();
+function linreg(x, y) {
+    const n = x.length;
+    let sx = 0, sy = 0, sxy = 0, sxx = 0;
+    for (let i = 0; i < n; i++) {
+        sx += x[i]; sy += y[i]; sxy += x[i] * y[i]; sxx += x[i] * x[i];
+    }
+    const slope = (n * sxy - sx * sy) / (n * sxx - sx * sx);
+    return slope;
 }
 
-// ══════════════════════════════════
-// TOGGLE
-// ══════════════════════════════════
-function toggle(){
-  if(!running){
-    document.getElementById("mOverlay").className="modal-overlay";
-  } else {
-    stopBot(false);
-  }
+function ATR(high, low, close, period) {
+    const n = close.length;
+    const tr = [high[0] - low[0]];
+    for (let i = 1; i < n; i++) {
+        tr.push(Math.max(high[i] - low[i], Math.abs(high[i] - close[i - 1]), Math.abs(low[i] - close[i - 1])));
+    }
+    const atr = Array(n).fill(0);
+    if (n >= period) {
+        atr[period - 1] = mean(tr.slice(0, period));
+        for (let i = period; i < n; i++) {
+            atr[i] = (atr[i - 1] * (period - 1) + tr[i]) / period;
+        }
+    }
+    return atr;
 }
 
-function setBtnState(on){
-  const b=document.getElementById("btnT");
-  if(on){ b.className="btn-toggle stop"; b.innerText="■ DETENER"; }
-  else   { b.className="btn-toggle go";  b.innerText="▶ INICIAR"; }
+function EMA(data, period) {
+    const out = Array(data.length).fill(0);
+    if (data.length < period) return out;
+    const k = 2 / (period + 1);
+    out[period - 1] = mean(data.slice(0, period));
+    for (let i = period; i < data.length; i++) {
+        out[i] = data[i] * k + out[i - 1] * (1 - k);
+    }
+    return out;
 }
 
-// ══════════════════════════════════
-// REPORTE
-// ══════════════════════════════════
-function showRep(){
-  const wr=total?(wins/total*100).toFixed(1):0;
-  const rv=document.getElementById("rRes");
-  rv.innerText=(profit>=0?"+$":"−$")+Math.abs(profit).toFixed(2);
-  rv.className="rs-v"+(profit>=0?" up":" dn");
-  document.getElementById("rWR").innerText=wr+"%";
-  document.getElementById("rW").innerText=wins;
-  document.getElementById("rL").innerText=lossC;
-  document.getElementById("rT").innerText=total;
-  document.getElementById("rI").innerText=invC;
-  const c=document.getElementById("rOps");
-  c.innerHTML=opLog.length===0
-    ?'<div style="font-size:10px;color:var(--dim);text-align:center;padding:6px">Sin operaciones</div>'
-    :opLog.slice(-12).reverse().map(o=>`
-      <div class="op">
-        <span style="color:var(--dim);font-size:9px">${o.t}</span>
-        <span class="${o.w?'op-w':'op-l'}">${o.w?'WIN':'LOSS'}</span>
-        <span style="color:var(--dim)">$$
+function ADX(high, low, close, period = 14) {
+    const n = close.length;
+    const plusDM = Array(n).fill(0), minusDM = Array(n).fill(0), tr = Array(n).fill(0);
+    for (let i = 1; i < n; i++) {
+        const up = high[i] - high[i - 1], down = low[i - 1] - low[i];
+        plusDM[i] = (up > down && up > 0) ? up : 0;
+        minusDM[i] = (down > up && down > 0) ? down : 0;
+        tr[i] = Math.max(high[i] - low[i], Math.abs(high[i] - close[i - 1]), Math.abs(low[i] - close[i - 1]));
+    }
+    tr[0] = high[0] - low[0];
+    function smooth(arr, p) {
+        const s = Array(arr.length).fill(0);
+        if (arr.length > p) {
+            s[p] = sum(arr.slice(1, p + 1));
+            for (let i = p + 1; i < arr.length; i++) {
+                s[i] = s[i - 1] - (s[i - 1] / p) + arr[i];
+            }
+        }
+        return s;
+    }
+    const atrS = smooth(tr, period);
+    const pdmS = smooth(plusDM, period);
+    const mdmS = smooth(minusDM, period);
+    const pdi = Array(n).fill(0), mdi = Array(n).fill(0), dx = Array(n).fill(0);
+    for (let i = 0; i < n; i++) {
+        if (atrS[i] > 0) {
+            pdi[i] = 100 * pdmS[i] / atrS[i];
+            mdi[i] = 100 * mdmS[i] / atrS[i];
+            if (pdi[i] + mdi[i] > 0) dx[i] = 100 * Math.abs(pdi[i] - mdi[i]) / (pdi[i] + mdi[i]);
+        }
+    }
+    const adx = Array(n).fill(0);
+    if (n > period * 2) {
+        adx[period * 2 - 1] = mean(dx.slice(period, period * 2));
+        for (let i = period * 2; i < n; i++) {
+            adx[i] = (adx[i - 1] * (period - 1) + dx[i]) / period;
+        }
+    }
+    return { adx, pdi, mdi };
+}
+
+function priceStructure(highs, lows, closes) {
+    const n = Math.min(10, closes.length);
+    if (n < 4) return "MIXED";
+    const recent_h = highs.slice(-n), recent_l = lows.slice(-n);
+    const pivots_h = [], pivots_l = [];
+    for (let i = 1; i < n - 1; i++) {
+        if (recent_h[i] > recent_h[i - 1] && recent_h[i] > recent_h[i + 1]) pivots_h.push(recent_h[i]);
+        if (recent_l[i] < recent_l[i - 1] && recent_l[i] < recent_l[i + 1]) pivots_l.push(recent_l[i]);
+    }
+    if (pivots_h.length >= 2 && pivots_l.length >= 2) {
+        const hh = pivots_h[pivots_h.length - 1] > pivots_h[pivots_h.length - 2];
+        const hl = pivots_l[pivots_l.length - 1] > pivots_l[pivots_l.length - 2];
+        const lh = pivots_h[pivots_h.length - 1] < pivots_h[pivots_h.length - 2];
+        const ll = pivots_l[pivots_l.length - 1] < pivots_l[pivots_l.length - 2];
+        if (hh && hl) return "HH_HL";
+        if (lh && ll) return "LH_LL";
+    }
+    const x = Array.from({ length: n }, (_, i) => i);
+    const slope = linreg(x, closes.slice(-n)) / closes[closes.length - 1] * 100;
+    if (slope > 0.05) return "HH_HL";
+    if (slope < -0.05) return "LH_LL";
+    return "MIXED";
+}
+
+function compression(highs, lows, atr, period = 20) {
+    if (highs.length < period || atr <= 0) return 0.5;
+    const recentRange = Math.max(...highs.slice(-period)) - Math.min(...lows.slice(-period));
+    const expectedRange = atr * Math.sqrt(period) * 0.5;
+    return Math.max(0, Math.min(1, 1 - recentRange / (expectedRange + 1e-10)));
+}
+
+function marketEfficiencyScore(bars) {
+    if (bars.length < 20) return 0.5;
+    const closes = bars.slice(-20).map(b => b.close);
+    const netChange = Math.abs(closes[closes.length - 1] - closes[0]);
+    let totalPath = 0;
+    for (let i = 1; i < closes.length; i++) totalPath += Math.abs(closes[i] - closes[i - 1]);
+    if (totalPath === 0) return 0;
+    const efficiency = netChange / totalPath;
+    const comp = compression(bars.map(b => b.high), bars.map(b => b.low), efficiency);
+    return Math.min(1, efficiency * (1 - comp * 0.5));
+}
+
+// ─── Clases del bot ──────────────────────────────────────────
+class TickAggregator {
+    constructor(symbol) {
+        this.symbol = symbol;
+        this.bars = [];
+        this.currentBar = null;
+    }
+    addTick(tick) {
+        const minute = Math.floor(tick.timestamp / 60) * 60;
+        if (!this.currentBar || this.currentBar.timestamp !== minute) {
+            if (this.currentBar) this.bars.push(this.currentBar);
+            this.currentBar = { timestamp: minute, open: tick.price, high: tick.price, low: tick.price, close: tick.price, tick_volume: 1 };
+        } else {
+            this.currentBar.high = Math.max(this.currentBar.high, tick.price);
+            this.currentBar.low = Math.min(this.currentBar.low, tick.price);
+            this.currentBar.close = tick.price;
+            this.currentBar.tick_volume++;
+        }
+        if (this.bars.length > 300) this.bars = this.bars.slice(-250);
+    }
+    getBars() { return this.currentBar ? [...this.bars, this.currentBar] : [...this.bars]; }
+}
+
+class AdaptiveSystem {
+    constructor(config, symbol) {
+        this.config = config;
+        this.symbol = symbol;
+        this.windowSize = config.rolling_window || 30;
+        this.baseRisk = config.base_risk_pct;
+        this.maxRisk = config.max_risk_pct;
+        this.minRisk = config.min_risk_pct;
+        this.defensiveDD = config.defensive_dd_pct;
+        this.pauseDD = config.pause_dd_pct;
+        this.winrateAggressive = config.winrate_aggressive;
+        this.winrateDefensive = config.winrate_defensive;
+        this.params = {
+            risk_per_trade_pct: this.baseRisk,
+            min_confluence: 0.75,
+            min_confidence: 0.75,
+            sl_atr_mult: 1.5,
+            tp_atr_mult: 2.5,
+            mode: "NORMAL",
+            cooldown_after_loss: 2,
+            max_trades_per_session: 15,
+        };
+        this.tradeHistory = [];
+        this.allTrades = [];
+        this.setupScores = {};
+        this.sessionTrades = 0;
+        this.sessionPnlR = 0;
+        this.cumulativePnlR = 0;
+        this.peakPnlR = 0;
+        this.barsSinceLoss = 999;
+        this.barCount = 0;
+        this.barsSinceLastClose = 999;
+        this.barsSinceLastWin = 999;
+        this.marketExposureTime = 0;
+        this.sessionStartBar = 0;
+        this.balance = config.initial_balance;
+        this.dailyPnlPct = 0;
+    }
+    recordTrade(trade) {
+        this.tradeHistory.push(trade);
+        this.allTrades.push(trade);
+        this.sessionTrades++;
+        this.sessionPnlR += trade.pnl_r;
+        this.cumulativePnlR += trade.pnl_r;
+        if (this.cumulativePnlR > this.peakPnlR) this.peakPnlR = this.cumulativePnlR;
+        if (!trade.was_winner) this.barsSinceLoss = 0;
+        else {
+            this.barsSinceLoss += 10;
+            this.barsSinceLastWin = 0;
+        }
+        this.barsSinceLastClose = 0;
+        this.marketExposureTime += trade.duration_bars;
+        this.balance += trade.pnl_r * (this.balance * this.params.risk_per_trade_pct / 100);
+        this.dailyPnlPct += trade.pnl_r * this.params.risk_per_trade_pct / 100;
+        const key = `${trade.signal_type}_${trade.regime}`;
+        if (!this.setupScores[key]) this.setupScores[key] = [];
+        this.setupScores[key].push(trade.pnl_r);
+        if (this.setupScores[key].length > 20) this.setupScores[key].shift();
+        this._adapt();
+        console.log(`[${this.symbol}] Trade ${trade.trade_id}: ${trade.was_winner ? 'WIN' : 'LOSS'} ${trade.pnl_r.toFixed(2)}R | Mode: ${this.params.mode}`);
+    }
+    onBar() {
+        this.barCount++;
+        this.barsSinceLoss++;
+        this.barsSinceLastClose++;
+        this.barsSinceLastWin++;
+        if (this.barCount % 500 === 0) this._partialReset();
+    }
+    winrate() {
+        if (!this.tradeHistory.length) return 0.5;
+        return this.tradeHistory.filter(t => t.was_winner).length / this.tradeHistory.length;
+    }
+    _adapt() {
+        const trades = this.tradeHistory;
+        const n = trades.length;
+        if (n < 5) { this.params.mode = "LEARNING"; return; }
+        const winrate = this.winrate();
+        const winners = trades.filter(t => t.was_winner).map(t => t.pnl_r);
+        const losers = trades.filter(t => !t.was_winner).map(t => t.pnl_r);
+        const grossProfit = sum(winners);
+        const grossLoss = Math.abs(sum(losers));
+        const pf = grossLoss ? grossProfit / grossLoss : 1;
+        const currentDdR = this.peakPnlR - this.cumulativePnlR;
+        const ddPct = currentDdR * this.params.risk_per_trade_pct;
+        if (ddPct >= this.pauseDD) { this.params.mode = "PAUSED"; return; }
+        if (ddPct >= this.defensiveDD) { this.params.mode = "DEFENSIVE"; this.params.risk_per_trade_pct = this.minRisk; return; }
+
+        if (winrate > 0.60 && pf > 1.8 && n >= 15) {
+            this.params.mode = "SNIPER";
+            this.params.max_trades_per_session = this.config.sniper_mode_max_trades;
+            this.params.min_confidence = 0.85;
+        } else if (winrate >= this.winrateAggressive && pf >= 1.8) {
+            this.params.mode = "AGGRESSIVE";
+            this.params.risk_per_trade_pct = Math.min(this.baseRisk * 1.5, this.maxRisk);
+            this.params.max_trades_per_session = 15;
+        } else if (winrate <= this.winrateDefensive || pf < 0.9) {
+            this.params.mode = "DEFENSIVE";
+            this.params.risk_per_trade_pct = Math.max(this.baseRisk * 0.5, this.minRisk);
+            this.params.max_trades_per_session = 10;
+        } else {
+            this.params.mode = "NORMAL";
+            this.params.risk_per_trade_pct = this.baseRisk;
+            this.params.max_trades_per_session = 10;
+        }
+
+        if (n >= 10) {
+            const avgWin = mean(winners);
+            const avgLoss = mean(losers);
+            if (avgWin / Math.abs(avgLoss) > 2) this.params.tp_atr_mult *= 1.02;
+            else this.params.tp_atr_mult *= 0.98;
+            this.params.tp_atr_mult = Math.max(1.5, Math.min(5, this.params.tp_atr_mult));
+        }
+    }
+    _partialReset() {
+        if (this.tradeHistory.length > Math.floor(this.windowSize / 2)) {
+            this.tradeHistory = this.tradeHistory.slice(-Math.floor(this.windowSize / 2));
+        }
+    }
+    canTrade() {
+        if (this.params.mode === "PAUSED") return [false, "Drawdown limit"];
+        if (this.sessionTrades >= this.params.max_trades_per_session) return [false, `Session limit (${this.params.max_trades_per_session})`];
+        const cooldownClose = this.config.cooldown_after_close_bars;
+        if (this.barsSinceLastClose < cooldownClose) return [false, `Post-trade cooldown (${cooldownClose - this.barsSinceLastClose} bars left)`];
+        const postWin = this.config.post_win_cooldown_bars;
+        if (this.barsSinceLastWin < postWin) return [false, `Post-win cooldown`];
+        if (this.barsSinceLoss < this.params.cooldown_after_loss) return [false, `Loss cooldown`];
+        const maxExposure = this.config.max_market_exposure_pct;
+        if (this.barCount - this.sessionStartBar > 60) {
+            const expPct = this.marketExposureTime / (this.barCount - this.sessionStartBar);
+            if (expPct > maxExposure) return [false, `Exposure limit (${(expPct*100).toFixed(1)}%)`];
+        }
+        return [true, "OK"];
+    }
+    getSetupScore(signalType, regime) {
+        const key = `${signalType}_${regime}`;
+        if (this.setupScores[key] && this.setupScores[key].length >= 3) {
+            const recent = this.setupScores[key].slice(-10);
+            const expectancy = mean(recent);
+            return Math.min(0.95, Math.max(0.1, 0.3 + expectancy * 0.3));
+        }
+        return 0.5;
+    }
+}
+
+// ─── Lógica de detección de régimen y señales ──
+class MarketRegimeDetector {
+    constructor(config, symbolConfig) {
+        this.cfg = config;
+        this.sc = symbolConfig;
+        this.strongTrendAdx = symbolConfig.strong_trend_adx;
+        this.weakTrendAdx = 16;
+        this.compressionThreshold = 0.3;
+        this.highVolThreshold = 0.7;
+    }
+    detect(bars) {
+        if (bars.length < 60) return { regime: "NOISE", confidence: 0, atr_percentile: 0.5, structure: "MIXED", atr_normalized: 0, compression_score: 0.5 };
+        const closes = bars.map(b => b.close);
+        const highs = bars.map(b => b.high);
+        const lows = bars.map(b => b.low);
+        const atrArr = ATR(highs, lows, closes, this.cfg.atr_period);
+        const currentAtr = atrArr[atrArr.length - 1];
+        const price = closes[closes.length - 1];
+        const atrNormalized = currentAtr / (price + 1e-10);
+        const atrHistory = atrArr.slice(-100);
+        const atrPercentile = atrHistory.filter(a => a <= currentAtr).length / atrHistory.length;
+        const emaF = EMA(closes, this.cfg.ema_fast);
+        const emaM = EMA(closes, this.cfg.ema_medium);
+        const emaS = EMA(closes, this.cfg.ema_slow);
+        const emaUp = emaF[emaF.length-1] > emaM[emaM.length-1] && emaM[emaM.length-1] > emaS[emaS.length-1];
+        const emaDown = emaF[emaF.length-1] < emaM[emaM.length-1] && emaM[emaM.length-1] < emaS[emaS.length-1];
+        const structure = priceStructure(highs, lows, closes);
+        const adxObj = ADX(highs, lows, closes, 14);
+        const trendStrength = adxObj.adx[adxObj.adx.length - 1];
+        const bull = adxObj.pdi[adxObj.pdi.length-1] > adxObj.mdi[adxObj.mdi.length-1];
+        const comp = compression(highs, lows, currentAtr);
+
+        let regime = "NOISE", confidence = 0.5;
+        if (atrPercentile > this.highVolThreshold && trendStrength > 20) {
+            if (emaUp && structure === "HH_HL") { regime = "STRONG_TREND_UP"; confidence = 0.85; }
+            else if (emaDown && structure === "LH_LL") { regime = "STRONG_TREND_DOWN"; confidence = 0.85; }
+            else { regime = "HIGH_VOL_EXPANSION"; confidence = 0.65; }
+        } else if (trendStrength >= this.strongTrendAdx) {
+            if (bull && (emaUp || structure === "HH_HL")) { regime = "STRONG_TREND_UP"; confidence = 0.8; }
+            else if (!bull && (emaDown || structure === "LH_LL")) { regime = "STRONG_TREND_DOWN"; confidence = 0.8; }
+            else { regime = bull ? "WEAK_TREND_UP" : "WEAK_TREND_DOWN"; confidence = 0.65; }
+        } else if (trendStrength >= this.weakTrendAdx) {
+            regime = bull ? "WEAK_TREND_UP" : "WEAK_TREND_DOWN"; confidence = 0.6;
+        } else if (comp >= this.compressionThreshold) {
+            regime = "COMPRESSION"; confidence = comp;
+        } else {
+            if (atrPercentile < 0.3) { regime = "RANGE"; confidence = 0.7; }
+            else { regime = "NOISE"; confidence = 0.5; }
+        }
+        return { regime, confidence, atr_normalized: atrNormalized, atr_percentile: atrPercentile, trend_strength: trendStrength, structure, compression_score: comp };
+    }
+}
+
+// ─── Generación de señales ──
+class SignalEngine {
+    constructor(config, symbol) {
+        this.cfg = config;
+        this.symbol = symbol;
+        this.momentumPeriod = config.momentum_period || 5;
+        this.rocThreshold = config.roc_threshold || 0.018;
+        this.microRangePeriod = config.micro_range_period || 8;
+        this.liquiditySweepLookback = config.liquidity_sweep_lookback || 6;
+    }
+    generateSignal(bars, regimeState, adaptiveParams, efficiency) {
+        const noSignal = { signal: "NO_SIGNAL", confidence: 0, entry_price: bars[bars.length-1].close };
+        if (bars.length < 60 || regimeState.regime === "NOISE" || regimeState.regime === "RANGE") return noSignal;
+        const closes = bars.map(b => b.close);
+        const highs = bars.map(b => b.high);
+        const lows = bars.map(b => b.low);
+        const opens = bars.map(b => b.open);
+        const atrArr = ATR(highs, lows, closes, 14);
+        const atr = atrArr[atrArr.length - 1];
+        const price = closes[closes.length - 1];
+        let direction = null;
+        if (["STRONG_TREND_UP", "WEAK_TREND_UP"].includes(regimeState.regime)) direction = "LONG";
+        else if (["STRONG_TREND_DOWN", "WEAK_TREND_DOWN"].includes(regimeState.regime)) direction = "SHORT";
+        else if (regimeState.regime === "COMPRESSION") {
+            const rangeHigh = Math.max(...highs.slice(-this.microRangePeriod-1, -1));
+            const rangeLow = Math.min(...lows.slice(-this.microRangePeriod-1, -1));
+            if (price > rangeHigh * 1.001) direction = "LONG";
+            else if (price < rangeLow * 0.999) direction = "SHORT";
+        }
+        if (!direction) return noSignal;
+
+        const sweep = this._detectLiquiditySweep(highs, lows, closes, direction, atr);
+        const liquidityScore = sweep.swept ? 0.6 + sweep.rejection_strength * 0.4 : 0.4 * sweep.rejection_strength;
+        const momScore = this._scoreMomentum(closes, direction);
+        const boQuality = this._breakoutQuality(opens, closes, highs, lows, direction);
+        const structScore = (direction === "LONG" && regimeState.structure === "HH_HL") ||
+                            (direction === "SHORT" && regimeState.structure === "LH_LL") ? 1 : 0.5;
+
+        const confluence = liquidityScore * 0.4 + structScore * 0.25 + momScore * 0.2 + boQuality * 0.15;
+        if (confluence < 0.75 || momScore < 0.5 || boQuality < 0.6) return noSignal;
+        if (!this._threeCandleConfirmation(closes, direction)) return noSignal;
+
+        const slMult = adaptiveParams.sl_atr_mult;
+        const tpMult = adaptiveParams.tp_atr_mult;
+        const sl = direction === "LONG" ? price - atr * slMult : price + atr * slMult;
+        const tp = direction === "LONG" ? price + atr * tpMult : price - atr * tpMult;
+        return {
+            signal: direction === "LONG" ? "LONG" : "SHORT",
+            confidence: confluence,
+            entry_price: price,
+            stop_loss: sl,
+            take_profit: tp,
+            confluence_score: confluence,
+            momentum_score: momScore,
+            breakout_quality: boQuality,
+            swept_liquidity: sweep.swept,
+            rejection_strength: sweep.rejection_strength,
+            reasoning: `${direction} entry, sweep=${sweep.swept}`,
+        };
+    }
+    _detectLiquiditySweep(highs, lows, closes, direction, atr) {
+        const lookback = this.liquiditySweepLookback;
+        if (highs.length < lookback + 1) return { swept: false, rejection_strength: 0 };
+        const recentHigh = Math.max(...highs.slice(-lookback - 1, -1));
+        const recentLow = Math.min(...lows.slice(-lookback - 1, -1));
+        const curHigh = highs[highs.length - 1], curLow = lows[lows.length - 1], curClose = closes[closes.length - 1];
+        if (direction === "LONG") {
+            if (curLow < recentLow && curClose > recentLow + atr * 0.2) {
+                const range = curHigh - curLow;
+                return { swept: true, rejection_strength: range ? Math.min(1, (curClose - curLow) / range) : 0 };
+            }
+        } else {
+            if (curHigh > recentHigh && curClose < recentHigh - atr * 0.2) {
+                const range = curHigh - curLow;
+                return { swept: true, rejection_strength: range ? Math.min(1, (curHigh - curClose) / range) : 0 };
+            }
+        }
+        return { swept: false, rejection_strength: 0 };
+    }
+    _scoreMomentum(closes, direction) {
+        if (closes.length <= this.momentumPeriod) return 0;
+        const roc = (closes[closes.length - 1] - closes[closes.length - 1 - this.momentumPeriod]) / (closes[closes.length - 1 - this.momentumPeriod] + 1e-10) * 100;
+        return direction === "LONG" ? Math.min(1, Math.max(0, roc / (this.rocThreshold * 100))) : Math.min(1, Math.max(0, -roc / (this.rocThreshold * 100)));
+    }
+    _breakoutQuality(opens, closes, highs, lows, direction) {
+        const lastIdx = closes.length - 1;
+        const body = Math.abs(closes[lastIdx] - opens[lastIdx]);
+        const candleRange = highs[lastIdx] - lows[lastIdx];
+        if (candleRange === 0) return 0;
+        return direction === "LONG" ? (body / candleRange) * 0.6 + ((closes[lastIdx] - lows[lastIdx]) / candleRange) * 0.4
+            : (body / candleRange) * 0.6 + ((highs[lastIdx] - closes[lastIdx]) / candleRange) * 0.4;
+    }
+    _threeCandleConfirmation(closes, direction) {
+        if (closes.length < 4) return false;
+        const last3 = closes.slice(-3);
+        return direction === "LONG" ? last3[0] <= last3[1] && last3[1] <= last3[2] : last3[0] >= last3[1] && last3[1] >= last3[2];
+    }
+}
+
+// ─── Gestión de posiciones y salidas ──
+class ExitManager {
+    constructor(config) {
+        this.trailingActivationR = config.trailing_activation_r;
+        this.trailingAtrMult = config.trailing_atr_mult;
+        this.ultraEarlyBars = config.ultra_early_exit_bars;
+        this.ultraEarlyRThreshold = config.ultra_early_exit_r_threshold;
+    }
+    updatePosition(pos, currentPrice, currentAtr, barIndex) {
+        const risk = Math.abs(pos.entry_price - pos.stop_loss);
+        if (risk <= 0) return pos;
+        if (pos.direction === "LONG") {
+            pos.current_r = (currentPrice - pos.entry_price) / risk;
+            if (currentPrice > pos.highest_favorable) pos.highest_favorable = currentPrice;
+        } else {
+            pos.current_r = (pos.entry_price - currentPrice) / risk;
+            if (currentPrice < pos.highest_favorable) pos.highest_favorable = currentPrice;
+        }
+        if (pos.current_r >= this.trailingActivationR && !pos.trailing_active) {
+            pos.trailing_active = true;
+            const trailDist = currentAtr * this.trailingAtrMult;
+            pos.trailing_stop = pos.direction === "LONG" ? currentPrice - trailDist : currentPrice + trailDist;
+        }
+        if (pos.trailing_active) {
+            const trailDist = currentAtr * this.trailingAtrMult;
+            if (pos.direction === "LONG") {
+                const newTrail = currentPrice - trailDist;
+                if (newTrail > pos.trailing_stop) { pos.trailing_stop = newTrail; pos.stop_loss = newTrail; }
+            } else {
+                const newTrail = currentPrice + trailDist;
+                if (newTrail < pos.trailing_stop) { pos.trailing_stop = newTrail; pos.stop_loss = newTrail; }
+            }
+        }
+        if (pos.current_r >= 0.8 && !pos.trailing_active) {
+            const beOffset = currentAtr * 0.1;
+            if (pos.direction === "LONG" && pos.entry_price + beOffset > pos.stop_loss) pos.stop_loss = pos.entry_price + beOffset;
+            else if (pos.direction === "SHORT" && pos.entry_price - beOffset < pos.stop_loss) pos.stop_loss = pos.entry_price - beOffset;
+        }
+        return pos;
+    }
+    checkExit(pos, barIndex, bars, currentAtr, efficiency) {
+        const current = bars[bars.length - 1];
+        if (pos.direction === "LONG" && current.low <= pos.stop_loss) return "STOP_LOSS";
+        if (pos.direction === "SHORT" && current.high >= pos.stop_loss) return "STOP_LOSS";
+        if (pos.direction === "LONG" && current.high >= pos.take_profit) return "TAKE_PROFIT";
+        if (pos.direction === "SHORT" && current.low <= pos.take_profit) return "TAKE_PROFIT";
+        if (pos.trailing_active) {
+            if (pos.direction === "LONG" && current.low <= pos.trailing_stop) return "TRAILING_STOP";
+            if (pos.direction === "SHORT" && current.high >= pos.trailing_stop) return "TRAILING_STOP";
+        }
+        const barsOpen = barIndex - pos.entry_bar;
+        if (barsOpen >= this.ultraEarlyBars && pos.current_r < this.ultraEarlyRThreshold) return "ULTRA_EARLY";
+        if (barsOpen > 3 && pos.current_r > 0.3 && efficiency < pos.efficiency_at_entry * 0.8) return "EFFICIENCY_LOSS";
+        if (barsOpen >= 20) return "TIMEOUT";
+        return null;
+    }
+}
+
+// ─── RiskManager y TradeExecutor ──
+class RiskManager {
+    constructor(config, symbol) {
+        this.initialBalance = config.initial_balance;
+        this.currentBalance = this.initialBalance;
+        this.dailyPnl = 0;
+        this.dailyStopLoss = config.daily_stop_loss_pct / 100 * this.initialBalance;
+    }
+    canOpenPosition(riskPct) {
+        return this.currentBalance > 0 && this.dailyPnl >= -this.dailyStopLoss;
+    }
+    updateBalance(pnlCurrency) {
+        this.currentBalance += pnlCurrency;
+        this.dailyPnl += pnlCurrency;
+    }
+}
+
+class TradeExecutor {
+    constructor(ws, symbol, token) {
+        this.ws = ws;
+        this.symbol = symbol;
+        this.token = token;
+        this.msgId = 0;
+    }
+    _send(request) {
+        return new Promise((resolve, reject) => {
+            this.msgId++;
+            request.req_id = this.msgId;
+            const handler = (e) => {
+                const msg = JSON.parse(e.data);
+                if (msg.req_id === request.req_id) {
+                    this.ws.removeEventListener('message', handler);
+                    resolve(msg);
+                }
+            };
+            this.ws.addEventListener('message', handler);
+            this.ws.send(JSON.stringify(request));
+            setTimeout(() => { this.ws.removeEventListener('message', handler); reject('timeout'); }, 10000);
+        });
+    }
+    async buy(direction, duration, stake) {
+        if (this.token) {
+            await this._send({ authorize: this.token });
+        }
+        const contractType = direction === "LONG" ? "CALL" : "PUT";
+        const proposal = await this._send({
+            proposal: 1,
+            amount: stake,
+            basis: "stake",
+            contract_type: contractType,
+            currency: "USD",
+            duration: duration,
+            duration_unit: "s",
+            symbol: this.symbol,
+        });
+        if (!proposal || !proposal.proposal) return null;
+        return this._send({ buy: proposal.proposal.id, price: stake });
+    }
+}
+
+// ─── FILTRO MAESTRO ──
+function shouldAllowTrade(efficiency, setupScore, regimeConfidence, rejectionStrength, config) {
+    if (efficiency < 0.7) return [false, "Efficiency low"];
+    if (setupScore < 0.75) return [false, "Setup score low"];
+    if (regimeConfidence < 0.75) return [false, "Regime confidence low"];
+    if (rejectionStrength < 0.7) return [false, "Rejection strength low"];
+    return [true, "OK"];
+}
+
+// ─── BOT PRINCIPAL ──
+class DerivAdaptiveBot {
+    constructor(config = {}) {
+        this.config = Object.assign({}, DEFAULT_CONFIG, config);
+        this.symbols = this.config.symbols;
+        this.states = {};
+        this.clients = {};
+        this.ws = null; // un único WebSocket general
+    }
+
+    async start() {
+        console.log(`Starting DerivAdaptiveBot (Sniper) for ${this.symbols.join(", ")}`);
+        // Conectar WebSocket
+        this.ws = new WebSocket("wss://ws.deriv.com/websockets/v3");
+        await new Promise((resolve) => this.ws.onopen = resolve);
+
+        for (const sym of this.symbols) {
+            const assetCfg = Object.assign({}, this.config, ASSET_SPECIFIC_CONFIG[sym] || {});
+            const aggregator = new TickAggregator(sym);
+            const regimeDetector = new MarketRegimeDetector(assetCfg, ASSET_SPECIFIC_CONFIG[sym] || {});
+            const signalEngine = new SignalEngine(assetCfg, sym);
+            const adaptiveSys = new AdaptiveSystem(assetCfg, sym);
+            const riskMgr = new RiskManager(assetCfg, sym);
+            const exitMgr = new ExitManager(assetCfg);
+            const tradeExec = new TradeExecutor(this.ws, sym, this.config.api_token);
+            this.states[sym] = {
+                aggregator, regimeDetector, signalEngine, adaptiveSys, riskMgr, exitMgr, tradeExec,
+                position: null, barCount: 0, lastSignal: null, lastRegime: null,
+            };
+            // Suscribirse a ticks
+            this.ws.send(JSON.stringify({ ticks: sym, subscribe: 1 }));
+        }
+
+        this.ws.onmessage = (event) => {
+            const data = JSON.parse(event.data);
+            if (data.tick) {
+                const tick = { timestamp: Date.now() / 1000, price: data.tick.quote, symbol: data.tick.symbol };
+                const sym = tick.symbol;
+                if (!this.states[sym]) return;
+                this.states[sym].aggregator.addTick(tick);
+                this.processAsset(sym);
+            } else if (data.error) {
+                console.error(`WS Error: ${data.error.message}`);
+            }
+        };
+
+        this.ws.onclose = () => console.log("WebSocket closed. Reconnecting in 10s...");
+        this.ws.onerror = (e) => console.error("WebSocket error", e);
+    }
+
+    processAsset(symbol) {
+        const state = this.states[symbol];
+        const bars = state.aggregator.getBars();
+        if (bars.length < this.config.min_bars_required) return;
+        state.barCount = bars.length;
+
+        const regimeState = state.regimeDetector.detect(bars);
+        state.lastRegime = regimeState;
+        const efficiency = marketEfficiencyScore(bars);
+
+        const adap = state.adaptiveSys;
+        adap.onBar();
+
+        // Gestionar posición abierta
+        if (state.position) {
+            const currentAtr = ATR(bars.map(b => b.high), bars.map(b => b.low), bars.map(b => b.close), 14).pop();
+            const pos = state.exitMgr.updatePosition(state.position, bars[bars.length - 1].close, currentAtr, bars.length);
+            const exitReason = state.exitMgr.checkExit(pos, bars.length, bars, currentAtr, efficiency);
+            if (exitReason) {
+                this._closePosition(symbol, pos, exitReason, bars[bars.length - 1].close);
+                state.position = null;
+            } else {
+                state.position = pos;
+            }
+            return;
+        }
+
+        // Condiciones para nueva entrada
+        const duration = this._classifyTrendDuration(bars, regimeState, efficiency, regimeState.atr_percentile);
+        if (!duration) return;
+        if (regimeState.atr_percentile >= 0.4 && regimeState.atr_percentile <= 0.6) return;
+        if (efficiency < 0.65) return;
+        const [canTrade, reason] = adap.canTrade();
+        if (!canTrade) return;
+
+        const signal = state.signalEngine.generateSignal(bars, regimeState, adap.params, efficiency);
+        if (signal.signal === "NO_SIGNAL") return;
+
+        const setupScore = adap.getSetupScore(signal.signal, regimeState.regime);
+        const requiredSetup = adap.params.mode === "SNIPER" ? this.config.sniper_setup_threshold : this.config.setup_score_threshold;
+        if (setupScore < requiredSetup) return;
+
+        const [allow, blockReason] = shouldAllowTrade(efficiency, setupScore, regimeState.confidence, signal.rejection_strength, this.config);
+        if (!allow) {
+            console.log(`[${symbol}] BLOCKED: ${blockReason}`);
+            return;
+        }
+
+        const currentAtr = ATR(bars.map(b => b.high), bars.map(b => b.low), bars.map(b => b.close), 14).pop();
+        const direction = signal.signal;
+        const stake = adap.params.risk_per_trade_pct / 100 * state.riskMgr.currentBalance;
+        if (!state.riskMgr.canOpenPosition(adap.params.risk_per_trade_pct)) return;
+
+        state.tradeExec.buy(direction, 60, stake).then(resp => {
+            if (resp && resp.buy) {
+                const tradeId = Math.random().toString(36).substring(2, 10);
+                const pos = {
+                    trade_id: tradeId,
+                    direction,
+                    entry_price: bars[bars.length - 1].close,
+                    stop_loss: signal.stop_loss,
+                    take_profit: signal.take_profit,
+                    size: stake,
+                    entry_bar: bars.length,
+                    atr_at_entry: currentAtr,
+                    trailing_active: false,
+                    trailing_stop: 0,
+                    highest_favorable: bars[bars.length - 1].close,
+                    current_r: 0,
+                    duration: 60,
+                    efficiency_at_entry: efficiency,
+                };
+                state.position = pos;
+                state.lastSignal = signal;
+                console.log(`[${symbol}] ENTRADA: ${direction} MICRO | Eff=${efficiency.toFixed(2)} Setup=${setupScore.toFixed(2)} Sweep=${signal.swept_liquidity}`);
+            } else {
+                console.warn(`[${symbol}] Trade execution failed`);
+            }
+        });
+    }
+
+    _closePosition(symbol, pos, exitReason, exitPrice) {
+        const state = this.states[symbol];
+        const risk = Math.abs(pos.entry_price - pos.stop_loss);
+        const pnlR = pos.direction === "LONG" ? (exitPrice - pos.entry_price) / risk : (pos.entry_price - exitPrice) / risk;
+        const pnlCurrency = pnlR * pos.size;
+        state.riskMgr.updateBalance(pnlCurrency);
+        const trade = {
+            trade_id: pos.trade_id,
+            symbol,
+            signal_type: state.lastSignal ? state.lastSignal.signal : "UNKNOWN",
+            regime: state.lastRegime ? state.lastRegime.regime : "UNKNOWN",
+            entry_price: pos.entry_price,
+            exit_price: exitPrice,
+            stop_loss: pos.stop_loss,
+            take_profit: pos.take_profit,
+            pnl_r: pnlR,
+            duration_bars: state.barCount - pos.entry_bar,
+            was_winner: pnlR > 0,
+            exit_reason: exitReason,
+            duration_seconds: pos.duration,
+            confidence: state.lastSignal ? state.lastSignal.confidence : 0,
+            efficiency_at_entry: pos.efficiency_at_entry,
+        };
+        state.adaptiveSys.recordTrade(trade);
+        console.log(`[${symbol}] CERRADO ${pos.direction} ${exitReason}: ${pnlR > 0 ? '+' : ''}${pnlR.toFixed(2)}R | Balance: $${state.riskMgr.currentBalance.toFixed(2)}`);
+    }
+
+    _classifyTrendDuration(bars, regimeState, efficiency, atrPercentile) {
+        if (["NOISE", "RANGE"].includes(regimeState.regime) || efficiency < 0.65) return false;
+        if (atrPercentile < 0.3 || (atrPercentile >= 0.4 && atrPercentile <= 0.6)) return false;
+        const closes = bars.slice(-10).map(b => b.close);
+        const dir = ["STRONG_TREND_UP", "WEAK_TREND_UP"].includes(regimeState.regime) ? 1 : -1;
+        let consec = 0;
+        for (let i = 1; i < closes.length; i++) {
+            const diff = closes[i] - closes[i - 1];
+            if ((dir === 1 && diff > 0) || (dir === -1 && diff < 0)) consec++;
+            else break;
+        }
+        return consec >= 2 && efficiency > 0.65;
+    }
+}
+
+// ─── ARRANCAR ──
+const bot = new DerivAdaptiveBot();
+bot.start();
