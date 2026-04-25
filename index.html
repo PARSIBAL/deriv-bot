@@ -1,954 +1,428 @@
-#!/usr/bin/env python3
-"""
-DerivAdaptiveBot — Single-File Multi-Asset Trading System (Sniper Mode)
-Symbols: R_10, R_25, R_50, R_75, R_100
-WebSocket: wss://ws.deriv.com/websockets/v3
-Version: 2.2.0 — Ultra-low-exposure, high-selectivity, anti-fragile
-"""
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BOT APEX v13</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Oxanium:wght@300;400;600;800&display=swap');
 
-import os, sys, json, time, uuid, logging, threading, math
-from typing import Dict, List, Optional, Tuple, Any
-from enum import Enum
-from collections import deque
-from dataclasses import dataclass, field
-import numpy as np
-import websocket
-
-# ─── Global Configuration (Ultra-conservative) ──────────────────────────
-DEFAULT_CONFIG = {
-    "symbols": ["R_10", "R_25", "R_50", "R_75", "R_100"],
-    "timeframe": "M1",
-    "atr_period": 14,
-    "atr_slow_period": 50,
-    "ema_fast": 8,
-    "ema_medium": 21,
-    "ema_slow": 55,
-    "momentum_period": 5,
-    "roc_threshold": 0.018,
-    "micro_range_period": 8,
-    "sl_atr_mult": 1.5,
-    "tp_atr_mult": 2.5,
-    "min_rr": 1.5,
-    "false_breakout_lookback": 5,
-    "fb_rejection_threshold": 0.4,
-    "rolling_window": 30,
-    "partial_reset_bars": 500,
-    "base_risk_pct": 0.2,
-    "max_risk_pct": 0.5,
-    "min_risk_pct": 0.1,
-    "defensive_dd_pct": 5.0,
-    "pause_dd_pct": 10.0,
-    "winrate_aggressive": 0.62,
-    "winrate_defensive": 0.42,
-    "trailing_activation_r": 1.0,
-    "trailing_atr_mult": 1.0,
-    "momentum_exit_period": 3,
-    "daily_stop_loss_pct": 3.0,
-    "initial_balance": 1000.0,
-    "min_bars_required": 80,
-    "log_level": "INFO",
-    "log_file": "deriv_bot.log",
-    "state_file": "bot_state.json",
-    "api_token": os.environ.get("DERIV_API_TOKEN", ""),
-
-    # ── Nuevos filtros ultra estrictos ──
-    "market_efficiency_threshold": 0.7,          # era 0.6
-    "setup_score_threshold": 0.75,               # era 0.7
-    "max_market_exposure_pct": 0.08,             # era 0.15 → 8%
-    "cooldown_after_close_bars": 8,              # 8 velas mínimo entre trades
-    "post_win_cooldown_bars": 5,                 # cooldown extra tras ganar
-    "liquidity_sweep_lookback": 6,
-    "rejection_strength_min": 0.7,               # era 0.6 → 0.7
-    "atr_grey_zone_low": 0.4,
-    "atr_grey_zone_high": 0.6,
-    "sniper_mode_max_trades": 3,
-    "sniper_setup_threshold": 0.8,
-    "ultra_early_exit_bars": 3,
-    "ultra_early_exit_r_threshold": 0.3,
+:root {
+  --g1: #00ffe0;
+  --g2: #00b4d8;
+  --red: #ff4757;
+  --gold: #feca57;
+  --win: #2ed573;
+  --bg0: #04080f;
+  --bg1: #080f1a;
+  --bg2: #0d1626;
+  --border: rgba(0,255,224,0.1);
+  --dim: #3d5a72;
 }
 
-ASSET_SPECIFIC_CONFIG = {
-    "R_10": {"sl_atr_mult": 1.5, "tp_atr_mult": 2.5, "roc_threshold": 0.018, "strong_trend_adx": 28},
-    "R_25": {"sl_atr_mult": 1.8, "tp_atr_mult": 3.0, "roc_threshold": 0.025, "strong_trend_adx": 25},
-    "R_50": {"sl_atr_mult": 2.0, "tp_atr_mult": 3.5, "roc_threshold": 0.03, "strong_trend_adx": 22},
-    "R_75": {"sl_atr_mult": 2.2, "tp_atr_mult": 4.0, "roc_threshold": 0.035, "strong_trend_adx": 20},
-    "R_100": {"sl_atr_mult": 2.5, "tp_atr_mult": 4.5, "roc_threshold": 0.04, "strong_trend_adx": 18},
+*{box-sizing:border-box;margin:0;padding:0;}
+body{
+  background:var(--bg0);
+  font-family:'Oxanium',monospace;
+  min-height:100vh;
+  display:flex;align-items:center;justify-content:center;
+  padding:16px;
 }
 
-# ─── Logging Setup ─────────────────────────────────────────────────────
-def setup_logging(log_level: str = "INFO", log_file: Optional[str] = None):
-    handlers = [logging.StreamHandler(sys.stdout)]
-    if log_file:
-        handlers.append(logging.FileHandler(log_file))
-    logging.basicConfig(
-        level=getattr(logging, log_level.upper(), logging.INFO),
-        format="%(asctime)s | %(name)-20s | %(levelname)-8s | %(message)s",
-        datefmt="%Y-%m-%d %H:%M:%S",
-        handlers=handlers,
-    )
-    logging.getLogger("websocket").setLevel(logging.WARNING)
-
-logger = logging.getLogger("DerivAdaptiveBot")
-
-# ─── Enums & Dataclasses ────────────────────────────────────────────────
-class Regime(Enum):
-    STRONG_TREND_UP = "STRONG_TREND_UP"
-    STRONG_TREND_DOWN = "STRONG_TREND_DOWN"
-    WEAK_TREND_UP = "WEAK_TREND_UP"
-    WEAK_TREND_DOWN = "WEAK_TREND_DOWN"
-    COMPRESSION = "COMPRESSION"
-    HIGH_VOL_EXPANSION = "HIGH_VOL_EXPANSION"
-    RANGE = "RANGE"
-    NOISE = "NOISE"
-
-class SignalType(Enum):
-    LONG = "LONG"
-    SHORT = "SHORT"
-    NO_SIGNAL = "NO_SIGNAL"
-
-class TrendDuration(Enum):
-    MICRO = 60
-    MEDIUM = 300
-    NONE = 0
-
-class ExitReason(Enum):
-    TAKE_PROFIT = "TP"
-    STOP_LOSS = "SL"
-    TRAILING_STOP = "TRAILING"
-    MOMENTUM_LOSS = "MOMENTUM_LOSS"
-    REVERSAL = "REVERSAL"
-    TIMEOUT = "TIMEOUT"
-    EFFICIENCY_LOSS = "EFFICIENCY_LOSS"
-    ABSORPTION = "ABSORPTION"
-    ULTRA_EARLY = "ULTRA_EARLY"            # Salida si no alcanza +0.3R en 2-3 velas
-
-@dataclass
-class Bar:
-    timestamp: float
-    open: float
-    high: float
-    low: float
-    close: float
-    tick_volume: float = 0.0
-
-@dataclass
-class Tick:
-    timestamp: float
-    price: float
-
-@dataclass
-class RegimeState:
-    regime: Regime
-    confidence: float
-    atr_normalized: float
-    atr_percentile: float
-    trend_strength: float
-    structure: str
-    compression_score: float
-
-@dataclass
-class SignalResult:
-    signal: SignalType
-    confidence: float
-    entry_price: float
-    stop_loss: float
-    take_profit: float
-    confluence_score: float
-    momentum_score: float
-    breakout_quality: float
-    is_false_breakout_risk: bool
-    reasoning: List[str] = field(default_factory=list)
-    swept_liquidity: bool = False
-    rejection_strength: float = 0.0
-
-@dataclass
-class Position:
-    trade_id: str
-    direction: str
-    entry_price: float
-    stop_loss: float
-    take_profit: float
-    size: float
-    entry_bar: int
-    atr_at_entry: float
-    trailing_active: bool = False
-    trailing_stop: float = 0.0
-    highest_favorable: float = 0.0
-    current_r: float = 0.0
-    duration: int = 60
-    efficiency_at_entry: float = 0.0
-
-@dataclass
-class TradeRecord:
-    trade_id: str
-    symbol: str
-    signal_type: str
-    regime: str
-    entry_price: float
-    exit_price: float
-    stop_loss: float
-    take_profit: float
-    pnl_r: float
-    duration_bars: int
-    was_winner: bool
-    exit_reason: str
-    duration_seconds: int
-    confidence: float
-    timestamp: float = field(default_factory=time.time)
-    efficiency_at_entry: float = 0.0
-
-@dataclass
-class AdaptiveParams:
-    risk_per_trade_pct: float = 0.2
-    min_confluence: float = 0.75
-    min_confidence: float = 0.75
-    sl_atr_mult: float = 1.5
-    tp_atr_mult: float = 2.5
-    mode: str = "NORMAL"          # NORMAL, DEFENSIVE, AGGRESSIVE, SNIPER, PAUSED
-    cooldown_after_loss: int = 2
-    max_trades_per_session: int = 15
-
-# ─── TickAggregator ────────────────────────────────────────────────────
-class TickAggregator:
-    def __init__(self, symbol: str):
-        self.symbol = symbol
-        self.bars: List[Bar] = []
-        self.current_bar: Optional[Bar] = None
-        self.lock = threading.Lock()
-
-    def add_tick(self, tick: Tick):
-        with self.lock:
-            minute = tick.timestamp // 60 * 60
-            if self.current_bar is None or self.current_bar.timestamp != minute:
-                if self.current_bar is not None:
-                    self.bars.append(self.current_bar)
-                self.current_bar = Bar(
-                    timestamp=minute, open=tick.price, high=tick.price,
-                    low=tick.price, close=tick.price, tick_volume=1.0)
-            else:
-                self.current_bar.high = max(self.current_bar.high, tick.price)
-                self.current_bar.low = min(self.current_bar.low, tick.price)
-                self.current_bar.close = tick.price
-                self.current_bar.tick_volume += 1.0
-            if len(self.bars) > 300:
-                self.bars = self.bars[-250:]
-
-    def get_bars(self) -> List[Bar]:
-        with self.lock:
-            if self.current_bar:
-                return self.bars + [self.current_bar]
-            return self.bars.copy()
-
-# ─── MarketRegimeDetector ──────────────────────────────────────────────
-class MarketRegimeDetector:
-    def __init__(self, config: dict, symbol_config: dict):
-        self.cfg = config
-        self.sc = symbol_config
-        self.atr_period = config.get("atr_period", 14)
-        self.atr_slow_period = config.get("atr_slow_period", 50)
-        self.ema_fast = config.get("ema_fast", 8)
-        self.ema_medium = config.get("ema_medium", 21)
-        self.ema_slow = config.get("ema_slow", 55)
-        self.strong_trend_adx = self.sc.get("strong_trend_adx", 28)
-        self.weak_trend_adx = 16
-        self.compression_threshold = 0.3
-        self.high_vol_threshold = 0.7
-
-    def detect(self, bars: List[Bar]) -> RegimeState:
-        if len(bars) < 60:
-            return RegimeState(regime=Regime.NOISE, confidence=0.0, atr_normalized=0.0, atr_percentile=0.5, trend_strength=0.0, structure="MIXED", compression_score=0.5)
-        closes = np.array([b.close for b in bars])
-        highs = np.array([b.high for b in bars])
-        lows = np.array([b.low for b in bars])
-        return self._detect(closes, highs, lows)
-
-    def _detect(self, closes, highs, lows) -> RegimeState:
-        atr = self._calc_atr(highs, lows, closes, self.atr_period)
-        current_atr = atr[-1]
-        price = closes[-1]
-        atr_normalized = current_atr / (price + 1e-10)
-        atr_history = atr[-100:]
-        atr_percentile = np.mean(atr_history <= current_atr)
-
-        ema_f = self._calc_ema(closes, self.ema_fast)
-        ema_m = self._calc_ema(closes, self.ema_medium)
-        ema_s = self._calc_ema(closes, self.ema_slow)
-        ema_aligned_up = ema_f[-1] > ema_m[-1] > ema_s[-1]
-        ema_aligned_down = ema_f[-1] < ema_m[-1] < ema_s[-1]
-
-        structure = self._price_structure(highs, lows, closes)
-        adx, pdi, mdi = self._calc_adx(highs, lows, closes, 14)
-        trend_strength = adx[-1]
-        bull_strength = pdi[-1] > mdi[-1]
-        compression = self._calc_compression(highs, lows, current_atr)
-
-        regime = Regime.NOISE
-        confidence = 0.5
-
-        if atr_percentile > self.high_vol_threshold and trend_strength > 20:
-            if ema_aligned_up and structure == "HH_HL":
-                regime = Regime.STRONG_TREND_UP; confidence = 0.85
-            elif ema_aligned_down and structure == "LH_LL":
-                regime = Regime.STRONG_TREND_DOWN; confidence = 0.85
-            else:
-                regime = Regime.HIGH_VOL_EXPANSION; confidence = 0.65
-        elif trend_strength >= self.strong_trend_adx:
-            if bull_strength and (ema_aligned_up or structure == "HH_HL"):
-                regime = Regime.STRONG_TREND_UP; confidence = 0.80
-            elif not bull_strength and (ema_aligned_down or structure == "LH_LL"):
-                regime = Regime.STRONG_TREND_DOWN; confidence = 0.80
-            else:
-                regime = Regime.WEAK_TREND_UP if bull_strength else Regime.WEAK_TREND_DOWN; confidence = 0.65
-        elif trend_strength >= self.weak_trend_adx:
-            if bull_strength:
-                regime = Regime.WEAK_TREND_UP; confidence = 0.60
-            else:
-                regime = Regime.WEAK_TREND_DOWN; confidence = 0.60
-        elif compression >= self.compression_threshold:
-            regime = Regime.COMPRESSION; confidence = compression
-        else:
-            if atr_percentile < 0.3:
-                regime = Regime.RANGE; confidence = 0.70
-            else:
-                regime = Regime.NOISE; confidence = 0.50
-
-        return RegimeState(regime=regime, confidence=confidence, atr_normalized=atr_normalized, atr_percentile=atr_percentile, trend_strength=trend_strength, structure=structure, compression_score=compression)
-
-    def market_efficiency_score(self, bars: List[Bar]) -> float:
-        if len(bars) < 20:
-            return 0.5
-        closes = np.array([b.close for b in bars[-20:]])
-        net_change = abs(closes[-1] - closes[0])
-        total_path = np.sum(np.abs(np.diff(closes)))
-        if total_path == 0:
-            return 0.0
-        efficiency = net_change / total_path
-        compression = self._calc_compression(np.array([b.high for b in bars]), np.array([b.low for b in bars]), efficiency)
-        return min(1.0, efficiency * (1.0 - compression * 0.5))
-
-    def _calc_atr(self, h, l, c, period):
-        n = len(c); tr = np.zeros(n)
-        for i in range(1, n):
-            tr[i] = max(h[i]-l[i], abs(h[i]-c[i-1]), abs(l[i]-c[i-1]))
-        tr[0] = h[0]-l[0]
-        atr = np.zeros(n)
-        if n >= period:
-            atr[period-1] = np.mean(tr[:period])
-            for i in range(period, n):
-                atr[i] = (atr[i-1]*(period-1)+tr[i])/period
-        return atr
-
-    def _calc_ema(self, data, period):
-        ema = np.zeros(len(data))
-        if len(data) < period: return ema
-        k = 2/(period+1); ema[period-1] = np.mean(data[:period])
-        for i in range(period, len(data)):
-            ema[i] = data[i]*k + ema[i-1]*(1-k)
-        return ema
-
-    def _calc_adx(self, h, l, c, period=14):
-        n = len(c); plus_dm=np.zeros(n); minus_dm=np.zeros(n); tr=np.zeros(n)
-        for i in range(1, n):
-            up=h[i]-h[i-1]; down=l[i-1]-l[i]
-            plus_dm[i]=up if (up>down and up>0) else 0
-            minus_dm[i]=down if (down>up and down>0) else 0
-            tr[i]=max(h[i]-l[i], abs(h[i]-c[i-1]), abs(l[i]-c[i-1]))
-        tr[0]=h[0]-l[0]
-        def smooth(arr, p):
-            s=np.zeros(len(arr))
-            if len(arr)>p:
-                s[p]=np.sum(arr[1:p+1])
-                for i in range(p+1, len(arr)): s[i]=s[i-1]-(s[i-1]/p)+arr[i]
-            return s
-        atr_s=smooth(tr, period); pdm_s=smooth(plus_dm, period); mdm_s=smooth(minus_dm, period)
-        pdi=np.where(atr_s>0,100*pdm_s/atr_s,0); mdi=np.where(atr_s>0,100*mdm_s/atr_s,0)
-        dx=np.where((pdi+mdi)>0,100*np.abs(pdi-mdi)/(pdi+mdi),0); adx=np.zeros(n)
-        if n>period*2:
-            adx[period*2-1]=np.mean(dx[period:period*2])
-            for i in range(period*2, n): adx[i]=(adx[i-1]*(period-1)+dx[i])/period
-        return adx, pdi, mdi
-
-    def _price_structure(self, highs, lows, closes):
-        n=min(10, len(closes))
-        if n<4: return "MIXED"
-        recent_h=highs[-n:]; recent_l=lows[-n:]
-        pivots_h=[recent_h[i] for i in range(1,n-1) if recent_h[i]>recent_h[i-1] and recent_h[i]>recent_h[i+1]]
-        pivots_l=[recent_l[i] for i in range(1,n-1) if recent_l[i]<recent_l[i-1] and recent_l[i]<recent_l[i+1]]
-        if len(pivots_h)>=2 and len(pivots_l)>=2:
-            hh=pivots_h[-1]>pivots_h[-2]; hl=pivots_l[-1]>pivots_l[-2]
-            lh=pivots_h[-1]<pivots_h[-2]; ll=pivots_l[-1]<pivots_l[-2]
-            if hh and hl: return "HH_HL"
-            if lh and ll: return "LH_LL"
-        x=np.arange(n); slope=np.polyfit(x, closes[-n:],1)[0]; norm_slope=slope/closes[-1]*100
-        if norm_slope>0.05: return "HH_HL"
-        elif norm_slope<-0.05: return "LH_LL"
-        return "MIXED"
-
-    def _calc_compression(self, highs, lows, atr, period=20):
-        if len(highs)<period or atr<=0: return 0.5
-        recent_range=np.max(highs[-period:])-np.min(lows[-period:])
-        expected_range=atr*math.sqrt(period)*0.5
-        return max(0, min(1.0, 1 - recent_range/(expected_range+1e-10)))
-
-# ─── SignalEngine (Re-weighted confluence) ────────────────────────────
-class SignalEngine:
-    def __init__(self, config: dict, symbol: str):
-        self.cfg = config; self.symbol = symbol
-        self.min_confluence = 0.75          # override to hard minimum
-        self.momentum_period = config.get("momentum_period", 5)
-        self.roc_threshold = config.get("roc_threshold", 0.018)
-        self.micro_range_period = config.get("micro_range_period", 8)
-        self.liquidity_sweep_lookback = config.get("liquidity_sweep_lookback", 6)
-
-    def generate_signal(self, bars: List[Bar], regime_state: RegimeState,
-                        adaptive_params: AdaptiveParams, market_efficiency: float) -> SignalResult:
-        no_signal = SignalResult(signal=SignalType.NO_SIGNAL, confidence=0, entry_price=bars[-1].close, stop_loss=0, take_profit=0, confluence_score=0, momentum_score=0, breakout_quality=0, is_false_breakout_risk=False)
-        if len(bars) < 60 or regime_state.regime in [Regime.NOISE, Regime.RANGE]:
-            return no_signal
-        closes = np.array([b.close for b in bars])
-        highs = np.array([b.high for b in bars])
-        lows = np.array([b.low for b in bars])
-        opens = np.array([b.open for b in bars])
-        atr_arr = self._calc_atr(highs, lows, closes, 14)
-        atr = atr_arr[-1]; price = closes[-1]
-
-        direction = None
-        if regime_state.regime in [Regime.STRONG_TREND_UP, Regime.WEAK_TREND_UP]:
-            direction = "LONG"
-        elif regime_state.regime in [Regime.STRONG_TREND_DOWN, Regime.WEAK_TREND_DOWN]:
-            direction = "SHORT"
-        elif regime_state.regime == Regime.COMPRESSION:
-            range_high, range_low = self._micro_range(highs, lows)
-            if price > range_high * 1.001: direction = "LONG"
-            elif price < range_low * 0.999: direction = "SHORT"
-        if not direction: return no_signal
-
-        swept, rejection_strength = self._detect_liquidity_sweep(highs, lows, closes, direction, atr)
-        liquidity_score = (1.0 if swept else 0.0) * 0.6 + rejection_strength * 0.4  # 0-1
-
-        mom_score = self._score_momentum(closes, direction)
-        bo_quality = self._breakout_quality(opens, closes, highs, lows, direction)
-
-        struct_score = 1.0 if (direction == "LONG" and regime_state.structure == "HH_HL") or \
-                            (direction == "SHORT" and regime_state.structure == "LH_LL") else 0.5
-
-        # Nuevo cálculo de concurrencia con pesos estrictos
-        confluence = (liquidity_score * 0.40 +
-                      struct_score * 0.25 +
-                      mom_score * 0.20 +
-                      bo_quality * 0.15)
-        if confluence < 0.75 or mom_score < 0.5 or bo_quality < 0.6:
-            return no_signal
-
-        if not self._three_candle_confirmation(closes, direction):
-            return no_signal
-
-        sl_mult = adaptive_params.sl_atr_mult; tp_mult = adaptive_params.tp_atr_mult
-        sl = price - atr * sl_mult if direction == "LONG" else price + atr * sl_mult
-        tp = price + atr * tp_mult if direction == "LONG" else price - atr * tp_mult
-
-        return SignalResult(
-            signal=SignalType.LONG if direction == "LONG" else SignalType.SHORT,
-            confidence=confluence,  # ahora confluence en 0-1
-            entry_price=price, stop_loss=sl, take_profit=tp,
-            confluence_score=confluence, momentum_score=mom_score,
-            breakout_quality=bo_quality, is_false_breakout_risk=False,
-            reasoning=[f"{direction} entry, sweep={swept}, liq={liquidity_score:.2f}, eff={market_efficiency:.2f}"],
-            swept_liquidity=swept, rejection_strength=rejection_strength
-        )
-
-    def _detect_liquidity_sweep(self, highs, lows, closes, direction, atr) -> Tuple[bool, float]:
-        lookback = self.liquidity_sweep_lookback
-        if len(highs) < lookback + 1: return False, 0.0
-        recent_high = np.max(highs[-lookback:-1])
-        recent_low = np.min(lows[-lookback:-1])
-        current_high = highs[-1]; current_low = lows[-1]; current_close = closes[-1]
-        rejection_strength = 0.0; swept = False
-        if direction == "LONG":
-            if current_low < recent_low and current_close > recent_low + atr * 0.2:
-                swept = True
-                candle_range = highs[-1] - lows[-1]
-                if candle_range > 0:
-                    rejection_strength = (current_close - lows[-1]) / candle_range
-        else:
-            if current_high > recent_high and current_close < recent_high - atr * 0.2:
-                swept = True
-                candle_range = highs[-1] - lows[-1]
-                if candle_range > 0:
-                    rejection_strength = (highs[-1] - current_close) / candle_range
-        return swept, min(1.0, rejection_strength)
-
-    @staticmethod
-    def _calc_atr(h, l, c, period):
-        n = len(c); tr = np.zeros(n)
-        for i in range(1, n): tr[i] = max(h[i]-l[i], abs(h[i]-c[i-1]), abs(l[i]-c[i-1]))
-        tr[0] = h[0]-l[0]; atr = np.zeros(n)
-        if n >= period:
-            atr[period-1] = np.mean(tr[:period])
-            for i in range(period, n): atr[i] = (atr[i-1]*(period-1)+tr[i])/period
-        return atr
-
-    def _score_momentum(self, closes, direction):
-        if len(closes) <= self.momentum_period: return 0
-        roc = (closes[-1] - closes[-self.momentum_period]) / (closes[-self.momentum_period] + 1e-10) * 100
-        return min(1.0, max(0.0, roc/(self.roc_threshold*100))) if direction=="LONG" else min(1.0, max(0.0, -roc/(self.roc_threshold*100)))
-
-    def _micro_range(self, highs, lows):
-        return np.max(highs[-self.micro_range_period-1:-1]), np.min(lows[-self.micro_range_period-1:-1])
-
-    def _breakout_quality(self, opens, closes, highs, lows, direction):
-        body = abs(closes[-1]-opens[-1]); candle_range = highs[-1]-lows[-1]
-        if candle_range == 0: return 0.0
-        if direction=="LONG":
-            quality = (body/candle_range)*0.6 + ((closes[-1]-lows[-1])/candle_range)*0.4
-        else:
-            quality = (body/candle_range)*0.6 + ((highs[-1]-closes[-1])/candle_range)*0.4
-        return min(1.0, quality)
-
-    def _three_candle_confirmation(self, closes, direction):
-        if len(closes)<4: return False
-        last3 = closes[-3:]
-        return (last3[0]<=last3[1]<=last3[2]) if direction=="LONG" else (last3[0]>=last3[1]>=last3[2])
-
-# ─── ExitManager (Ultra-early exit) ───────────────────────────────────
-class ExitManager:
-    def __init__(self, config: dict):
-        self.trailing_activation_r = config.get("trailing_activation_r", 1.0)
-        self.trailing_atr_mult = config.get("trailing_atr_mult", 1.0)
-        self.max_trade_bars = config.get("max_trade_bars", {"MICRO": 5, "MEDIUM": 20})
-        self.breakeven_r = config.get("breakeven_r", 0.8)
-        self.ultra_early_bars = config.get("ultra_early_exit_bars", 3)
-        self.ultra_early_r_threshold = config.get("ultra_early_exit_r_threshold", 0.3)
-
-    def update_position(self, pos: Position, current_price: float, current_atr: float, bar_index: int):
-        risk = abs(pos.entry_price - pos.stop_loss)
-        if risk <= 0: return pos
-        if pos.direction == "LONG":
-            pos.current_r = (current_price - pos.entry_price) / risk
-            if current_price > pos.highest_favorable: pos.highest_favorable = current_price
-        else:
-            pos.current_r = (pos.entry_price - current_price) / risk
-            if current_price < pos.highest_favorable: pos.highest_favorable = current_price
-
-        if pos.current_r >= self.trailing_activation_r and not pos.trailing_active:
-            pos.trailing_active = True
-            trail_dist = current_atr * self.trailing_atr_mult
-            pos.trailing_stop = current_price - trail_dist if pos.direction == "LONG" else current_price + trail_dist
-        if pos.trailing_active:
-            trail_dist = current_atr * self.trailing_atr_mult
-            if pos.direction == "LONG":
-                new_trail = current_price - trail_dist
-                if new_trail > pos.trailing_stop: pos.trailing_stop = new_trail; pos.stop_loss = new_trail
-            else:
-                new_trail = current_price + trail_dist
-                if new_trail < pos.trailing_stop: pos.trailing_stop = new_trail; pos.stop_loss = new_trail
-
-        if pos.current_r >= self.breakeven_r and not pos.trailing_active:
-            be_offset = current_atr * 0.1
-            if pos.direction == "LONG":
-                be_sl = pos.entry_price + be_offset
-                if be_sl > pos.stop_loss: pos.stop_loss = be_sl
-            else:
-                be_sl = pos.entry_price - be_offset
-                if be_sl < pos.stop_loss: pos.stop_loss = be_sl
-        return pos
-
-    def check_exit(self, pos: Position, bar_index: int, bars: List[Bar],
-                   current_atr: float, market_efficiency: float) -> Optional[ExitReason]:
-        current = bars[-1].close
-        # SL / TP
-        if pos.direction == "LONG" and bars[-1].low <= pos.stop_loss: return ExitReason.STOP_LOSS
-        if pos.direction == "SHORT" and bars[-1].high >= pos.stop_loss: return ExitReason.STOP_LOSS
-        if pos.direction == "LONG" and bars[-1].high >= pos.take_profit: return ExitReason.TAKE_PROFIT
-        if pos.direction == "SHORT" and bars[-1].low <= pos.take_profit: return ExitReason.TAKE_PROFIT
-        if pos.trailing_active:
-            if pos.direction == "LONG" and bars[-1].low <= pos.trailing_stop: return ExitReason.TRAILING_STOP
-            if pos.direction == "SHORT" and bars[-1].high >= pos.trailing_stop: return ExitReason.TRAILING_STOP
-        # Ultra early exit
-        bars_open = bar_index - pos.entry_bar
-        if bars_open >= self.ultra_early_bars and pos.current_r < self.ultra_early_r_threshold:
-            return ExitReason.ULTRA_EARLY
-        # Efficiency loss
-        if bars_open > 3 and pos.current_r > 0.3 and market_efficiency < pos.efficiency_at_entry * 0.8:
-            return ExitReason.EFFICIENCY_LOSS
-        # Timeout
-        max_bars = self.max_trade_bars.get("MEDIUM", 20)  # MICRO ya no se usa
-        if bars_open >= max_bars:
-            return ExitReason.TIMEOUT
-        return None
-
-# ─── AdaptiveSystem (Sniper mode, post-win cooldown) ──────────────────
-class AdaptiveSystem:
-    def __init__(self, config: dict, symbol: str):
-        self.config = config; self.symbol = symbol
-        self.window_size = config.get("rolling_window", 30)
-        self.base_risk = config.get("base_risk_pct", 0.2)
-        self.max_risk = config.get("max_risk_pct", 0.5); self.min_risk = config.get("min_risk_pct", 0.1)
-        self.defensive_dd = config.get("defensive_dd_pct", 5.0); self.pause_dd = config.get("pause_dd_pct", 10.0)
-        self.winrate_aggressive = config.get("winrate_aggressive", 0.62)
-        self.winrate_defensive = config.get("winrate_defensive", 0.42)
-        self.params = AdaptiveParams()
-        self.trade_history: deque = deque(maxlen=self.window_size)
-        self.all_trades: List[TradeRecord] = []
-        self.setup_scores: Dict[str, List[float]] = {}
-        self.session_trades = 0; self.session_pnl_r = 0.0; self.cumulative_pnl_r = 0.0
-        self.peak_pnl_r = 0.0; self.bars_since_loss = 999; self.bar_count = 0
-        self.daily_pnl_pct = 0.0; self.initial_balance = config.get("initial_balance", 1000.0)
-        self.balance = self.initial_balance
-        self.bars_since_last_close = 999
-        self.bars_since_last_win = 999   # separado para post-win cooldown
-        self.market_exposure_time = 0
-        self.session_start_bar = 0
-
-    def record_trade(self, trade: TradeRecord):
-        self.trade_history.append(trade); self.all_trades.append(trade)
-        self.session_trades += 1; self.session_pnl_r += trade.pnl_r
-        self.cumulative_pnl_r += trade.pnl_r
-        if self.cumulative_pnl_r > self.peak_pnl_r: self.peak_pnl_r = self.cumulative_pnl_r
-        if not trade.was_winner:
-            self.bars_since_loss = 0
-        else:
-            self.bars_since_loss += 10
-            self.bars_since_last_win = 0   # reiniciar cooldown de victoria
-        self.bars_since_last_close = 0
-        self.market_exposure_time += trade.duration_bars
-        self.balance += trade.pnl_r * (self.balance * self.params.risk_per_trade_pct / 100)
-        self.daily_pnl_pct += (trade.pnl_r * self.params.risk_per_trade_pct / 100)
-        key = f"{trade.signal_type}_{trade.regime}"
-        if key not in self.setup_scores: self.setup_scores[key] = []
-        self.setup_scores[key].append(trade.pnl_r)
-        if len(self.setup_scores[key]) > 20: self.setup_scores[key].pop(0)
-        self._adapt()
-        logger.info(f"[{self.symbol}] Trade {trade.trade_id}: {'WIN' if trade.was_winner else 'LOSS'} {trade.pnl_r:+.2f}R | Mode: {self.params.mode} | WR: {self.winrate():.1%} | Max trades: {self.params.max_trades_per_session}")
-
-    def on_bar(self):
-        self.bar_count += 1; self.bars_since_loss += 1
-        self.bars_since_last_close += 1; self.bars_since_last_win += 1
-        if self.bar_count % 500 == 0:
-            self._partial_reset()
-
-    def winrate(self) -> float:
-        if not self.trade_history: return 0.5
-        return sum(1 for t in self.trade_history if t.was_winner) / len(self.trade_history)
-
-    def _adapt(self):
-        trades = list(self.trade_history); n = len(trades)
-        if n < 5: self.params.mode = "LEARNING"; return
-        winrate = sum(1 for t in trades if t.was_winner) / n
-        winners = [t.pnl_r for t in trades if t.was_winner]
-        losers = [t.pnl_r for t in trades if not t.was_winner]
-        gross_profit = sum(winners) if winners else 0; gross_loss = abs(sum(losers)) if losers else 1e-10
-        pf = gross_profit / gross_loss
-        current_dd_r = self.peak_pnl_r - self.cumulative_pnl_r
-        dd_pct = current_dd_r * self.params.risk_per_trade_pct
-        if dd_pct >= self.pause_dd: self.params.mode = "PAUSED"; return
-        if dd_pct >= self.defensive_dd: self.params.mode = "DEFENSIVE"; self.params.risk_per_trade_pct = self.min_risk; return
-
-        # Modo Sniper (prioridad máxima)
-        if winrate > 0.60 and pf > 1.8 and n >= 15:
-            self.params.mode = "SNIPER"
-            self.params.max_trades_per_session = self.config.get("sniper_mode_max_trades", 3)
-            self.params.min_confidence = 0.85
-        elif winrate >= self.winrate_aggressive and pf >= 1.8:
-            self.params.mode = "AGGRESSIVE"
-            self.params.risk_per_trade_pct = min(self.base_risk * 1.5, self.max_risk)
-            self.params.max_trades_per_session = 15
-        elif winrate <= self.winrate_defensive or pf < 0.9:
-            self.params.mode = "DEFENSIVE"
-            self.params.risk_per_trade_pct = max(self.base_risk * 0.5, self.min_risk)
-            self.params.max_trades_per_session = 10
-        else:
-            self.params.mode = "NORMAL"
-            self.params.risk_per_trade_pct = self.base_risk
-            self.params.max_trades_per_session = 10
-
-        # Ajuste de TP según expectancia
-        if n >= 10:
-            avg_win = np.mean(winners) if winners else 1.0; avg_loss = np.mean(losers) if losers else -1.0
-            if avg_win / abs(avg_loss) > 2.0: self.params.tp_atr_mult *= 1.02
-            else: self.params.tp_atr_mult *= 0.98
-            self.params.tp_atr_mult = max(1.5, min(5.0, self.params.tp_atr_mult))
-
-    def _partial_reset(self):
-        if len(self.trade_history) > self.window_size // 2:
-            recent = list(self.trade_history)[-self.window_size // 2:]
-            self.trade_history = deque(recent, maxlen=self.window_size)
-
-    def can_trade(self) -> Tuple[bool, str]:
-        if self.params.mode == "PAUSED": return False, "Drawdown limit"
-        if self.session_trades >= self.params.max_trades_per_session:
-            return False, f"Session limit ({self.params.max_trades_per_session})"
-
-        cooldown_close = self.config.get("cooldown_after_close_bars", 8)
-        if self.bars_since_last_close < cooldown_close:
-            return False, f"Post-trade cooldown ({cooldown_close - self.bars_since_last_close} bars left)"
-        post_win = self.config.get("post_win_cooldown_bars", 5)
-        if self.bars_since_last_win < post_win:
-            return False, f"Post-win cooldown ({post_win - self.bars_since_last_win} bars left)"
-        if self.bars_since_loss < self.params.cooldown_after_loss:
-            return False, f"Cooldown loss: {self.params.cooldown_after_loss - self.bars_since_loss} bars"
-
-        max_exposure = self.config.get("max_market_exposure_pct", 0.08)
-        if self.bar_count - self.session_start_bar > 60:
-            exposure_pct = self.market_exposure_time / (self.bar_count - self.session_start_bar)
-            if exposure_pct > max_exposure:
-                return False, f"Exposure limit ({exposure_pct:.1%} > {max_exposure:.1%})"
-        return True, "OK"
-
-    def get_setup_score(self, signal_type, regime):
-        key = f"{signal_type}_{regime}"
-        if key in self.setup_scores and len(self.setup_scores[key]) >= 3:
-            recent = self.setup_scores[key][-10:]
-            expectancy = np.mean(recent)
-            return min(0.95, max(0.1, 0.3 + expectancy * 0.3))
-        return 0.5
-
-# ─── RiskManager ────────────────────────────────────────────────────────
-class RiskManager:
-    def __init__(self, config: dict, symbol: str):
-        self.config = config; self.symbol = symbol
-        self.daily_profit_loss = 0.0
-        self.daily_stop_loss = config["daily_stop_loss_pct"] / 100.0
-        self.initial_balance = config["initial_balance"]; self.current_balance = self.initial_balance
-
-    def can_open_position(self, risk_pct: float) -> bool:
-        return self.current_balance > 0 and self.daily_profit_loss >= -self.daily_stop_loss * self.initial_balance
-
-    def update_balance(self, pnl_currency: float):
-        self.current_balance += pnl_currency; self.daily_profit_loss += pnl_currency
-
-# ─── TradeExecutor ─────────────────────────────────────────────────────
-class TradeExecutor:
-    def __init__(self, ws: websocket.WebSocket, symbol: str, token: Optional[str] = None):
-        self.ws = ws; self.symbol = symbol; self.token = token; self.msg_id = 0
-
-    def _send(self, request: dict) -> Optional[dict]:
-        self.msg_id += 1; request["req_id"] = self.msg_id
-        self.ws.send(json.dumps(request))
-        for _ in range(50):
-            try:
-                msg = json.loads(self.ws.recv())
-                if msg.get("req_id") == self.msg_id: return msg
-            except: break
-        return None
-
-    def buy(self, direction: str, duration: int, stake: float) -> Optional[dict]:
-        if self.token:
-            self.ws.send(json.dumps({"authorize": self.token})); self.ws.recv()
-        contract_type = "CALL" if direction == "LONG" else "PUT"
-        proposal = self._send({"proposal": 1, "amount": stake, "basis": "stake",
-                               "contract_type": contract_type, "currency": "USD",
-                               "duration": duration, "duration_unit": "s",
-                               "symbol": self.symbol})
-        if not proposal or "proposal" not in proposal: return None
-        return self._send({"buy": proposal["proposal"]["id"], "price": stake})
-
-# ─── Clasificación avanzada de tendencias (solo MICRO / NONE) ─────────
-def classify_trend_duration_advanced(bars: List[Bar], regime_state: RegimeState,
-                                     efficiency: float, atr_percentile: float) -> Tuple[TrendDuration, str]:
-    if regime_state.regime in [Regime.NOISE, Regime.RANGE] or efficiency < 0.65:
-        return TrendDuration.NONE, "low_quality"
-    if atr_percentile < 0.3 or (0.4 <= atr_percentile <= 0.6):
-        return TrendDuration.NONE, "grey_zone"
-    closes = np.array([b.close for b in bars[-10:]])
-    direction = 1 if "UP" in regime_state.regime.value else -1
-    consecutive = 0
-    for i in range(1, len(closes)):
-        diff = closes[i] - closes[i-1]
-        if (direction == 1 and diff > 0) or (direction == -1 and diff < 0):
-            consecutive += 1
-        else:
-            break
-    if consecutive >= 2 and efficiency > 0.65:
-        return TrendDuration.MICRO, "micro_trend"
-    return TrendDuration.NONE, "no_reliable_trend"
-
-# ─── DerivWebSocketClient ─────────────────────────────────────────────
-class DerivWebSocketClient:
-    def __init__(self, symbol: str, config: dict, bot_controller):
-        self.symbol = symbol; self.config = config; self.bot = bot_controller
-        self.ws: Optional[websocket.WebSocket] = None
-        self.aggregator = TickAggregator(symbol)
-        self.trade_executor: Optional[TradeExecutor] = None
-        self.connected = False; self.thread: Optional[threading.Thread] = None
-
-    def start(self):
-        self.thread = threading.Thread(target=self._run, daemon=True)
-        self.thread.start()
-
-    def _run(self):
-        self.ws = websocket.WebSocket()
-        while True:
-            try:
-                self.ws.connect("wss://ws.deriv.com/websockets/v3")
-                self.connected = True
-                logger.info(f"[{self.symbol}] WebSocket connected")
-                self.ws.send(json.dumps({"ticks": self.symbol, "subscribe": 1}))
-                self.trade_executor = TradeExecutor(self.ws, self.symbol, self.config.get("api_token"))
-                for msg in iter(self.ws.recv, None):
-                    try: data = json.loads(msg)
-                    except: continue
-                    if "tick" in data:
-                        tick = data["tick"]; price = tick["quote"]
-                        self.aggregator.add_tick(Tick(time.time(), price))
-                        self.bot.process_asset(self.symbol, self)
-                    elif "error" in data:
-                        logger.error(f"[{self.symbol}] Error: {data['error']}")
-            except Exception as e:
-                logger.error(f"[{self.symbol}] Connection error: {e}, reconnecting in 10s..."); self.connected = False; time.sleep(10)
-
-# ─── FILTRO MAESTRO GLOBAL ─────────────────────────────────────────────
-def should_allow_trade(market_efficiency: float, setup_score: float,
-                       regime_confidence: float, rejection_strength: float,
-                       config: dict) -> Tuple[bool, str]:
-    if market_efficiency < 0.7:
-        return False, f"Efficiency low ({market_efficiency:.2f})"
-    if setup_score < 0.75:
-        return False, f"Setup score low ({setup_score:.2f})"
-    if regime_confidence < 0.75:
-        return False, f"Regime confidence low ({regime_confidence:.2f})"
-    if rejection_strength < 0.7:
-        return False, f"Rejection strength low ({rejection_strength:.2f})"
-    return True, "OK"
-
-# ─── Main Bot Orchestrator ────────────────────────────────────────────
-class DerivAdaptiveBot:
-    def __init__(self, config: Optional[dict] = None):
-        self.config = dict(DEFAULT_CONFIG)
-        if config: self.config.update(config)
-        setup_logging(self.config["log_level"], self.config.get("log_file"))
-        self.symbols = self.config["symbols"]
-        self.asset_states: Dict[str, dict] = {}
-        self.clients: Dict[str, DerivWebSocketClient] = {}
-        self.lock = threading.Lock()
-        for sym in self.symbols:
-            asset_config = {**self.config, **(ASSET_SPECIFIC_CONFIG.get(sym, {}))}
-            self.asset_states[sym] = {
-                "aggregator": TickAggregator(sym),
-                "regime_detector": MarketRegimeDetector(asset_config, ASSET_SPECIFIC_CONFIG.get(sym, {})),
-                "signal_engine": SignalEngine(asset_config, sym),
-                "adaptive_system": AdaptiveSystem(asset_config, sym),
-                "risk_manager": RiskManager(asset_config, sym),
-                "exit_manager": ExitManager(asset_config),
-                "position": None, "bar_count": 0, "last_signal": None, "last_regime": None,
-            }
-
-    def process_asset(self, symbol: str, client: DerivWebSocketClient):
-        with self.lock:
-            state = self.asset_states[symbol]
-            bars = client.aggregator.get_bars()
-            if len(bars) < self.config["min_bars_required"]: return
-            state["bar_count"] = len(bars)
-            regime_state = state["regime_detector"].detect(bars)
-            state["last_regime"] = regime_state
-            efficiency = state["regime_detector"].market_efficiency_score(bars)
-
-            adap = state["adaptive_system"]
-            adap.on_bar()
-
-            # Posición abierta
-            pos = state["position"]
-            if pos is not None:
-                current_atr = state["regime_detector"]._calc_atr(
-                    np.array([b.high for b in bars]), np.array([b.low for b in bars]),
-                    np.array([b.close for b in bars]), 14)[-1]
-                pos = state["exit_manager"].update_position(pos, bars[-1].close, current_atr, len(bars))
-                exit_reason = state["exit_manager"].check_exit(pos, len(bars), bars, current_atr, efficiency)
-                if exit_reason:
-                    self._close_position(symbol, pos, exit_reason, bars[-1].close)
-                    state["position"] = None
-                else:
-                    state["position"] = pos
-                return
-
-            # Solo duración MICRO (ya no MEDIUM)
-            duration, dur_reason = classify_trend_duration_advanced(bars, regime_state, efficiency, regime_state.atr_percentile)
-            if duration == TrendDuration.NONE:
-                return
-
-            # ATR grey zone filter
-            if 0.4 <= regime_state.atr_percentile <= 0.6:
-                logger.debug(f"[{symbol}] TRADE BLOCKED: ATR grey zone ({regime_state.atr_percentile:.2f})")
-                return
-
-            # Eficiencia mínima extra
-            if efficiency < 0.65:
-                logger.debug(f"[{symbol}] TRADE BLOCKED: Efficiency below 0.65 ({efficiency:.2f})")
-                return
-
-            can_trade, reason = adap.can_trade()
-            if not can_trade:
-                logger.debug(f"[{symbol}] TRADE BLOCKED: {reason}")
-                return
-
-            signal = state["signal_engine"].generate_signal(bars, regime_state, adap.params, efficiency)
-            if signal.signal == SignalType.NO_SIGNAL:
-                return
-            # Filtro maestro
-            setup_score = adap.get_setup_score(signal.signal.value, regime_state.regime.value)
-            if adap.params.mode == "SNIPER":
-                required_setup = self.config.get("sniper_setup_threshold", 0.8)
-            else:
-                required_setup = self.config.get("setup_score_threshold", 0.75)
-            if setup_score < required_setup:
-                logger.debug(f"[{symbol}] TRADE BLOCKED: Setup score {setup_score:.2f} < {required_setup}")
-                return
-
-            allow, block_reason = should_allow_trade(
-                efficiency, setup_score, regime_state.confidence,
-                signal.rejection_strength, self.config)
-            if not allow:
-                logger.info(f"[{symbol}] TRADE BLOCKED by master filter: {block_reason}")
-                return
-
-            current_atr = state["regime_detector"]._calc_atr(
-                np.array([b.high for b in bars]), np.array([b.low for b in bars]),
-                np.array([b.close for b in bars]), 14)[-1]
-            direction = "LONG" if signal.signal == SignalType.LONG else "SHORT"
-            stake = adap.params.risk_per_trade_pct / 100.0 * state["risk_manager"].current_balance
-            if not state["risk_manager"].can_open_position(adap.params.risk_per_trade_pct):
-                return
-
-            exec_resp = client.trade_executor.buy(direction, TrendDuration.MICRO.value, stake)
-            if exec_resp and "buy" in exec_resp:
-                trade_id = str(uuid.uuid4())[:8]
-                position = Position(
-                    trade_id=trade_id, direction=direction, entry_price=bars[-1].close,
-                    stop_loss=signal.stop_loss, take_profit=signal.take_profit,
-                    size=stake, entry_bar=len(bars), atr_at_entry=current_atr,
-                    duration=TrendDuration.MICRO.value, efficiency_at_entry=efficiency
-                )
-                state["position"] = position; state["last_signal"] = signal
-                logger.info(f"[{symbol}] ENTRADA VALIDADA (MASTER): {direction} MICRO | Entry={bars[-1].close:.5f} | Eff={efficiency:.2f} | Setup={setup_score:.2f} | Sweep={signal.swept_liquidity}")
-            else:
-                logger.warning(f"[{symbol}] Trade execution failed")
-
-    def _close_position(self, symbol: str, pos: Position, exit_reason: ExitReason, exit_price: float):
-        state = self.asset_states[symbol]
-        risk = abs(pos.entry_price - pos.stop_loss)
-        pnl_r = (exit_price - pos.entry_price)/risk if pos.direction=="LONG" else (pos.entry_price - exit_price)/risk
-        pnl_currency = pnl_r * pos.size
-        state["risk_manager"].update_balance(pnl_currency)
-        trade = TradeRecord(
-            trade_id=pos.trade_id, symbol=symbol,
-            signal_type=state["last_signal"].signal.value if state["last_signal"] else "UNKNOWN",
-            regime=state["last_regime"].regime.value if state["last_regime"] else "UNKNOWN",
-            entry_price=pos.entry_price, exit_price=exit_price, stop_loss=pos.stop_loss,
-            take_profit=pos.take_profit, pnl_r=pnl_r, duration_bars=state["bar_count"] - pos.entry_bar,
-            was_winner=pnl_r>0, exit_reason=exit_reason.value, duration_seconds=pos.duration,
-            confidence=state["last_signal"].confidence if state["last_signal"] else 0,
-            efficiency_at_entry=pos.efficiency_at_entry
-        )
-        state["adaptive_system"].record_trade(trade)
-        logger.info(f"[{symbol}] CLOSED {pos.direction} {exit_reason.value}: {pnl_r:+.2f}R | Balance: ${state['risk_manager'].current_balance:.2f}")
-
-    def run(self):
-        logger.info(f"Starting DerivAdaptiveBot (Sniper) for symbols: {self.symbols}")
-        for sym in self.symbols:
-            client = DerivWebSocketClient(sym, self.config, self)
-            self.clients[sym] = client; client.start()
-        while True: time.sleep(1)
-
-if __name__ == "__main__":
-    bot = DerivAdaptiveBot()
-    bot.run()
+.wrap{width:100%;max-width:400px;}
+
+/* MODAL */
+.modal-overlay{position:fixed;inset:0;background:rgba(4,8,15,.96);display:flex;align-items:center;justify-content:center;z-index:999;backdrop-filter:blur(8px);transition:opacity .3s;}
+.modal-overlay.hidden{opacity:0;pointer-events:none;}
+.modal{background:var(--bg1);border:1px solid var(--border);border-radius:18px;padding:24px 22px;max-width:320px;width:92%;position:relative;}
+.modal::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,transparent,var(--g1),transparent);}
+.m-title{font-size:16px;font-weight:800;color:#fff;letter-spacing:3px;text-align:center;margin-bottom:16px;}
+.m-row{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px;}
+.m-group{}
+.m-lbl{font-size:9px;color:var(--dim);letter-spacing:1px;margin-bottom:6px;}
+.m-input{width:100%;background:var(--bg2);border:1px solid var(--dim);border-radius:10px;color:#fff;font-family:'Oxanium',monospace;font-size:18px;font-weight:800;padding:10px;outline:none;text-align:center;transition:border .2s;}
+.m-input:focus{border-color:var(--g1);}
+.m-presets{display:flex;gap:5px;margin-top:5px;flex-wrap:wrap;}
+.mp{font-size:9px;padding:4px 8px;border:1px solid var(--dim);border-radius:6px;color:var(--dim);background:var(--bg2);cursor:pointer;transition:all .2s;}
+.mp:hover{border-color:var(--g1);color:var(--g1);}
+.mp.on{border-color:var(--g1);color:#000;background:var(--g1);}
+.m-btn{width:100%;font-size:13px;font-weight:800;letter-spacing:3px;padding:14px;border:none;border-radius:12px;background:linear-gradient(135deg,#00b09b,#00ffe0);color:#000;cursor:pointer;margin-top:4px;transition:all .2s;}
+.m-btn:hover{box-shadow:0 4px 20px rgba(0,255,224,.4);}
+
+/* REPORTE */
+.rep-overlay{position:fixed;inset:0;background:rgba(4,8,15,.96);display:flex;align-items:center;justify-content:center;z-index:998;backdrop-filter:blur(8px);transition:opacity .3s;}
+.rep-overlay.hidden{opacity:0;pointer-events:none;}
+.rep{background:var(--bg1);border:1px solid var(--border);border-radius:18px;padding:22px 20px;max-width:320px;width:92%;}
+.rep::before{display:none;}
+.rep-title{font-size:15px;font-weight:800;color:#fff;letter-spacing:3px;text-align:center;margin-bottom:14px;}
+.rep-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px;}
+.rs{background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:12px 8px;text-align:center;}
+.rs-l{font-size:8px;color:var(--dim);letter-spacing:1px;margin-bottom:4px;}
+.rs-v{font-size:22px;font-weight:800;color:#fff;}
+.rs-v.up{color:var(--win);}.rs-v.dn{color:var(--red);}
+.rs-v.go{color:var(--gold);}.rs-v.cy{color:var(--g1);}
+.rep-ops{background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:10px;margin-bottom:12px;max-height:160px;overflow-y:auto;}
+.rep-ops-lbl{font-size:8px;color:var(--dim);letter-spacing:1px;margin-bottom:6px;}
+.op{display:flex;justify-content:space-between;font-size:10px;padding:3px 0;border-bottom:1px solid rgba(255,255,255,.04);}
+.op:last-child{border:none;}
+.op-w{color:var(--win);}.op-l{color:var(--red);}
+.rep-btn{width:100%;font-size:11px;font-weight:700;letter-spacing:2px;padding:11px;border:1px solid var(--dim);border-radius:10px;background:transparent;color:var(--dim);cursor:pointer;transition:all .2s;}
+.rep-btn:hover{border-color:var(--g1);color:var(--g1);}
+
+/* CARD PRINCIPAL */
+.card{background:var(--bg1);border:1px solid var(--border);border-radius:18px;overflow:hidden;}
+
+/* TOP */
+.top{padding:16px 18px 12px;border-bottom:1px solid var(--border);position:relative;}
+.top::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,transparent,var(--g2) 30%,var(--g1) 70%,transparent);}
+.top-row{display:flex;justify-content:space-between;align-items:center;}
+.brand{font-size:22px;font-weight:800;color:#fff;letter-spacing:4px;}
+.ver{font-size:8px;color:var(--dim);letter-spacing:2px;margin-top:2px;}
+.badge{font-size:9px;letter-spacing:2px;padding:4px 10px;border-radius:20px;border:1px solid var(--dim);color:var(--dim);transition:all .4s;}
+.badge.live{border-color:var(--win);color:var(--win);animation:glow 2s infinite;}
+@keyframes glow{0%,100%{box-shadow:0 0 6px rgba(46,213,115,.2);}50%{box-shadow:0 0 14px rgba(46,213,115,.5);}}
+.dot{display:inline-block;width:5px;height:5px;border-radius:50%;background:currentColor;margin-right:4px;vertical-align:middle;}
+.badge.live .dot{animation:blink 1s infinite;}
+@keyframes blink{0%,100%{opacity:1;}50%{opacity:.2;}}
+
+/* INFO ROW */
+.info-row{display:flex;gap:6px;margin-top:10px;}
+.ibox{flex:1;background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:7px 10px;}
+.il{font-size:8px;color:var(--dim);letter-spacing:1px;}
+.iv{font-size:12px;color:var(--gold);margin-top:2px;font-weight:700;}
+.sess-pill{font-size:8px;padding:2px 8px;border-radius:10px;border:1px solid var(--dim);color:var(--dim);display:inline-block;margin-top:2px;}
+.sess-pill.hot{border-color:var(--win);color:var(--win);}
+.sess-pill.warm{border-color:var(--gold);color:var(--gold);}
+.sess-pill.cold{border-color:var(--red);color:var(--red);}
+
+/* META */
+.meta{display:flex;margin-top:10px;background:var(--bg2);border:1px solid var(--border);border-radius:8px;overflow:hidden;}
+.mi{flex:1;padding:7px 6px;text-align:center;border-right:1px solid var(--border);}
+.mi:last-child{border-right:none;}
+.ml{font-size:8px;color:var(--dim);}
+.mv{font-size:13px;font-weight:800;color:#fff;margin-top:1px;}
+.mv.g{color:var(--win);}.mv.r{color:var(--red);}.mv.y{color:var(--gold);}
+.prog{height:3px;background:var(--border);margin-top:10px;border-radius:0;overflow:hidden;}
+.prog-fill{height:100%;width:0%;background:linear-gradient(90deg,var(--g2),var(--win));transition:width .5s;}
+
+/* Z-SCORE VISUAL — el corazón del bot */
+.zscore-display{
+  margin-top:10px;
+  background:var(--bg2);border:1px solid var(--border);border-radius:10px;
+  padding:10px 14px;display:flex;align-items:center;gap:12px;
+}
+.zs-lbl{font-size:8px;color:var(--dim);letter-spacing:1px;flex-shrink:0;}
+.zs-bar{flex:1;height:6px;background:rgba(255,255,255,.06);border-radius:3px;position:relative;overflow:visible;}
+.zs-center{position:absolute;top:-4px;left:50%;width:2px;height:14px;background:var(--dim);border-radius:1px;}
+.zs-fill{position:absolute;top:0;height:100%;border-radius:3px;transition:all .4s;}
+.zs-val{font-size:14px;font-weight:800;width:44px;text-align:right;flex-shrink:0;}
+
+/* BOTÓN TOGGLE */
+.btn-wrap{padding:12px 14px;background:var(--bg1);border-top:1px solid var(--border);}
+.btn-toggle{width:100%;font-size:14px;font-weight:800;letter-spacing:3px;padding:14px;border:none;border-radius:12px;cursor:pointer;transition:all .3s;}
+.btn-toggle.go{background:linear-gradient(135deg,#00b09b,#00ffe0);color:#000;}
+.btn-toggle.go:hover{box-shadow:0 4px 20px rgba(0,255,224,.4);}
+.btn-toggle.stop{background:linear-gradient(135deg,#b91c1c,#ff4757);color:#fff;}
+.btn-toggle.stop:hover{box-shadow:0 4px 20px rgba(255,71,87,.4);}
+.btn-toggle:active{transform:scale(.98);}
+
+/* STATS 2x2 */
+.stats{display:grid;grid-template-columns:1fr 1fr;gap:1px;background:var(--border);border-top:1px solid var(--border);}
+.st{background:var(--bg1);padding:12px 15px;}
+.sl{font-size:8px;color:var(--dim);letter-spacing:2px;text-transform:uppercase;margin-bottom:3px;}
+.sv{font-size:20px;font-weight:800;color:#fff;transition:color .3s;}
+.sv.up{color:var(--win);}.sv.dn{color:var(--red);}
+.sv.cy{color:var(--g1);}.sv.go{color:var(--gold);}
+
+/* HISTORIAL DOTS */
+.dots-row{background:var(--bg1);border-top:1px solid var(--border);padding:8px 15px;display:flex;gap:4px;align-items:center;}
+.dl{font-size:9px;color:var(--dim);letter-spacing:1px;margin-right:4px;}
+.d{width:9px;height:9px;border-radius:2px;background:var(--bg2);border:1px solid var(--dim);transition:all .3s;}
+.d.w{background:var(--win);border-color:var(--win);box-shadow:0 0 4px var(--win);}
+.d.l{background:var(--red);border-color:var(--red);}
+
+/* ESTADO */
+.state-row{background:var(--bg1);border-top:1px solid var(--border);padding:7px 15px;display:flex;justify-content:space-between;align-items:center;font-size:10px;color:var(--dim);}
+.chip{font-size:9px;letter-spacing:1px;padding:3px 8px;border-radius:5px;background:rgba(0,180,216,.1);color:var(--g2);border:1px solid rgba(0,180,216,.2);transition:all .3s;}
+.chip.act{background:rgba(0,255,224,.1);color:var(--g1);border-color:rgba(0,255,224,.3);}
+.chip.inv{background:rgba(255,71,87,.08);color:var(--red);border-color:rgba(255,71,87,.2);}
+.chip.wait{background:rgba(254,202,87,.08);color:var(--gold);border-color:rgba(254,202,87,.2);}
+
+/* CONTADORES */
+.count-row{background:var(--bg2);border-top:1px solid var(--border);padding:7px 15px;display:flex;justify-content:space-between;font-size:9px;color:var(--dim);letter-spacing:1px;}
+.cnt{font-family:'Oxanium',monospace;font-size:12px;color:var(--gold);}
+
+/* LOG */
+.log-wrap{background:var(--bg1);border-top:1px solid var(--border);padding:10px 12px;}
+.log{background:#020609;border:1px solid rgba(0,255,224,.07);border-radius:10px;height:150px;overflow-y:auto;padding:8px 10px;font-size:10px;line-height:1.9;scrollbar-width:thin;scrollbar-color:var(--border) transparent;}
+.log::-webkit-scrollbar{width:3px;}
+.log::-webkit-scrollbar-thumb{background:var(--border);}
+.le{display:flex;gap:6px;}
+.lt{color:var(--dim);font-size:9px;flex-shrink:0;}
+.lw{color:var(--win);}.ll{color:var(--red);}
+.li{color:var(--g2);}.lx{color:var(--gold);}
+.ls{color:var(--red);font-weight:700;}.linv{color:#3d5a72;font-style:italic;}
+.lg{color:var(--win);font-weight:700;}
+
+/* FOOTER */
+.ftr{background:var(--bg1);border-top:1px solid var(--border);padding:9px 15px 12px;display:flex;justify-content:space-between;align-items:center;font-size:9px;color:var(--dim);letter-spacing:1px;}
+.rep-link{font-size:9px;padding:4px 10px;border:1px solid var(--dim);border-radius:6px;background:transparent;color:var(--dim);cursor:pointer;transition:all .2s;letter-spacing:1px;}
+.rep-link:hover{border-color:var(--gold);color:var(--gold);}
+
+.spin{display:inline-block;width:7px;height:7px;border:1.5px solid transparent;border-top-color:var(--g1);border-radius:50%;animation:sp 1s linear infinite;margin-right:4px;vertical-align:middle;}
+@keyframes sp{to{transform:rotate(360deg);}}
+</style>
+</head>
+<body>
+
+<!-- MODAL CONFIG -->
+<div class="modal-overlay" id="mOverlay">
+  <div class="modal">
+    <div class="m-title">⚡ APEX v13</div>
+    <div class="m-row">
+      <div class="m-group">
+        <div class="m-lbl">💰 STAKE ($)</div>
+        <input class="m-input" type="number" id="iStake" value="0.35" min="0.35" max="100" step="0.05" oninput="refreshSummary()">
+        <div class="m-presets">
+          <div class="mp on"  onclick="sp2('stake',0.35)">0.35</div>
+          <div class="mp"     onclick="sp2('stake',0.50)">0.50</div>
+          <div class="mp"     onclick="sp2('stake',1.00)">1.00</div>
+          <div class="mp"     onclick="sp2('stake',2.00)">2.00</div>
+        </div>
+      </div>
+      <div class="m-group" style="display:flex;flex-direction:column;gap:8px;">
+        <div>
+          <div class="m-lbl">🎯 TAKE PROFIT ($)</div>
+          <input class="m-input" type="number" id="iTP" value="5" min="0.5" max="500" step="0.5" oninput="refreshSummary()">
+          <div class="m-presets">
+            <div class="mp on" onclick="sp2('tp',5)">$5</div>
+            <div class="mp"    onclick="sp2('tp',10)">$10</div>
+            <div class="mp"    onclick="sp2('tp',20)">$20</div>
+          </div>
+        </div>
+        <div>
+          <div class="m-lbl">🛡 STOP LOSS ($)</div>
+          <input class="m-input" type="number" id="iSL" value="3" min="0.5" max="500" step="0.5" oninput="refreshSummary()">
+          <div class="m-presets">
+            <div class="mp on" onclick="sp2('sl',3)">$3</div>
+            <div class="mp"    onclick="sp2('sl',5)">$5</div>
+            <div class="mp"    onclick="sp2('sl',10)">$10</div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <button class="m-btn" onclick="launch()">▶ COMENZAR</button>
+  </div>
+</div>
+
+<!-- MODAL REPORTE -->
+<div class="rep-overlay hidden" id="rOverlay">
+  <div class="rep">
+    <div class="rep-title">📊 REPORTE DE SESIÓN</div>
+    <div class="rep-grid">
+      <div class="rs"><div class="rs-l">RESULTADO</div><div class="rs-v" id="rRes">$0.00</div></div>
+      <div class="rs"><div class="rs-l">WINRATE</div><div class="rs-v go" id="rWR">0%</div></div>
+      <div class="rs"><div class="rs-l">WINS ✅</div><div class="rs-v up" id="rW">0</div></div>
+      <div class="rs"><div class="rs-l">LOSSES ❌</div><div class="rs-v dn" id="rL">0</div></div>
+      <div class="rs"><div class="rs-l">TOTAL OPS</div><div class="rs-v cy" id="rT">0</div></div>
+      <div class="rs"><div class="rs-l">INVALIDADAS</div><div class="rs-v go" id="rI">0</div></div>
+    </div>
+    <div class="rep-ops">
+      <div class="rep-ops-lbl">ÚLTIMAS OPERACIONES</div>
+      <div id="rOps"></div>
+    </div>
+    <button class="rep-btn" onclick="closeRep()">✕ CERRAR</button>
+  </div>
+</div>
+
+<!-- MAIN -->
+<div class="wrap">
+<div class="card">
+
+  <!-- TOP -->
+  <div class="top">
+    <div class="top-row">
+      <div>
+        <div class="brand">⚡ APEX</div>
+        <div class="ver">v13 · R_50 · Z-SCORE · 3 TICKS</div>
+      </div>
+      <div class="badge" id="badge"><span class="dot"></span><span id="bTxt">OFFLINE</span></div>
+    </div>
+
+    <div class="info-row">
+      <div class="ibox">
+        <div class="il">COLOMBIA</div>
+        <div class="iv" id="clock">--:--</div>
+      </div>
+      <div class="ibox">
+        <div class="il">SESIÓN</div>
+        <div class="sess-pill" id="sessEl">--</div>
+      </div>
+      <div class="ibox">
+        <div class="il">STAKE</div>
+        <div class="iv" id="stakeEl">$0.35</div>
+      </div>
+    </div>
+
+    <div class="meta">
+      <div class="mi"><div class="ml">PROFIT</div><div class="mv g" id="mGoal">+$5</div></div>
+      <div class="mi"><div class="ml">HOY</div><div class="mv" id="mProg">$0.00</div></div>
+      <div class="mi"><div class="ml">STOP</div><div class="mv r" id="mStop">-$3</div></div>
+      <div class="mi"><div class="ml">OPS</div><div class="mv y" id="mOps">0/25</div></div>
+    </div>
+    <div class="prog"><div class="prog-fill" id="pFill"></div></div>
+
+    <!-- Z-SCORE VISUAL -->
+    <div class="zscore-display">
+      <div class="zs-lbl">Z-SCORE</div>
+      <div class="zs-bar">
+        <div class="zs-center"></div>
+        <div class="zs-fill" id="zFill"></div>
+      </div>
+      <div class="zs-val" id="zVal" style="color:var(--dim)">0.00</div>
+    </div>
+  </div>
+
+  <!-- BOTÓN TOGGLE -->
+  <div class="btn-wrap">
+    <button class="btn-toggle go" id="btnT" onclick="toggle()">▶ INICIAR</button>
+  </div>
+
+  <!-- STATS -->
+  <div class="stats">
+    <div class="st"><div class="sl">💰 Balance</div><div class="sv cy" id="bal">0.00</div></div>
+    <div class="st"><div class="sl">📈 Ganancia</div><div class="sv" id="prof">+0.00</div></div>
+    <div class="st"><div class="sl">🏆 Winrate</div><div class="sv" id="wr">0%</div></div>
+    <div class="st"><div class="sl">📉 Pérdidas</div><div class="sv dn" id="lossEl">$0.00</div></div>
+  </div>
+
+  <!-- HISTORIAL -->
+  <div class="dots-row">
+    <span class="dl">ÚLTIMAS</span>
+    <div id="dots"></div>
+  </div>
+
+  <!-- ESTADO -->
+  <div class="state-row">
+    <span id="stateInfo">Presiona INICIAR</span>
+    <span class="chip" id="chip">IDLE</span>
+  </div>
+
+  <!-- CONTADORES -->
+  <div class="count-row">
+    <span>🚫 INVALIDADAS <span class="cnt" id="invEl">0</span></span>
+    <span>✅ EJECUTADAS <span class="cnt" id="totEl">0</span></span>
+  </div>
+
+  <!-- LOG -->
+  <div class="log-wrap">
+    <div class="log" id="log"></div>
+  </div>
+
+  <!-- FOOTER -->
+  <div class="ftr">
+    <span id="ftrTxt">$0.35 · TP $5 · SL $3</span>
+    <button class="rep-link" onclick="showRep()">📊 REPORTE</button>
+  </div>
+
+</div>
+</div>
+
+<script>
+// ══════════════════════════════════
+// CONFIG
+// ══════════════════════════════════
+const TOKEN  = "e1lRgxNoxWwBkzx";
+const SYMBOL = "R_50";
+
+const CFG = {
+  TICKS:    5,
+  COOLDOWN: 7500,
+  PAUSE_MS: 45000,
+  MIN_BARS: 20,
+  HISTORY:  80,
+  // Rango de volatilidad óptimo para R_50
+  // Calibrado para capturar el 70% del tiempo de mercado activo
+  VOL_MIN:  0.0025,
+  VOL_MAX:  0.020,
+  // Z-score: umbral para detectar desviación estadística real
+  // 1.45 = señal moderada pero consistente
+  // La media revierte cuando Z > umbral
+  Z_MIN:    2.20,
+  MAX_OPS:  15,
+};
+
+// ══════════════════════════════════
+// ESTADO
+// ══════════════════════════════════
+let ws;
+let bal=0, initBal=0;
+let running=false;
+let wins=0, lossC=0, total=0, profit=0, totalLoss=0;
+let lossStreak=0;
+let lastTrade=0, pauseUntil=0;
+let prices=[], recent=[], invC=0;
+let STAKE=0.35, TP=5, SL=3;
+let opLog=[];
+
+// ══════════════════════════════════
+// MODAL
+// ══════════════════════════════════
+function sp2(t,v){
+  if(t==="stake"){ document.getElementById("iStake").value=v; document.querySelectorAll(".m-presets .mp").forEach(b=>{ if(b.closest(".m-group")) b.className="mp"+(parseFloat(b.innerText)===v?" on":""); }); }
+  else if(t==="tp")  document.getElementById("iTP").value=v;
+  else               document.getElementById("iSL").value=v;
+  refreshSummary();
+}
+function refreshSummary(){}
+
+function launch(){
+  STAKE = Math.max(0.35, parseFloat(document.getElementById("iStake").value)||0.35);
+  TP    = parseFloat(document.getElementById("iTP").value)||5;
+  SL    = parseFloat(document.getElementById("iSL").value)||3;
+  document.getElementById("mOverlay").className="modal-overlay hidden";
+  document.getElementById("stakeEl").innerText="$"+STAKE.toFixed(2);
+  document.getElementById("mGoal").innerText="+$"+TP;
+  document.getElementById("mStop").innerText="-$"+SL;
+  document.getElementById("ftrTxt").innerText=`$${STAKE.toFixed(2)} · TP $${TP} · SL $${SL}`;
+  startBot();
+}
+
+// ══════════════════════════════════
+// TOGGLE
+// ══════════════════════════════════
+function toggle(){
+  if(!running){
+    document.getElementById("mOverlay").className="modal-overlay";
+  } else {
+    stopBot(false);
+  }
+}
+
+function setBtnState(on){
+  const b=document.getElementById("btnT");
+  if(on){ b.className="btn-toggle stop"; b.innerText="■ DETENER"; }
+  else   { b.className="btn-toggle go";  b.innerText="▶ INICIAR"; }
+}
+
+// ══════════════════════════════════
+// REPORTE
+// ══════════════════════════════════
+function showRep(){
+  const wr=total?(wins/total*100).toFixed(1):0;
+  const rv=document.getElementById("rRes");
+  rv.innerText=(profit>=0?"+$":"−$")+Math.abs(profit).toFixed(2);
+  rv.className="rs-v"+(profit>=0?" up":" dn");
+  document.getElementById("rWR").innerText=wr+"%";
+  document.getElementById("rW").innerText=wins;
+  document.getElementById("rL").innerText=lossC;
+  document.getElementById("rT").innerText=total;
+  document.getElementById("rI").innerText=invC;
+  const c=document.getElementById("rOps");
+  c.innerHTML=opLog.length===0
+    ?'<div style="font-size:10px;color:var(--dim);text-align:center;padding:6px">Sin operaciones</div>'
+    :opLog.slice(-12).reverse().map(o=>`
+      <div class="op">
+        <span style="color:var(--dim);font-size:9px">${o.t}</span>
+        <span class="${o.w?'op-w':'op-l'}">${o.w?'WIN':'LOSS'}</span>
+        <span style="color:var(--dim)">$$
