@@ -1,820 +1,324 @@
-// ════════════════════════════════════════════════
-//  DerivAdaptiveBot — Sniper Mode (JavaScript)
-//  Símbolos: R_10, R_25, R_50, R_75, R_100
-//  Versión Browser Console
-// ════════════════════════════════════════════════
-
-// ─── TOKEN API ──
-// Pega aquí tu token o defínelo en consola antes de ejecutar
-const DERIV_API_TOKEN = typeof DERIV_API_TOKEN !== 'undefined' ? DERIV_API_TOKEN : '';
-
-// ─── Configuración (idéntica a Python) ──
-const DEFAULT_CONFIG = {
-    symbols: ["R_10", "R_25", "R_50", "R_75", "R_100"],
-    timeframe: "M1",
-    atr_period: 14,
-    atr_slow_period: 50,
-    ema_fast: 8,
-    ema_medium: 21,
-    ema_slow: 55,
-    momentum_period: 5,
-    roc_threshold: 0.018,
-    micro_range_period: 8,
-    sl_atr_mult: 1.5,
-    tp_atr_mult: 2.5,
-    min_rr: 1.5,
-    false_breakout_lookback: 5,
-    fb_rejection_threshold: 0.4,
-    rolling_window: 30,
-    partial_reset_bars: 500,
-    base_risk_pct: 0.2,
-    max_risk_pct: 0.5,
-    min_risk_pct: 0.1,
-    defensive_dd_pct: 5.0,
-    pause_dd_pct: 10.0,
-    winrate_aggressive: 0.62,
-    winrate_defensive: 0.42,
-    trailing_activation_r: 1.0,
-    trailing_atr_mult: 1.0,
-    momentum_exit_period: 3,
-    daily_stop_loss_pct: 3.0,
-    initial_balance: 1000.0,
-    min_bars_required: 80,
-    log_level: "INFO",
-    log_file: null,
-    state_file: null,
-    api_token: DERIV_API_TOKEN,
-
-    market_efficiency_threshold: 0.7,
-    setup_score_threshold: 0.75,
-    max_market_exposure_pct: 0.08,
-    cooldown_after_close_bars: 8,
-    post_win_cooldown_bars: 5,
-    liquidity_sweep_lookback: 6,
-    rejection_strength_min: 0.7,
-    atr_grey_zone_low: 0.4,
-    atr_grey_zone_high: 0.6,
-    sniper_mode_max_trades: 3,
-    sniper_setup_threshold: 0.8,
-    ultra_early_exit_bars: 3,
-    ultra_early_exit_r_threshold: 0.3,
-};
-
-const ASSET_SPECIFIC_CONFIG = {
-    "R_10": { sl_atr_mult: 1.5, tp_atr_mult: 2.5, roc_threshold: 0.018, strong_trend_adx: 28 },
-    "R_25": { sl_atr_mult: 1.8, tp_atr_mult: 3.0, roc_threshold: 0.025, strong_trend_adx: 25 },
-    "R_50": { sl_atr_mult: 2.0, tp_atr_mult: 3.5, roc_threshold: 0.03, strong_trend_adx: 22 },
-    "R_75": { sl_atr_mult: 2.2, tp_atr_mult: 4.0, roc_threshold: 0.035, strong_trend_adx: 20 },
-    "R_100": { sl_atr_mult: 2.5, tp_atr_mult: 4.5, roc_threshold: 0.04, strong_trend_adx: 18 },
-};
-
-// ─── Utilidades matemáticas ──
-function sum(arr) { return arr.reduce((a, b) => a + b, 0); }
-function mean(arr) { return arr.length ? sum(arr) / arr.length : 0; }
-function std(arr) {
-    const avg = mean(arr);
-    return Math.sqrt(arr.reduce((s, x) => s + (x - avg) ** 2, 0) / arr.length);
-}
-function linreg(x, y) {
-    const n = x.length;
-    let sx = 0, sy = 0, sxy = 0, sxx = 0;
-    for (let i = 0; i < n; i++) {
-        sx += x[i]; sy += y[i]; sxy += x[i] * y[i]; sxx += x[i] * x[i];
-    }
-    const slope = (n * sxy - sx * sy) / (n * sxx - sx * sx);
-    return slope;
-}
-
-function ATR(high, low, close, period) {
-    const n = close.length;
-    const tr = [high[0] - low[0]];
-    for (let i = 1; i < n; i++) {
-        tr.push(Math.max(high[i] - low[i], Math.abs(high[i] - close[i - 1]), Math.abs(low[i] - close[i - 1])));
-    }
-    const atr = Array(n).fill(0);
-    if (n >= period) {
-        atr[period - 1] = mean(tr.slice(0, period));
-        for (let i = period; i < n; i++) {
-            atr[i] = (atr[i - 1] * (period - 1) + tr[i]) / period;
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Deriv Contrarian Bot — BrokerMode</title>
+    <style>
+        body {
+            background: #0a0e14;
+            color: #c9d1d9;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
         }
-    }
-    return atr;
-}
+        .bot-container {
+            background: #161b22;
+            border: 1px solid #30363d;
+            border-radius: 12px;
+            padding: 30px;
+            width: 500px;
+            box-shadow: 0 0 20px rgba(0,255,200,0.1);
+        }
+        h1 {
+            margin: 0 0 20px;
+            font-size: 24px;
+            color: #58a6ff;
+        }
+        label {
+            display: block;
+            margin-bottom: 6px;
+            font-size: 14px;
+            color: #8b949e;
+        }
+        input {
+            width: 100%;
+            padding: 10px;
+            margin-bottom: 15px;
+            background: #0d1117;
+            border: 1px solid #30363d;
+            color: #c9d1d9;
+            border-radius: 6px;
+            font-size: 14px;
+            box-sizing: border-box;
+        }
+        button {
+            padding: 10px 24px;
+            margin-right: 10px;
+            border: none;
+            border-radius: 6px;
+            font-weight: bold;
+            cursor: pointer;
+            font-size: 14px;
+        }
+        .start-btn { background: #238636; color: white; }
+        .stop-btn { background: #da3633; color: white; }
+        .log-area {
+            background: #0d1117;
+            border: 1px solid #30363d;
+            border-radius: 6px;
+            height: 200px;
+            overflow-y: auto;
+            padding: 10px;
+            font-size: 12px;
+            color: #8b949e;
+            margin-top: 15px;
+            white-space: pre-wrap;
+        }
+        .status {
+            font-size: 14px;
+            margin-bottom: 10px;
+            color: #f0883e;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+<div class="bot-container">
+    <h1>🔱 BrokerMode Contrarian</h1>
+    <label>Token API Deriv</label>
+    <input type="text" id="apiToken" placeholder="Pega aquí tu token API...">
+    <div style="display: flex; align-items: center;">
+        <button class="start-btn" id="startBtn">▶️ Start</button>
+        <button class="stop-btn" id="stopBtn" disabled>⏹️ Stop</button>
+        <span class="status" id="statusText">⚫ Detenido</span>
+    </div>
+    <div class="log-area" id="logOutput">[INFO] Esperando token y orden de inicio...</div>
+</div>
 
-function EMA(data, period) {
-    const out = Array(data.length).fill(0);
-    if (data.length < period) return out;
-    const k = 2 / (period + 1);
-    out[period - 1] = mean(data.slice(0, period));
-    for (let i = period; i < data.length; i++) {
-        out[i] = data[i] * k + out[i - 1] * (1 - k);
-    }
-    return out;
-}
+<script>
+    (function() {
+        // ─── Elementos UI ─────────────────────────────
+        const tokenInput = document.getElementById('apiToken');
+        const startBtn = document.getElementById('startBtn');
+        const stopBtn = document.getElementById('stopBtn');
+        const statusText = document.getElementById('statusText');
+        const logOutput = document.getElementById('logOutput');
 
-function ADX(high, low, close, period = 14) {
-    const n = close.length;
-    const plusDM = Array(n).fill(0), minusDM = Array(n).fill(0), tr = Array(n).fill(0);
-    for (let i = 1; i < n; i++) {
-        const up = high[i] - high[i - 1], down = low[i - 1] - low[i];
-        plusDM[i] = (up > down && up > 0) ? up : 0;
-        minusDM[i] = (down > up && down > 0) ? down : 0;
-        tr[i] = Math.max(high[i] - low[i], Math.abs(high[i] - close[i - 1]), Math.abs(low[i] - close[i - 1]));
-    }
-    tr[0] = high[0] - low[0];
-    function smooth(arr, p) {
-        const s = Array(arr.length).fill(0);
-        if (arr.length > p) {
-            s[p] = sum(arr.slice(1, p + 1));
-            for (let i = p + 1; i < arr.length; i++) {
-                s[i] = s[i - 1] - (s[i - 1] / p) + arr[i];
+        // ─── Configuración del bot (BrokerMode) ────────
+        const SYMBOLS = ["R_10", "R_25"];
+        const RISK_PCT = 0.2;          // 0.2% por trade
+        const DURATION = 60;           // segundos
+        const RSI_PERIOD = 7;          // RSI rápido para detectar extremos del rebaño
+        const CONTRARIAN_PROB = 0.70;  // 70% contra el rebaño, 30% con el rebaño
+
+        // Estado global
+        let ws = null;
+        let running = false;
+        const assetStates = {};
+
+        // ─── Utilidades de trading ────────────────────
+        function addLog(msg) {
+            const time = new Date().toLocaleTimeString();
+            logOutput.innerText += `\n[${time}] ${msg}`;
+            logOutput.scrollTop = logOutput.scrollHeight;
+        }
+
+        function rsi(closes, period = RSI_PERIOD) {
+            if (closes.length < period + 1) return 50; // neutral
+            let gains = 0, losses = 0;
+            for (let i = closes.length - period; i < closes.length; i++) {
+                const diff = closes[i] - closes[i - 1];
+                if (diff > 0) gains += diff;
+                else losses -= diff;
             }
-        }
-        return s;
-    }
-    const atrS = smooth(tr, period);
-    const pdmS = smooth(plusDM, period);
-    const mdmS = smooth(minusDM, period);
-    const pdi = Array(n).fill(0), mdi = Array(n).fill(0), dx = Array(n).fill(0);
-    for (let i = 0; i < n; i++) {
-        if (atrS[i] > 0) {
-            pdi[i] = 100 * pdmS[i] / atrS[i];
-            mdi[i] = 100 * mdmS[i] / atrS[i];
-            if (pdi[i] + mdi[i] > 0) dx[i] = 100 * Math.abs(pdi[i] - mdi[i]) / (pdi[i] + mdi[i]);
-        }
-    }
-    const adx = Array(n).fill(0);
-    if (n > period * 2) {
-        adx[period * 2 - 1] = mean(dx.slice(period, period * 2));
-        for (let i = period * 2; i < n; i++) {
-            adx[i] = (adx[i - 1] * (period - 1) + dx[i]) / period;
-        }
-    }
-    return { adx, pdi, mdi };
-}
-
-function priceStructure(highs, lows, closes) {
-    const n = Math.min(10, closes.length);
-    if (n < 4) return "MIXED";
-    const recent_h = highs.slice(-n), recent_l = lows.slice(-n);
-    const pivots_h = [], pivots_l = [];
-    for (let i = 1; i < n - 1; i++) {
-        if (recent_h[i] > recent_h[i - 1] && recent_h[i] > recent_h[i + 1]) pivots_h.push(recent_h[i]);
-        if (recent_l[i] < recent_l[i - 1] && recent_l[i] < recent_l[i + 1]) pivots_l.push(recent_l[i]);
-    }
-    if (pivots_h.length >= 2 && pivots_l.length >= 2) {
-        const hh = pivots_h[pivots_h.length - 1] > pivots_h[pivots_h.length - 2];
-        const hl = pivots_l[pivots_l.length - 1] > pivots_l[pivots_l.length - 2];
-        const lh = pivots_h[pivots_h.length - 1] < pivots_h[pivots_h.length - 2];
-        const ll = pivots_l[pivots_l.length - 1] < pivots_l[pivots_l.length - 2];
-        if (hh && hl) return "HH_HL";
-        if (lh && ll) return "LH_LL";
-    }
-    const x = Array.from({ length: n }, (_, i) => i);
-    const slope = linreg(x, closes.slice(-n)) / closes[closes.length - 1] * 100;
-    if (slope > 0.05) return "HH_HL";
-    if (slope < -0.05) return "LH_LL";
-    return "MIXED";
-}
-
-function compression(highs, lows, atr, period = 20) {
-    if (highs.length < period || atr <= 0) return 0.5;
-    const recentRange = Math.max(...highs.slice(-period)) - Math.min(...lows.slice(-period));
-    const expectedRange = atr * Math.sqrt(period) * 0.5;
-    return Math.max(0, Math.min(1, 1 - recentRange / (expectedRange + 1e-10)));
-}
-
-function marketEfficiencyScore(bars) {
-    if (bars.length < 20) return 0.5;
-    const closes = bars.slice(-20).map(b => b.close);
-    const netChange = Math.abs(closes[closes.length - 1] - closes[0]);
-    let totalPath = 0;
-    for (let i = 1; i < closes.length; i++) totalPath += Math.abs(closes[i] - closes[i - 1]);
-    if (totalPath === 0) return 0;
-    const efficiency = netChange / totalPath;
-    const comp = compression(bars.map(b => b.high), bars.map(b => b.low), efficiency);
-    return Math.min(1, efficiency * (1 - comp * 0.5));
-}
-
-// ─── Clases del bot ──────────────────────────────────────────
-class TickAggregator {
-    constructor(symbol) {
-        this.symbol = symbol;
-        this.bars = [];
-        this.currentBar = null;
-    }
-    addTick(tick) {
-        const minute = Math.floor(tick.timestamp / 60) * 60;
-        if (!this.currentBar || this.currentBar.timestamp !== minute) {
-            if (this.currentBar) this.bars.push(this.currentBar);
-            this.currentBar = { timestamp: minute, open: tick.price, high: tick.price, low: tick.price, close: tick.price, tick_volume: 1 };
-        } else {
-            this.currentBar.high = Math.max(this.currentBar.high, tick.price);
-            this.currentBar.low = Math.min(this.currentBar.low, tick.price);
-            this.currentBar.close = tick.price;
-            this.currentBar.tick_volume++;
-        }
-        if (this.bars.length > 300) this.bars = this.bars.slice(-250);
-    }
-    getBars() { return this.currentBar ? [...this.bars, this.currentBar] : [...this.bars]; }
-}
-
-class AdaptiveSystem {
-    constructor(config, symbol) {
-        this.config = config;
-        this.symbol = symbol;
-        this.windowSize = config.rolling_window || 30;
-        this.baseRisk = config.base_risk_pct;
-        this.maxRisk = config.max_risk_pct;
-        this.minRisk = config.min_risk_pct;
-        this.defensiveDD = config.defensive_dd_pct;
-        this.pauseDD = config.pause_dd_pct;
-        this.winrateAggressive = config.winrate_aggressive;
-        this.winrateDefensive = config.winrate_defensive;
-        this.params = {
-            risk_per_trade_pct: this.baseRisk,
-            min_confluence: 0.75,
-            min_confidence: 0.75,
-            sl_atr_mult: 1.5,
-            tp_atr_mult: 2.5,
-            mode: "NORMAL",
-            cooldown_after_loss: 2,
-            max_trades_per_session: 15,
-        };
-        this.tradeHistory = [];
-        this.allTrades = [];
-        this.setupScores = {};
-        this.sessionTrades = 0;
-        this.sessionPnlR = 0;
-        this.cumulativePnlR = 0;
-        this.peakPnlR = 0;
-        this.barsSinceLoss = 999;
-        this.barCount = 0;
-        this.barsSinceLastClose = 999;
-        this.barsSinceLastWin = 999;
-        this.marketExposureTime = 0;
-        this.sessionStartBar = 0;
-        this.balance = config.initial_balance;
-        this.dailyPnlPct = 0;
-    }
-    recordTrade(trade) {
-        this.tradeHistory.push(trade);
-        this.allTrades.push(trade);
-        this.sessionTrades++;
-        this.sessionPnlR += trade.pnl_r;
-        this.cumulativePnlR += trade.pnl_r;
-        if (this.cumulativePnlR > this.peakPnlR) this.peakPnlR = this.cumulativePnlR;
-        if (!trade.was_winner) this.barsSinceLoss = 0;
-        else {
-            this.barsSinceLoss += 10;
-            this.barsSinceLastWin = 0;
-        }
-        this.barsSinceLastClose = 0;
-        this.marketExposureTime += trade.duration_bars;
-        this.balance += trade.pnl_r * (this.balance * this.params.risk_per_trade_pct / 100);
-        this.dailyPnlPct += trade.pnl_r * this.params.risk_per_trade_pct / 100;
-        const key = `${trade.signal_type}_${trade.regime}`;
-        if (!this.setupScores[key]) this.setupScores[key] = [];
-        this.setupScores[key].push(trade.pnl_r);
-        if (this.setupScores[key].length > 20) this.setupScores[key].shift();
-        this._adapt();
-        console.log(`[${this.symbol}] Trade ${trade.trade_id}: ${trade.was_winner ? 'WIN' : 'LOSS'} ${trade.pnl_r.toFixed(2)}R | Mode: ${this.params.mode}`);
-    }
-    onBar() {
-        this.barCount++;
-        this.barsSinceLoss++;
-        this.barsSinceLastClose++;
-        this.barsSinceLastWin++;
-        if (this.barCount % 500 === 0) this._partialReset();
-    }
-    winrate() {
-        if (!this.tradeHistory.length) return 0.5;
-        return this.tradeHistory.filter(t => t.was_winner).length / this.tradeHistory.length;
-    }
-    _adapt() {
-        const trades = this.tradeHistory;
-        const n = trades.length;
-        if (n < 5) { this.params.mode = "LEARNING"; return; }
-        const winrate = this.winrate();
-        const winners = trades.filter(t => t.was_winner).map(t => t.pnl_r);
-        const losers = trades.filter(t => !t.was_winner).map(t => t.pnl_r);
-        const grossProfit = sum(winners);
-        const grossLoss = Math.abs(sum(losers));
-        const pf = grossLoss ? grossProfit / grossLoss : 1;
-        const currentDdR = this.peakPnlR - this.cumulativePnlR;
-        const ddPct = currentDdR * this.params.risk_per_trade_pct;
-        if (ddPct >= this.pauseDD) { this.params.mode = "PAUSED"; return; }
-        if (ddPct >= this.defensiveDD) { this.params.mode = "DEFENSIVE"; this.params.risk_per_trade_pct = this.minRisk; return; }
-
-        if (winrate > 0.60 && pf > 1.8 && n >= 15) {
-            this.params.mode = "SNIPER";
-            this.params.max_trades_per_session = this.config.sniper_mode_max_trades;
-            this.params.min_confidence = 0.85;
-        } else if (winrate >= this.winrateAggressive && pf >= 1.8) {
-            this.params.mode = "AGGRESSIVE";
-            this.params.risk_per_trade_pct = Math.min(this.baseRisk * 1.5, this.maxRisk);
-            this.params.max_trades_per_session = 15;
-        } else if (winrate <= this.winrateDefensive || pf < 0.9) {
-            this.params.mode = "DEFENSIVE";
-            this.params.risk_per_trade_pct = Math.max(this.baseRisk * 0.5, this.minRisk);
-            this.params.max_trades_per_session = 10;
-        } else {
-            this.params.mode = "NORMAL";
-            this.params.risk_per_trade_pct = this.baseRisk;
-            this.params.max_trades_per_session = 10;
+            const avgGain = gains / period;
+            const avgLoss = losses / period;
+            if (avgLoss === 0) return 100;
+            const rs = avgGain / avgLoss;
+            return 100 - (100 / (1 + rs));
         }
 
-        if (n >= 10) {
-            const avgWin = mean(winners);
-            const avgLoss = mean(losers);
-            if (avgWin / Math.abs(avgLoss) > 2) this.params.tp_atr_mult *= 1.02;
-            else this.params.tp_atr_mult *= 0.98;
-            this.params.tp_atr_mult = Math.max(1.5, Math.min(5, this.params.tp_atr_mult));
+        function getCrowdBias(rsiValue) {
+            // -1 = rebaño sobrevendido (compran), +1 = sobrecomprado (venden)
+            if (rsiValue > 70) return 1;   // crowd vende
+            if (rsiValue < 30) return -1;  // crowd compra
+            return 0;                       // sin extremo
         }
-    }
-    _partialReset() {
-        if (this.tradeHistory.length > Math.floor(this.windowSize / 2)) {
-            this.tradeHistory = this.tradeHistory.slice(-Math.floor(this.windowSize / 2));
-        }
-    }
-    canTrade() {
-        if (this.params.mode === "PAUSED") return [false, "Drawdown limit"];
-        if (this.sessionTrades >= this.params.max_trades_per_session) return [false, `Session limit (${this.params.max_trades_per_session})`];
-        const cooldownClose = this.config.cooldown_after_close_bars;
-        if (this.barsSinceLastClose < cooldownClose) return [false, `Post-trade cooldown (${cooldownClose - this.barsSinceLastClose} bars left)`];
-        const postWin = this.config.post_win_cooldown_bars;
-        if (this.barsSinceLastWin < postWin) return [false, `Post-win cooldown`];
-        if (this.barsSinceLoss < this.params.cooldown_after_loss) return [false, `Loss cooldown`];
-        const maxExposure = this.config.max_market_exposure_pct;
-        if (this.barCount - this.sessionStartBar > 60) {
-            const expPct = this.marketExposureTime / (this.barCount - this.sessionStartBar);
-            if (expPct > maxExposure) return [false, `Exposure limit (${(expPct*100).toFixed(1)}%)`];
-        }
-        return [true, "OK"];
-    }
-    getSetupScore(signalType, regime) {
-        const key = `${signalType}_${regime}`;
-        if (this.setupScores[key] && this.setupScores[key].length >= 3) {
-            const recent = this.setupScores[key].slice(-10);
-            const expectancy = mean(recent);
-            return Math.min(0.95, Math.max(0.1, 0.3 + expectancy * 0.3));
-        }
-        return 0.5;
-    }
-}
 
-// ─── Lógica de detección de régimen y señales ──
-class MarketRegimeDetector {
-    constructor(config, symbolConfig) {
-        this.cfg = config;
-        this.sc = symbolConfig;
-        this.strongTrendAdx = symbolConfig.strong_trend_adx;
-        this.weakTrendAdx = 16;
-        this.compressionThreshold = 0.3;
-        this.highVolThreshold = 0.7;
-    }
-    detect(bars) {
-        if (bars.length < 60) return { regime: "NOISE", confidence: 0, atr_percentile: 0.5, structure: "MIXED", atr_normalized: 0, compression_score: 0.5 };
-        const closes = bars.map(b => b.close);
-        const highs = bars.map(b => b.high);
-        const lows = bars.map(b => b.low);
-        const atrArr = ATR(highs, lows, closes, this.cfg.atr_period);
-        const currentAtr = atrArr[atrArr.length - 1];
-        const price = closes[closes.length - 1];
-        const atrNormalized = currentAtr / (price + 1e-10);
-        const atrHistory = atrArr.slice(-100);
-        const atrPercentile = atrHistory.filter(a => a <= currentAtr).length / atrHistory.length;
-        const emaF = EMA(closes, this.cfg.ema_fast);
-        const emaM = EMA(closes, this.cfg.ema_medium);
-        const emaS = EMA(closes, this.cfg.ema_slow);
-        const emaUp = emaF[emaF.length-1] > emaM[emaM.length-1] && emaM[emaM.length-1] > emaS[emaS.length-1];
-        const emaDown = emaF[emaF.length-1] < emaM[emaM.length-1] && emaM[emaM.length-1] < emaS[emaS.length-1];
-        const structure = priceStructure(highs, lows, closes);
-        const adxObj = ADX(highs, lows, closes, 14);
-        const trendStrength = adxObj.adx[adxObj.adx.length - 1];
-        const bull = adxObj.pdi[adxObj.pdi.length-1] > adxObj.mdi[adxObj.mdi.length-1];
-        const comp = compression(highs, lows, currentAtr);
-
-        let regime = "NOISE", confidence = 0.5;
-        if (atrPercentile > this.highVolThreshold && trendStrength > 20) {
-            if (emaUp && structure === "HH_HL") { regime = "STRONG_TREND_UP"; confidence = 0.85; }
-            else if (emaDown && structure === "LH_LL") { regime = "STRONG_TREND_DOWN"; confidence = 0.85; }
-            else { regime = "HIGH_VOL_EXPANSION"; confidence = 0.65; }
-        } else if (trendStrength >= this.strongTrendAdx) {
-            if (bull && (emaUp || structure === "HH_HL")) { regime = "STRONG_TREND_UP"; confidence = 0.8; }
-            else if (!bull && (emaDown || structure === "LH_LL")) { regime = "STRONG_TREND_DOWN"; confidence = 0.8; }
-            else { regime = bull ? "WEAK_TREND_UP" : "WEAK_TREND_DOWN"; confidence = 0.65; }
-        } else if (trendStrength >= this.weakTrendAdx) {
-            regime = bull ? "WEAK_TREND_UP" : "WEAK_TREND_DOWN"; confidence = 0.6;
-        } else if (comp >= this.compressionThreshold) {
-            regime = "COMPRESSION"; confidence = comp;
-        } else {
-            if (atrPercentile < 0.3) { regime = "RANGE"; confidence = 0.7; }
-            else { regime = "NOISE"; confidence = 0.5; }
-        }
-        return { regime, confidence, atr_normalized: atrNormalized, atr_percentile: atrPercentile, trend_strength: trendStrength, structure, compression_score: comp };
-    }
-}
-
-// ─── Generación de señales ──
-class SignalEngine {
-    constructor(config, symbol) {
-        this.cfg = config;
-        this.symbol = symbol;
-        this.momentumPeriod = config.momentum_period || 5;
-        this.rocThreshold = config.roc_threshold || 0.018;
-        this.microRangePeriod = config.micro_range_period || 8;
-        this.liquiditySweepLookback = config.liquidity_sweep_lookback || 6;
-    }
-    generateSignal(bars, regimeState, adaptiveParams, efficiency) {
-        const noSignal = { signal: "NO_SIGNAL", confidence: 0, entry_price: bars[bars.length-1].close };
-        if (bars.length < 60 || regimeState.regime === "NOISE" || regimeState.regime === "RANGE") return noSignal;
-        const closes = bars.map(b => b.close);
-        const highs = bars.map(b => b.high);
-        const lows = bars.map(b => b.low);
-        const opens = bars.map(b => b.open);
-        const atrArr = ATR(highs, lows, closes, 14);
-        const atr = atrArr[atrArr.length - 1];
-        const price = closes[closes.length - 1];
-        let direction = null;
-        if (["STRONG_TREND_UP", "WEAK_TREND_UP"].includes(regimeState.regime)) direction = "LONG";
-        else if (["STRONG_TREND_DOWN", "WEAK_TREND_DOWN"].includes(regimeState.regime)) direction = "SHORT";
-        else if (regimeState.regime === "COMPRESSION") {
-            const rangeHigh = Math.max(...highs.slice(-this.microRangePeriod-1, -1));
-            const rangeLow = Math.min(...lows.slice(-this.microRangePeriod-1, -1));
-            if (price > rangeHigh * 1.001) direction = "LONG";
-            else if (price < rangeLow * 0.999) direction = "SHORT";
-        }
-        if (!direction) return noSignal;
-
-        const sweep = this._detectLiquiditySweep(highs, lows, closes, direction, atr);
-        const liquidityScore = sweep.swept ? 0.6 + sweep.rejection_strength * 0.4 : 0.4 * sweep.rejection_strength;
-        const momScore = this._scoreMomentum(closes, direction);
-        const boQuality = this._breakoutQuality(opens, closes, highs, lows, direction);
-        const structScore = (direction === "LONG" && regimeState.structure === "HH_HL") ||
-                            (direction === "SHORT" && regimeState.structure === "LH_LL") ? 1 : 0.5;
-
-        const confluence = liquidityScore * 0.4 + structScore * 0.25 + momScore * 0.2 + boQuality * 0.15;
-        if (confluence < 0.75 || momScore < 0.5 || boQuality < 0.6) return noSignal;
-        if (!this._threeCandleConfirmation(closes, direction)) return noSignal;
-
-        const slMult = adaptiveParams.sl_atr_mult;
-        const tpMult = adaptiveParams.tp_atr_mult;
-        const sl = direction === "LONG" ? price - atr * slMult : price + atr * slMult;
-        const tp = direction === "LONG" ? price + atr * tpMult : price - atr * tpMult;
-        return {
-            signal: direction === "LONG" ? "LONG" : "SHORT",
-            confidence: confluence,
-            entry_price: price,
-            stop_loss: sl,
-            take_profit: tp,
-            confluence_score: confluence,
-            momentum_score: momScore,
-            breakout_quality: boQuality,
-            swept_liquidity: sweep.swept,
-            rejection_strength: sweep.rejection_strength,
-            reasoning: `${direction} entry, sweep=${sweep.swept}`,
-        };
-    }
-    _detectLiquiditySweep(highs, lows, closes, direction, atr) {
-        const lookback = this.liquiditySweepLookback;
-        if (highs.length < lookback + 1) return { swept: false, rejection_strength: 0 };
-        const recentHigh = Math.max(...highs.slice(-lookback - 1, -1));
-        const recentLow = Math.min(...lows.slice(-lookback - 1, -1));
-        const curHigh = highs[highs.length - 1], curLow = lows[lows.length - 1], curClose = closes[closes.length - 1];
-        if (direction === "LONG") {
-            if (curLow < recentLow && curClose > recentLow + atr * 0.2) {
-                const range = curHigh - curLow;
-                return { swept: true, rejection_strength: range ? Math.min(1, (curClose - curLow) / range) : 0 };
-            }
-        } else {
-            if (curHigh > recentHigh && curClose < recentHigh - atr * 0.2) {
-                const range = curHigh - curLow;
-                return { swept: true, rejection_strength: range ? Math.min(1, (curHigh - curClose) / range) : 0 };
-            }
-        }
-        return { swept: false, rejection_strength: 0 };
-    }
-    _scoreMomentum(closes, direction) {
-        if (closes.length <= this.momentumPeriod) return 0;
-        const roc = (closes[closes.length - 1] - closes[closes.length - 1 - this.momentumPeriod]) / (closes[closes.length - 1 - this.momentumPeriod] + 1e-10) * 100;
-        return direction === "LONG" ? Math.min(1, Math.max(0, roc / (this.rocThreshold * 100))) : Math.min(1, Math.max(0, -roc / (this.rocThreshold * 100)));
-    }
-    _breakoutQuality(opens, closes, highs, lows, direction) {
-        const lastIdx = closes.length - 1;
-        const body = Math.abs(closes[lastIdx] - opens[lastIdx]);
-        const candleRange = highs[lastIdx] - lows[lastIdx];
-        if (candleRange === 0) return 0;
-        return direction === "LONG" ? (body / candleRange) * 0.6 + ((closes[lastIdx] - lows[lastIdx]) / candleRange) * 0.4
-            : (body / candleRange) * 0.6 + ((highs[lastIdx] - closes[lastIdx]) / candleRange) * 0.4;
-    }
-    _threeCandleConfirmation(closes, direction) {
-        if (closes.length < 4) return false;
-        const last3 = closes.slice(-3);
-        return direction === "LONG" ? last3[0] <= last3[1] && last3[1] <= last3[2] : last3[0] >= last3[1] && last3[1] >= last3[2];
-    }
-}
-
-// ─── Gestión de posiciones y salidas ──
-class ExitManager {
-    constructor(config) {
-        this.trailingActivationR = config.trailing_activation_r;
-        this.trailingAtrMult = config.trailing_atr_mult;
-        this.ultraEarlyBars = config.ultra_early_exit_bars;
-        this.ultraEarlyRThreshold = config.ultra_early_exit_r_threshold;
-    }
-    updatePosition(pos, currentPrice, currentAtr, barIndex) {
-        const risk = Math.abs(pos.entry_price - pos.stop_loss);
-        if (risk <= 0) return pos;
-        if (pos.direction === "LONG") {
-            pos.current_r = (currentPrice - pos.entry_price) / risk;
-            if (currentPrice > pos.highest_favorable) pos.highest_favorable = currentPrice;
-        } else {
-            pos.current_r = (pos.entry_price - currentPrice) / risk;
-            if (currentPrice < pos.highest_favorable) pos.highest_favorable = currentPrice;
-        }
-        if (pos.current_r >= this.trailingActivationR && !pos.trailing_active) {
-            pos.trailing_active = true;
-            const trailDist = currentAtr * this.trailingAtrMult;
-            pos.trailing_stop = pos.direction === "LONG" ? currentPrice - trailDist : currentPrice + trailDist;
-        }
-        if (pos.trailing_active) {
-            const trailDist = currentAtr * this.trailingAtrMult;
-            if (pos.direction === "LONG") {
-                const newTrail = currentPrice - trailDist;
-                if (newTrail > pos.trailing_stop) { pos.trailing_stop = newTrail; pos.stop_loss = newTrail; }
+        function shouldTrade(rsiValue) {
+            // Decide dirección contraria según 70/30
+            const bias = getCrowdBias(rsiValue);
+            if (bias === 0) return null;
+            const goContrarian = Math.random() < CONTRARIAN_PROB;
+            // bias +1 -> crowd vende -> contrarian compra (LONG)
+            // bias -1 -> crowd compra -> contrarian vende (SHORT)
+            if (goContrarian) {
+                return bias === 1 ? "LONG" : "SHORT";
             } else {
-                const newTrail = currentPrice + trailDist;
-                if (newTrail < pos.trailing_stop) { pos.trailing_stop = newTrail; pos.stop_loss = newTrail; }
+                // seguir al rebaño
+                return bias === 1 ? "SHORT" : "LONG";
             }
         }
-        if (pos.current_r >= 0.8 && !pos.trailing_active) {
-            const beOffset = currentAtr * 0.1;
-            if (pos.direction === "LONG" && pos.entry_price + beOffset > pos.stop_loss) pos.stop_loss = pos.entry_price + beOffset;
-            else if (pos.direction === "SHORT" && pos.entry_price - beOffset < pos.stop_loss) pos.stop_loss = pos.entry_price - beOffset;
-        }
-        return pos;
-    }
-    checkExit(pos, barIndex, bars, currentAtr, efficiency) {
-        const current = bars[bars.length - 1];
-        if (pos.direction === "LONG" && current.low <= pos.stop_loss) return "STOP_LOSS";
-        if (pos.direction === "SHORT" && current.high >= pos.stop_loss) return "STOP_LOSS";
-        if (pos.direction === "LONG" && current.high >= pos.take_profit) return "TAKE_PROFIT";
-        if (pos.direction === "SHORT" && current.low <= pos.take_profit) return "TAKE_PROFIT";
-        if (pos.trailing_active) {
-            if (pos.direction === "LONG" && current.low <= pos.trailing_stop) return "TRAILING_STOP";
-            if (pos.direction === "SHORT" && current.high >= pos.trailing_stop) return "TRAILING_STOP";
-        }
-        const barsOpen = barIndex - pos.entry_bar;
-        if (barsOpen >= this.ultraEarlyBars && pos.current_r < this.ultraEarlyRThreshold) return "ULTRA_EARLY";
-        if (barsOpen > 3 && pos.current_r > 0.3 && efficiency < pos.efficiency_at_entry * 0.8) return "EFFICIENCY_LOSS";
-        if (barsOpen >= 20) return "TIMEOUT";
-        return null;
-    }
-}
 
-// ─── RiskManager y TradeExecutor ──
-class RiskManager {
-    constructor(config, symbol) {
-        this.initialBalance = config.initial_balance;
-        this.currentBalance = this.initialBalance;
-        this.dailyPnl = 0;
-        this.dailyStopLoss = config.daily_stop_loss_pct / 100 * this.initialBalance;
-    }
-    canOpenPosition(riskPct) {
-        return this.currentBalance > 0 && this.dailyPnl >= -this.dailyStopLoss;
-    }
-    updateBalance(pnlCurrency) {
-        this.currentBalance += pnlCurrency;
-        this.dailyPnl += pnlCurrency;
-    }
-}
+        // ─── Conexión WebSocket ───────────────────────
+        function connect(token) {
+            return new Promise((resolve, reject) => {
+                ws = new WebSocket("wss://ws.deriv.com/websockets/v3");
+                ws.onopen = () => {
+                    addLog("[CONEXIÓN] WebSocket abierto, autorizando...");
+                    ws.send(JSON.stringify({ authorize: token }));
+                };
+                ws.onmessage = (event) => {
+                    const msg = JSON.parse(event.data);
+                    if (msg.error) {
+                        addLog(`[ERROR] ${msg.error.message}`);
+                        return;
+                    }
+                    if (msg.authorize) {
+                        addLog("[AUTORIZADO] Token válido. Suscribiendo ticks...");
+                        SYMBOLS.forEach(sym => {
+                            ws.send(JSON.stringify({ ticks: sym, subscribe: 1 }));
+                            assetStates[sym] = { bars: [], currentBar: null };
+                        });
+                        resolve();
+                    }
+                    if (msg.tick) {
+                        const { symbol, quote } = msg.tick;
+                        if (!assetStates[symbol]) return;
+                        processTick(symbol, quote, msg.tick.epoch);
+                    }
+                };
+                ws.onclose = () => {
+                    addLog("[CONEXIÓN] WebSocket cerrado.");
+                    if (running) {
+                        addLog("[RECONEXIÓN] Intentando reconectar en 10s...");
+                        setTimeout(() => connect(token), 10000);
+                    }
+                };
+                ws.onerror = (e) => {
+                    addLog("[ERROR] WebSocket error.");
+                    reject(e);
+                };
+            });
+        }
 
-class TradeExecutor {
-    constructor(ws, symbol, token) {
-        this.ws = ws;
-        this.symbol = symbol;
-        this.token = token;
-        this.msgId = 0;
-    }
-    _send(request) {
-        return new Promise((resolve, reject) => {
-            this.msgId++;
-            request.req_id = this.msgId;
+        // ─── Agregación de ticks en velas M1 ──────────
+        function processTick(symbol, price, epoch) {
+            const state = assetStates[symbol];
+            const minute = Math.floor(epoch / 60) * 60;
+            if (!state.currentBar || state.currentBar.timestamp !== minute) {
+                if (state.currentBar) state.bars.push(state.currentBar);
+                state.currentBar = {
+                    timestamp: minute,
+                    open: price,
+                    high: price,
+                    low: price,
+                    close: price,
+                    volume: 1
+                };
+                if (state.bars.length > 200) state.bars = state.bars.slice(-150);
+                evaluateSymbol(symbol);
+            } else {
+                state.currentBar.high = Math.max(state.currentBar.high, price);
+                state.currentBar.low = Math.min(state.currentBar.low, price);
+                state.currentBar.close = price;
+                state.currentBar.volume++;
+            }
+        }
+
+        // ─── Evaluación de entrada contraria ──────────
+        function evaluateSymbol(symbol) {
+            if (!running) return;
+            const state = assetStates[symbol];
+            const bars = state.currentBar ? [...state.bars, state.currentBar] : state.bars;
+            if (bars.length < RSI_PERIOD + 5) return;
+
+            const closes = bars.map(b => b.close);
+            const rsiVal = rsi(closes, RSI_PERIOD);
+            const tradeDir = shouldTrade(rsiVal);
+
+            if (tradeDir && !state.inPosition) {
+                // Calcular stake en USD
+                const balance = 1000; // balance fijo de referencia, puedes ajustarlo
+                const stake = (RISK_PCT / 100) * balance;
+                const contractType = tradeDir === "LONG" ? "CALL" : "PUT";
+
+                addLog(`[${symbol}] RSI=${rsiVal.toFixed(1)} → ${tradeDir} (Contrarian${Math.random() < CONTRARIAN_PROB ? ' SÍ' : ' NO'})`);
+                placeTrade(symbol, contractType, stake);
+                state.inPosition = true;
+                // Simular salida después de 60s (el contrato expira solo)
+                setTimeout(() => {
+                    state.inPosition = false;
+                    addLog(`[${symbol}] Contrato finalizado.`);
+                }, DURATION * 1000);
+            }
+        }
+
+        async function placeTrade(symbol, contractType, stake) {
+            const proposalReq = {
+                proposal: 1,
+                amount: stake,
+                basis: "stake",
+                contract_type: contractType,
+                currency: "USD",
+                duration: DURATION,
+                duration_unit: "s",
+                symbol: symbol,
+                req_id: Math.floor(Math.random() * 100000)
+            };
+            ws.send(JSON.stringify(proposalReq));
             const handler = (e) => {
                 const msg = JSON.parse(e.data);
-                if (msg.req_id === request.req_id) {
-                    this.ws.removeEventListener('message', handler);
-                    resolve(msg);
+                if (msg.req_id === proposalReq.req_id) {
+                    ws.removeEventListener('message', handler);
+                    if (msg.proposal) {
+                        const buyReq = {
+                            buy: msg.proposal.id,
+                            price: stake,
+                            req_id: Math.floor(Math.random() * 100000)
+                        };
+                        ws.send(JSON.stringify(buyReq));
+                        addLog(`[${symbol}] Orden COMPRA enviada: ${contractType} ${stake.toFixed(2)} USD`);
+                    } else {
+                        addLog(`[${symbol}] Error en propuesta: ${JSON.stringify(msg)}`);
+                        assetStates[symbol].inPosition = false;
+                    }
                 }
             };
-            this.ws.addEventListener('message', handler);
-            this.ws.send(JSON.stringify(request));
-            setTimeout(() => { this.ws.removeEventListener('message', handler); reject('timeout'); }, 10000);
-        });
-    }
-    async buy(direction, duration, stake) {
-        if (this.token) {
-            await this._send({ authorize: this.token });
-        }
-        const contractType = direction === "LONG" ? "CALL" : "PUT";
-        const proposal = await this._send({
-            proposal: 1,
-            amount: stake,
-            basis: "stake",
-            contract_type: contractType,
-            currency: "USD",
-            duration: duration,
-            duration_unit: "s",
-            symbol: this.symbol,
-        });
-        if (!proposal || !proposal.proposal) return null;
-        return this._send({ buy: proposal.proposal.id, price: stake });
-    }
-}
-
-// ─── FILTRO MAESTRO ──
-function shouldAllowTrade(efficiency, setupScore, regimeConfidence, rejectionStrength, config) {
-    if (efficiency < 0.7) return [false, "Efficiency low"];
-    if (setupScore < 0.75) return [false, "Setup score low"];
-    if (regimeConfidence < 0.75) return [false, "Regime confidence low"];
-    if (rejectionStrength < 0.7) return [false, "Rejection strength low"];
-    return [true, "OK"];
-}
-
-// ─── BOT PRINCIPAL ──
-class DerivAdaptiveBot {
-    constructor(config = {}) {
-        this.config = Object.assign({}, DEFAULT_CONFIG, config);
-        this.symbols = this.config.symbols;
-        this.states = {};
-        this.clients = {};
-        this.ws = null; // un único WebSocket general
-    }
-
-    async start() {
-        console.log(`Starting DerivAdaptiveBot (Sniper) for ${this.symbols.join(", ")}`);
-        // Conectar WebSocket
-        this.ws = new WebSocket("wss://ws.deriv.com/websockets/v3");
-        await new Promise((resolve) => this.ws.onopen = resolve);
-
-        for (const sym of this.symbols) {
-            const assetCfg = Object.assign({}, this.config, ASSET_SPECIFIC_CONFIG[sym] || {});
-            const aggregator = new TickAggregator(sym);
-            const regimeDetector = new MarketRegimeDetector(assetCfg, ASSET_SPECIFIC_CONFIG[sym] || {});
-            const signalEngine = new SignalEngine(assetCfg, sym);
-            const adaptiveSys = new AdaptiveSystem(assetCfg, sym);
-            const riskMgr = new RiskManager(assetCfg, sym);
-            const exitMgr = new ExitManager(assetCfg);
-            const tradeExec = new TradeExecutor(this.ws, sym, this.config.api_token);
-            this.states[sym] = {
-                aggregator, regimeDetector, signalEngine, adaptiveSys, riskMgr, exitMgr, tradeExec,
-                position: null, barCount: 0, lastSignal: null, lastRegime: null,
-            };
-            // Suscribirse a ticks
-            this.ws.send(JSON.stringify({ ticks: sym, subscribe: 1 }));
+            ws.addEventListener('message', handler);
+            setTimeout(() => {
+                ws.removeEventListener('message', handler);
+                assetStates[symbol].inPosition = false;
+                addLog(`[${symbol}] Timeout en propuesta.`);
+            }, 5000);
         }
 
-        this.ws.onmessage = (event) => {
-            const data = JSON.parse(event.data);
-            if (data.tick) {
-                const tick = { timestamp: Date.now() / 1000, price: data.tick.quote, symbol: data.tick.symbol };
-                const sym = tick.symbol;
-                if (!this.states[sym]) return;
-                this.states[sym].aggregator.addTick(tick);
-                this.processAsset(sym);
-            } else if (data.error) {
-                console.error(`WS Error: ${data.error.message}`);
+        // ─── Control de UI ─────────────────────────────
+        startBtn.addEventListener('click', async () => {
+            const token = tokenInput.value.trim();
+            if (!token) {
+                alert("Pega tu token API de Deriv");
+                return;
             }
-        };
-
-        this.ws.onclose = () => console.log("WebSocket closed. Reconnecting in 10s...");
-        this.ws.onerror = (e) => console.error("WebSocket error", e);
-    }
-
-    processAsset(symbol) {
-        const state = this.states[symbol];
-        const bars = state.aggregator.getBars();
-        if (bars.length < this.config.min_bars_required) return;
-        state.barCount = bars.length;
-
-        const regimeState = state.regimeDetector.detect(bars);
-        state.lastRegime = regimeState;
-        const efficiency = marketEfficiencyScore(bars);
-
-        const adap = state.adaptiveSys;
-        adap.onBar();
-
-        // Gestionar posición abierta
-        if (state.position) {
-            const currentAtr = ATR(bars.map(b => b.high), bars.map(b => b.low), bars.map(b => b.close), 14).pop();
-            const pos = state.exitMgr.updatePosition(state.position, bars[bars.length - 1].close, currentAtr, bars.length);
-            const exitReason = state.exitMgr.checkExit(pos, bars.length, bars, currentAtr, efficiency);
-            if (exitReason) {
-                this._closePosition(symbol, pos, exitReason, bars[bars.length - 1].close);
-                state.position = null;
-            } else {
-                state.position = pos;
-            }
-            return;
-        }
-
-        // Condiciones para nueva entrada
-        const duration = this._classifyTrendDuration(bars, regimeState, efficiency, regimeState.atr_percentile);
-        if (!duration) return;
-        if (regimeState.atr_percentile >= 0.4 && regimeState.atr_percentile <= 0.6) return;
-        if (efficiency < 0.65) return;
-        const [canTrade, reason] = adap.canTrade();
-        if (!canTrade) return;
-
-        const signal = state.signalEngine.generateSignal(bars, regimeState, adap.params, efficiency);
-        if (signal.signal === "NO_SIGNAL") return;
-
-        const setupScore = adap.getSetupScore(signal.signal, regimeState.regime);
-        const requiredSetup = adap.params.mode === "SNIPER" ? this.config.sniper_setup_threshold : this.config.setup_score_threshold;
-        if (setupScore < requiredSetup) return;
-
-        const [allow, blockReason] = shouldAllowTrade(efficiency, setupScore, regimeState.confidence, signal.rejection_strength, this.config);
-        if (!allow) {
-            console.log(`[${symbol}] BLOCKED: ${blockReason}`);
-            return;
-        }
-
-        const currentAtr = ATR(bars.map(b => b.high), bars.map(b => b.low), bars.map(b => b.close), 14).pop();
-        const direction = signal.signal;
-        const stake = adap.params.risk_per_trade_pct / 100 * state.riskMgr.currentBalance;
-        if (!state.riskMgr.canOpenPosition(adap.params.risk_per_trade_pct)) return;
-
-        state.tradeExec.buy(direction, 60, stake).then(resp => {
-            if (resp && resp.buy) {
-                const tradeId = Math.random().toString(36).substring(2, 10);
-                const pos = {
-                    trade_id: tradeId,
-                    direction,
-                    entry_price: bars[bars.length - 1].close,
-                    stop_loss: signal.stop_loss,
-                    take_profit: signal.take_profit,
-                    size: stake,
-                    entry_bar: bars.length,
-                    atr_at_entry: currentAtr,
-                    trailing_active: false,
-                    trailing_stop: 0,
-                    highest_favorable: bars[bars.length - 1].close,
-                    current_r: 0,
-                    duration: 60,
-                    efficiency_at_entry: efficiency,
-                };
-                state.position = pos;
-                state.lastSignal = signal;
-                console.log(`[${symbol}] ENTRADA: ${direction} MICRO | Eff=${efficiency.toFixed(2)} Setup=${setupScore.toFixed(2)} Sweep=${signal.swept_liquidity}`);
-            } else {
-                console.warn(`[${symbol}] Trade execution failed`);
+            startBtn.disabled = true;
+            stopBtn.disabled = false;
+            statusText.innerText = "🟢 Conectando...";
+            addLog("[SISTEMA] Iniciando bot contrarian...");
+            try {
+                await connect(token);
+                running = true;
+                statusText.innerText = "🟢 Operando (BrokerMode)";
+                addLog("[SISTEMA] Bot activo. Esperando extremos del rebaño...");
+            } catch (err) {
+                addLog("[ERROR] No se pudo conectar.");
+                startBtn.disabled = false;
+                stopBtn.disabled = true;
+                statusText.innerText = "🔴 Error de conexión";
             }
         });
-    }
 
-    _closePosition(symbol, pos, exitReason, exitPrice) {
-        const state = this.states[symbol];
-        const risk = Math.abs(pos.entry_price - pos.stop_loss);
-        const pnlR = pos.direction === "LONG" ? (exitPrice - pos.entry_price) / risk : (pos.entry_price - exitPrice) / risk;
-        const pnlCurrency = pnlR * pos.size;
-        state.riskMgr.updateBalance(pnlCurrency);
-        const trade = {
-            trade_id: pos.trade_id,
-            symbol,
-            signal_type: state.lastSignal ? state.lastSignal.signal : "UNKNOWN",
-            regime: state.lastRegime ? state.lastRegime.regime : "UNKNOWN",
-            entry_price: pos.entry_price,
-            exit_price: exitPrice,
-            stop_loss: pos.stop_loss,
-            take_profit: pos.take_profit,
-            pnl_r: pnlR,
-            duration_bars: state.barCount - pos.entry_bar,
-            was_winner: pnlR > 0,
-            exit_reason: exitReason,
-            duration_seconds: pos.duration,
-            confidence: state.lastSignal ? state.lastSignal.confidence : 0,
-            efficiency_at_entry: pos.efficiency_at_entry,
-        };
-        state.adaptiveSys.recordTrade(trade);
-        console.log(`[${symbol}] CERRADO ${pos.direction} ${exitReason}: ${pnlR > 0 ? '+' : ''}${pnlR.toFixed(2)}R | Balance: $${state.riskMgr.currentBalance.toFixed(2)}`);
-    }
-
-    _classifyTrendDuration(bars, regimeState, efficiency, atrPercentile) {
-        if (["NOISE", "RANGE"].includes(regimeState.regime) || efficiency < 0.65) return false;
-        if (atrPercentile < 0.3 || (atrPercentile >= 0.4 && atrPercentile <= 0.6)) return false;
-        const closes = bars.slice(-10).map(b => b.close);
-        const dir = ["STRONG_TREND_UP", "WEAK_TREND_UP"].includes(regimeState.regime) ? 1 : -1;
-        let consec = 0;
-        for (let i = 1; i < closes.length; i++) {
-            const diff = closes[i] - closes[i - 1];
-            if ((dir === 1 && diff > 0) || (dir === -1 && diff < 0)) consec++;
-            else break;
-        }
-        return consec >= 2 && efficiency > 0.65;
-    }
-}
-
-// ─── ARRANCAR ──
-const bot = new DerivAdaptiveBot();
-bot.start();
+        stopBtn.addEventListener('click', () => {
+            running = false;
+            if (ws) ws.close();
+            startBtn.disabled = false;
+            stopBtn.disabled = true;
+            statusText.innerText = "⚫ Detenido";
+            addLog("[SISTEMA] Bot detenido por el usuario.");
+        });
+    })();
+</script>
+</body>
+</html>
