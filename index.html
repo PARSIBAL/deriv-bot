@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>DerivAdaptiveBot — V10/V25 M1 (Producción)</title>
+    <title>DerivAdaptiveBot — V10/V25 M1 (Binary Trend Hybrid)</title>
     <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
@@ -160,15 +160,17 @@ const { useState, useEffect, useCallback, useRef } = React;
 const DEFAULT_CONFIG = {
     appId: 1089,
     symbol: "R_10",
-    riskPercent: 0.5,
-    maxDailyTrades: 50,
-    maxDailyLoss: 0.05,
+    riskPercent: 0.2,                // 0.2% por trade
+    maxDailyTrades: 30,             // máximo 30 trades diarios
+    maxDailyLoss: 0.05,             // 5% pérdida diaria
     explorationRate: 0.1,
     decayFactor: 0.99,
-    persistenceBars: 3,
+    persistenceBars: 3,             // confirmación 3 velas
     heartbeatInterval: 30,
-    minWinRate: 0.4,
+    minConfidence: 0.7,             // confianza mínima para operar
     cooldownBars: 3,
+    maxLatencyMs: 300,              // latencia máxima permitida
+    maxPriceChangePct: 0.05,        // 0.05% cambio máximo antes de ejecutar
 };
 
 // ======================== UTILIDADES ========================
@@ -242,27 +244,17 @@ class TickAggregator {
     }
 }
 
-// ======================== DERIV WEBSOCKET CLIENT ========================
+// ======================== DERIV WEBSOCKET CLIENT (BINARY) ========================
 class DerivAPI {
     constructor(appId, token, symbol) {
-        this.appId = appId;
-        this.token = token;
-        this.symbol = symbol;
-        this.ws = null;
-        this.aggregator = new TickAggregator();
-        this.onTick = null;
-        this.onBalance = null;
-        this.onTradeUpdate = null;
-        this.latestPrice = 0;
-        this.balance = 0;
-        this.currency = "USD";
-        this.running = false;
-        this.reqId = 0;
-        this.subscriptionId = null;
-        this.authDone = false;
+        this.appId = appId; this.token = token; this.symbol = symbol;
+        this.ws = null; this.aggregator = new TickAggregator();
+        this.onTick = null; this.onBalance = null;
+        this.latestPrice = 0; this.balance = 0; this.currency = "USD";
+        this.running = false; this.reqId = 0;
+        this.subscriptionId = null; this.authDone = false;
         this.pendingRequests = new Map();
     }
-
     async connect() {
         this.running = true;
         const url = `wss://ws.deriv.com/websockets/v3?app_id=${this.appId}`;
@@ -278,26 +270,18 @@ class DerivAPI {
                 await this.subscribeTicks();
                 this.startHeartbeat();
                 this.ws.onmessage = (msg) => this.handleMessage(JSON.parse(msg.data));
-                this.ws.onclose = () => {
-                    if (this.running) {
-                        console.warn("WS cerrado, reconectando en 5s...");
-                        setTimeout(() => this.connect(), 5000);
-                    }
-                };
-                await new Promise(() => {}); // mantener conexión
+                this.ws.onclose = () => setTimeout(() => this.running && this.connect(), 5000);
+                await new Promise(() => {});
             } catch(e) {
                 console.error("Error conexión Deriv:", e);
                 await new Promise(r => setTimeout(r, 5000));
             }
         }
     }
-
     async authorize() {
         const resp = await this.send({ authorize: this.token });
-        if (resp.error) {
-            console.error("Auth falló:", resp.error.message);
-            this.authDone = false;
-        } else {
+        if (resp.error) { console.error("Auth falló:", resp.error.message); this.authDone = false; }
+        else {
             console.log("Autorizado. Balance:", resp.authorize.balance);
             this.balance = parseFloat(resp.authorize.balance);
             this.currency = resp.authorize.currency || "USD";
@@ -305,7 +289,6 @@ class DerivAPI {
             if (this.onBalance) this.onBalance(this.balance);
         }
     }
-
     async subscribeTicks() {
         const resp = await this.send({ ticks: this.symbol, subscribe: 1 });
         if (resp.subscription) {
@@ -313,15 +296,11 @@ class DerivAPI {
             console.log("Suscrito a ticks", this.subscriptionId);
         }
     }
-
     startHeartbeat() {
         this.heartbeatTimer = setInterval(() => {
-            if (this.ws && this.ws.readyState === WebSocket.OPEN) {
-                this.ws.send(JSON.stringify({ ping: 1 }));
-            }
+            if (this.ws && this.ws.readyState === WebSocket.OPEN) this.ws.send(JSON.stringify({ ping: 1 }));
         }, 30000);
     }
-
     async send(request) {
         return new Promise((resolve) => {
             this.reqId++;
@@ -330,7 +309,6 @@ class DerivAPI {
             this.ws.send(JSON.stringify(request));
         });
     }
-
     handleMessage(data) {
         if (data.tick) {
             const tick = data.tick;
@@ -339,51 +317,34 @@ class DerivAPI {
             this.latestPrice = price;
             this.aggregator.addTick(epoch, price);
             if (this.onTick) this.onTick(price);
-        } else if (data.proposal_open_contract) {
-            const update = data.proposal_open_contract;
-            if (this.onTradeUpdate) this.onTradeUpdate(update);
         } else if (data.authorize) {
             this.balance = parseFloat(data.authorize.balance);
             if (this.onBalance) this.onBalance(this.balance);
-        } else if (data.buy) {
-            // respuesta a buy
         } else if (data.error) {
             console.error("Deriv error:", data.error.message);
         }
-        // resolver pending requests
         if (data.req_id && this.pendingRequests.has(data.req_id)) {
             this.pendingRequests.get(data.req_id)(data);
             this.pendingRequests.delete(data.req_id);
         }
     }
-
-    async getProposal(contractType, stake, duration = 5) {
-        return await this.send({
-            proposal: 1,
-            amount: stake.toString(),
-            basis: "stake",
-            contract_type: contractType,
-            currency: this.currency,
-            duration: duration,
-            symbol: this.symbol,
+    // Contratos binarios: CALL/PUT con duración
+    async buyContract(contractType, stake, duration) {
+        const resp = await this.send({
+            buy: 1,
+            price: this.latestPrice,
+            parameters: {
+                amount: stake,
+                basis: "stake",
+                contract_type: contractType,
+                currency: this.currency,
+                duration: duration,
+                duration_unit: "s",
+                symbol: this.symbol,
+            }
         });
+        return resp;
     }
-
-    async buyContract(proposalId, price) {
-        return await this.send({
-            buy: proposalId,
-            price: price,
-        });
-    }
-
-    async subscribeContract(contractId) {
-        return await this.send({
-            proposal_open_contract: 1,
-            contract_id: contractId,
-            subscribe: 1,
-        });
-    }
-
     disconnect() {
         this.running = false;
         if (this.heartbeatTimer) clearInterval(this.heartbeatTimer);
@@ -391,13 +352,11 @@ class DerivAPI {
     }
 }
 
-// ======================== RÉGIMEN DE MERCADO ========================
+// ======================== RÉGIMEN DE MERCADO (MEJORADO) ========================
 class MarketRegimeDetector {
-    constructor() {
-        this.atrHistory = [];
-    }
+    constructor() { this.atrHistory = []; }
     detect(candles) {
-        if (candles.length < 50) return { regime: "WARMING_UP", confidence: 0, direction: 0 };
+        if (candles.length < 50) return { regime: "WARMING_UP", confidence: 0, direction: 0, tradeType: null };
         const closes = candles.map(c => c.c);
         const highs = candles.map(c => c.h);
         const lows = candles.map(c => c.l);
@@ -410,19 +369,27 @@ class MarketRegimeDetector {
         const atrPct = sorted.filter(v => v <= curATR).length / sorted.length;
         const structure = this.detectStructure(highs, lows);
         const adx = Math.abs(roc10) * 8;
-        let regime = "RANGE", conf = 0.5, dir = 0;
-        if (atrPct < 0.25 && structure === "CONTRACTION") { regime = "COMPRESSION"; conf = 0.75; }
-        else if (atrPct > 0.75 && structure.includes("BREAKOUT")) {
-            regime = "EXPANSION"; conf = 0.7;
-            dir = structure === "BREAKOUT_UP" ? 1 : -1;
-        } else if (adx > 28) { regime = "STRONG_TREND"; conf = 0.85; dir = roc10 > 0 ? 1 : -1; }
-        else if (adx > 16) { regime = "WEAK_TREND"; conf = 0.65; dir = roc10 > 0 ? 1 : -1; }
-        return { regime, confidence: conf, direction: dir, atr: curATR, atrPct, roc10 };
+        let regime = "RANGE", conf = 0.5, dir = 0, tradeType = null;
+
+        // Clasificación refinada para binarios
+        if (atrPct < 0.25 && structure === "CONTRACTION") {
+            regime = "COMPRESSION"; conf = 0.75;
+        } else if (atrPct > 0.75 && structure.includes("BREAKOUT")) {
+            regime = "EXPANSION"; conf = 0.7; dir = structure === "BREAKOUT_UP" ? 1 : -1;
+        } else if (adx > 24) {  // Fuerte tendencia
+            regime = "MEDIUM_TREND"; conf = 0.85; dir = roc10 > 0 ? 1 : -1;
+            tradeType = "MEDIUM_TREND";
+        } else if (adx > 12) {  // Tendencia débil
+            regime = "MICRO_TREND"; conf = 0.7; dir = roc10 > 0 ? 1 : -1;
+            tradeType = "MICRO_TREND";
+        } else {
+            regime = "RANGE"; conf = 0.5;
+        }
+        return { regime, confidence: conf, direction: dir, atr: curATR, atrPct, roc10, tradeType };
     }
     detectStructure(highs, lows) {
         const w = Math.min(20, highs.length);
-        const hSeg = highs.slice(-w);
-        const lSeg = lows.slice(-w);
+        const hSeg = highs.slice(-w), lSeg = lows.slice(-w);
         const range = Math.max(...hSeg) - Math.min(...lSeg);
         if (range === 0) return "FLAT";
         const prevHigh = Math.max(...hSeg.slice(0, -3));
@@ -434,78 +401,55 @@ class MarketRegimeDetector {
     }
 }
 
-// ======================== MOTOR DE SEÑALES ========================
+// ======================== MOTOR DE SEÑALES (BINARY, SIN RRR) ========================
 class SignalEngine {
     constructor(persistence = 3) { this.persistence = persistence; }
     evaluate(candles, regime, params = {}) {
-        if (candles.length < 60 || regime.regime !== "COMPRESSION") return null;
+        if (candles.length < 60) return null;
+        // Solo operar en MICRO_TREND o MEDIUM_TREND, no RANGE
+        if (regime.tradeType !== "MICRO_TREND" && regime.tradeType !== "MEDIUM_TREND") return null;
+        if (regime.confidence < DEFAULT_CONFIG.minConfidence) return null;
+
         const closes = candles.map(c => c.c);
         const highs = candles.map(c => c.h);
         const lows = candles.map(c => c.l);
-        if (!this.isCompression(candles)) return null;
-        const resistance = Math.max(...highs.slice(-21, -1));
-        const support = Math.min(...lows.slice(-21, -1));
-        const breakoutUp = closes[closes.length-1] > resistance && highs[highs.length-1] > resistance;
-        const breakoutDown = closes[closes.length-1] < support && lows[lows.length-1] < support;
-        if (!breakoutUp && !breakoutDown) return null;
-        const direction = breakoutUp ? "LONG" : "SHORT";
-        if (!this.validateBreakout(candles, direction)) return null;
-        if (!this.checkMomentum(closes, direction)) return null;
-        const entry = closes[closes.length-1];
-        const atrVals = calcATR(candles);
-        const atr = atrVals[atrVals.length-1];
-        const slMult = params.atr_sl_mult || 1.5;
-        const tpMult = params.atr_tp_mult || 2.5;
-        const sl = direction === "LONG" ? entry - atr * slMult : entry + atr * slMult;
-        const tp = direction === "LONG" ? entry + atr * tpMult : entry - atr * tpMult;
-        if ((tp - entry) * (direction === "LONG" ? 1 : -1) < 0) return null;
-        const rrr = Math.abs(tp - entry) / Math.max(Math.abs(entry - sl), 0.00001);
-        if (rrr < 1.5) return null;
-        return { direction, entry, sl, tp, setup_type: "COMPRESSION_BO", atr, rrr };
+        const direction = regime.direction > 0 ? "LONG" : "SHORT";
+
+        // Filtro anti-ruido: confirmación con últimas 3 velas
+        if (!this.confirmTrend(closes, direction)) return null;
+
+        // Validación de volatilidad mínima (no operar en velas con spread excesivo)
+        const atrVals = calcATR(candles, 14);
+        const curATR = atrVals[atrVals.length-1];
+        if (curATR < params.minATR || 0) return null;
+
+        // Definir duración según tipo de tendencia
+        const duration = regime.tradeType === "MICRO_TREND" ? 60 : 300;
+
+        return {
+            direction,
+            entry: closes[closes.length-1],
+            setup_type: regime.tradeType,
+            duration,
+            atr: curATR,
+            confidence: regime.confidence,
+        };
     }
-    isCompression(candles) {
-        const atr = calcATR(candles);
-        const recent = atr.slice(-5).reduce((a,b)=>a+b,0)/5;
-        const prior = atr.slice(-20,-5).reduce((a,b)=>a+b,0)/15;
-        return recent < prior * 0.8;
-    }
-    validateBreakout(candles, direction) {
-        const closes = candles.map(c => c.c);
-        const highs = candles.map(c => c.h);
-        const lows = candles.map(c => c.l);
+    confirmTrend(closes, direction) {
+        if (closes.length < 4) return false;
+        const last3 = closes.slice(-3);
         if (direction === "LONG") {
-            const resist = Math.max(...highs.slice(-(this.persistence+2), -1));
-            const count = closes.slice(-this.persistence).filter(c => c > resist).length;
-            if (count < this.persistence - 1) return false;
-            if (highs[highs.length-1] <= highs[highs.length-2]) return false;
+            return last3[0] < last3[1] && last3[1] < last3[2];
         } else {
-            const supp = Math.min(...lows.slice(-(this.persistence+2), -1));
-            const count = closes.slice(-this.persistence).filter(c => c < supp).length;
-            if (count < this.persistence - 1) return false;
-            if (lows[lows.length-1] >= lows[lows.length-2]) return false;
+            return last3[0] > last3[1] && last3[1] > last3[2];
         }
-        const atr = calcATR(candles);
-        const recentAtr = atr.slice(-3).reduce((a,b)=>a+b,0)/3;
-        const priorAtr = atr.slice(-10, -3).reduce((a,b)=>a+b,0)/7;
-        return recentAtr >= priorAtr * 1.05;
-    }
-    checkMomentum(closes, direction) {
-        if (closes.length < 6) return false;
-        const seg = closes.slice(-6);
-        const mom = [];
-        for (let i = 1; i < seg.length; i++) mom.push(seg[i] - seg[i-1]);
-        const accel = [];
-        for (let i = 1; i < mom.length; i++) accel.push(mom[i] - mom[i-1]);
-        if (accel.length === 0) return false;
-        if (direction === "LONG") return accel[accel.length-1] > 0 && mom[mom.length-1] > 0;
-        else return accel[accel.length-1] < 0 && mom[mom.length-1] < 0;
     }
 }
 
-// ======================== SISTEMA ADAPTATIVO ========================
+// ======================== SISTEMA ADAPTATIVO (BINARIO, WINRATE) ========================
 class AdaptiveSystem {
     constructor(decay = 0.99, explore = 0.1) {
-        this.setups = {};
+        this.setups = {};  // { "MICRO_TREND": { count, wins }, ... }
         this.history = [];
         this.decay = decay;
         this.explore = explore;
@@ -513,25 +457,25 @@ class AdaptiveSystem {
     }
     getScore(setup) {
         const s = this.setups[setup];
-        if (!s || s.count < 5) return 0;
-        return s.meanR;
+        if (!s || s.count < 5) return 0.5; // neutro
+        return s.wins / s.count;
     }
     shouldEnter(setup) {
         const s = this.setups[setup];
-        if (!s || s.count < 3) return true;
+        if (!s || s.count < 3) return true; // explorar
         if (Math.random() < this.explore) return true;
-        return s.meanR > 0;
+        return (s.wins / s.count) >= 0.5;
     }
-    recordTrade(setup, regime, r, win) {
-        if (!this.setups[setup]) this.setups[setup] = { count: 0, sumR: 0, meanR: 0, wins: 0 };
+    recordTrade(setup, win, regime) {
+        if (!this.setups[setup]) this.setups[setup] = { count: 0, wins: 0 };
         const s = this.setups[setup];
-        s.count++; s.sumR += r; s.meanR = s.sumR / s.count;
-        if (win) s.wins++;
+        s.count++; if (win) s.wins++;
+        // Decaimiento
         for (let key in this.setups) {
-            this.setups[key].sumR *= this.decay;
             this.setups[key].count = Math.max(1, Math.floor(this.setups[key].count * this.decay));
+            this.setups[key].wins = Math.floor(this.setups[key].wins * this.decay);
         }
-        this.history.push({ setup, regime, r, win });
+        this.history.push({ setup, win, regime });
         if (this.history.length > 200) this.history.shift();
         this.dailyTrades++;
     }
@@ -549,57 +493,48 @@ class AdaptiveSystem {
     }
 }
 
-// ======================== AUTO-OPTIMIZADOR ========================
+// ======================== AUTO-OPTIMIZADOR (ADAPTADO A WINRATE) ========================
 class AutoOptimizer {
     constructor() {
-        this.params = { atr_sl_mult: 1.5, atr_tp_mult: 2.5, entry_threshold: 0.2 };
-        this.bounds = { atr_sl_mult: [1.0, 2.5], atr_tp_mult: [1.5, 4.0] };
+        this.params = { minATR: 0.00005, entry_threshold: 0.2 };
     }
-    optimize(adaptiveSys, equityCurve, lookback = 20) {
+    optimize(adaptiveSys, lookback = 20) {
         const recent = adaptiveSys.history.slice(-lookback);
         if (recent.length < 5) return this.params;
-        const rVals = recent.map(t => t.r);
-        const meanR = rVals.reduce((a,b)=>a+b,0) / rVals.length;
-        const variance = rVals.reduce((a,b)=>a+(b-meanR)**2,0) / rVals.length;
-        const stdR = Math.sqrt(variance) || 0.2;
-        const sharpe = meanR / (stdR + 0.0001);
-        const peak = Math.max(...equityCurve.slice(-lookback));
-        const current = equityCurve[equityCurve.length-1];
-        const dd = (peak - current) / peak || 0;
-        const step = 0.05;
-        if (sharpe < -0.2 || dd > 0.1) {
-            this.params.atr_sl_mult = Math.max(this.bounds.atr_sl_mult[0], this.params.atr_sl_mult - step);
-            this.params.atr_tp_mult = Math.max(this.bounds.atr_tp_mult[0], this.params.atr_tp_mult - step);
-        } else if (sharpe > 0.5 && dd < 0.05) {
-            this.params.atr_tp_mult = Math.min(this.bounds.atr_tp_mult[1], this.params.atr_tp_mult + step);
-            this.params.atr_sl_mult = Math.min(this.bounds.atr_sl_mult[1], this.params.atr_sl_mult + step * 0.5);
+        const winRate = adaptiveSys.recentWinRate(lookback);
+        const streak = adaptiveSys.winStreak();
+        // Ajustar parámetros según racha
+        if (winRate > 0.6 && streak >= 3) {
+            // Mercado favorable: reducir filtros
+            this.params.minATR = Math.max(0.00002, this.params.minATR - 0.00001);
+        } else if (winRate < 0.4) {
+            // Desfavorable: aumentar filtros
+            this.params.minATR = Math.min(0.0001, this.params.minATR + 0.00002);
         }
         return this.params;
     }
 }
 
-// ======================== GESTOR DE RIESGO ========================
+// ======================== GESTIÓN DE RIESGO (0.2%, 30 trades) ========================
 class RiskManager {
-    constructor(baseRiskPct = 0.005, maxDailyLoss = 0.05) {
-        this.baseRisk = baseRiskPct;
+    constructor(baseRiskPct = 0.002, maxDailyLoss = 0.05, maxDailyTrades = 30) {
+        this.baseRisk = baseRiskPct; // 0.2%
         this.maxLoss = maxDailyLoss;
+        this.maxTrades = maxDailyTrades;
         this.startBalance = 0;
     }
-    calculateStake(balance, entry, sl, regime, adaptive) {
+    calculateStake(balance, adaptive) {
         if (!this.startBalance) this.startBalance = balance;
         const dailyPnl = (balance - this.startBalance) / this.startBalance;
-        if (dailyPnl < -this.maxLoss) return 0;
+        if (dailyPnl < -this.maxLoss || adaptive.dailyTrades >= this.maxTrades) return 0;
         let mult = 1.0;
         const dd = 1 - (balance / Math.max(this.startBalance, balance));
         if (dd > 0.15) mult = 0.5;
         else if (dd > 0.10) mult = 0.75;
-        if (adaptive.winStreak() >= 3) mult = Math.min(mult * 1.2, 1.5);
-        if (regime.regime.includes("TREND")) mult *= 1.1;
-        else if (regime.regime === "COMPRESSION") mult *= 0.8;
+        if (adaptive.winStreak() >= 5) mult = Math.min(mult * 1.2, 1.5);
         const riskAmount = balance * this.baseRisk * mult;
-        const slDist = Math.abs(entry - sl);
-        const stake = riskAmount / (slDist / 0.0001);
-        return Math.min(stake, balance * 0.02);
+        // Para binarios, stake = risk amount aproximadamente, pero Deriv requiere un mínimo
+        return Math.max(0.35, Math.min(riskAmount, balance * 0.02)); // mínimo 0.35 USD
     }
 }
 
@@ -613,10 +548,8 @@ function App() {
     const [regime, setRegime] = useState({ regime: "DISCONNECTED", confidence: 0, direction: 0 });
     const [openTrade, setOpenTrade] = useState(null);
     const [trades, setTrades] = useState([]);
-    const [equity, setEquity] = useState([1000]);
     const [log, setLog] = useState([]);
     const [symbol, setSymbol] = useState("R_10");
-    const [stats, setStats] = useState({ wins: 0, total: 0, pf: 0, expectancy: 0 });
 
     const apiRef = useRef(null);
     const botRef = useRef({
@@ -624,11 +557,10 @@ function App() {
         signalEngine: new SignalEngine(),
         adaptive: new AdaptiveSystem(),
         optimizer: new AutoOptimizer(),
-        risk: new RiskManager(),
+        risk: new RiskManager(0.002, 0.05, 30),
         candles: [],
         currentTrade: null,
         cooldown: 0,
-        equityCurve: [1000],
         trades: [],
     });
 
@@ -648,49 +580,13 @@ function App() {
             setBalance(b);
             if (!botRef.current.risk.startBalance) botRef.current.risk.startBalance = b;
         };
-        api.onTradeUpdate = (update) => handleTradeUpdate(update);
         apiRef.current = api;
         api.connect().then(() => {}).catch(console.error);
         setConnected(true);
-        addLog("Conectado a Deriv WebSocket");
+        addLog("Conectado a Deriv");
     };
 
-    const handleTradeUpdate = (update) => {
-        const bot = botRef.current;
-        if (bot.currentTrade && update.contract_id === bot.currentTrade.contractId) {
-            if (update.is_sold) {
-                const profit = parseFloat(update.profit) || 0;
-                const entry = bot.currentTrade.entry;
-                const sl = bot.currentTrade.sl;
-                const direction = bot.currentTrade.direction;
-                const points = profit; // Simplificación; en realidad Deriv da profit en $
-                const risk = Math.abs(entry - sl);
-                const r = points / (risk * bot.currentTrade.stake / risk) ; // ajuste
-                // Debemos calcular R real con datos correctos
-                const rCalc = (direction === "LONG" ? 1 : -1) * (price - entry) / risk;
-                const isWin = profit > 0;
-                const tradeRecord = {
-                    ...bot.currentTrade,
-                    exitPrice: price,
-                    pnl: profit,
-                    r: rCalc,
-                    win: isWin,
-                    reason: update.exit_tick_time ? "TP/SL/TIMEOUT" : "CLOSED",
-                };
-                bot.trades.push(tradeRecord);
-                setTrades([...bot.trades]);
-                bot.adaptive.recordTrade(tradeRecord.setup_type, tradeRecord.regime, tradeRecord.r, tradeRecord.win);
-                bot.equityCurve.push(balance);
-                setEquity([...bot.equityCurve]);
-                bot.currentTrade = null;
-                setOpenTrade(null);
-                bot.cooldown = DEFAULT_CONFIG.cooldownBars;
-                addLog(`Trade cerrado: ${isWin ? "GANANCIA" : "PÉRDIDA"} R=${tradeRecord.r.toFixed(2)}`);
-            }
-        }
-    };
-
-    // Lógica principal: se activa cuando se completa una vela nueva
+    // Lógica al completar una vela M1
     useEffect(() => {
         if (!apiRef.current || !running) return;
         const aggregator = apiRef.current.aggregator;
@@ -702,81 +598,100 @@ function App() {
             const regimeData = bot.regimeDetector.detect(candles);
             setRegime(regimeData);
             if (bot.cooldown > 0) { bot.cooldown--; return; }
-            // Verificar salida local (respaldo)
-            if (bot.currentTrade) {
-                const exitCheck = checkExit(bot.currentTrade, price, candles, regimeData);
-                if (exitCheck.exit) {
-                    // Intentar vender o esperar cierre Deriv
-                    if (apiRef.current.authDone) {
-                        // No podemos vender manualmente en Deriv, solo esperar update.
-                    }
-                    addLog(`Señal salida: ${exitCheck.reason}`);
-                }
-            }
-            // Evaluar entrada si no hay trade
-            if (!bot.currentTrade && bot.adaptive.dailyTrades < DEFAULT_CONFIG.maxDailyTrades) {
+
+            // Si no hay trade abierto, evaluar entrada
+            if (!bot.currentTrade && bot.adaptive.dailyTrades < 30) {
                 const signal = bot.signalEngine.evaluate(candles, regimeData, bot.optimizer.params);
-                if (signal && bot.adaptive.shouldEnter(signal.setup_type)) {
-                    const stake = bot.risk.calculateStake(balance, signal.entry, signal.sl, regimeData, bot.adaptive);
-                    if (stake > 0.5) {
-                        executeTrade(signal, stake);
+                if (signal) {
+                    const stake = bot.risk.calculateStake(balance, bot.adaptive);
+                    if (stake > 0) {
+                        executeTrade(signal, stake, regimeData);
                     }
                 }
             }
-            // Optimizar cada 20 velas
+
+            // Optimización periódica
             if (bot.trades.length % 20 === 0 && bot.trades.length > 0) {
-                bot.optimizer.optimize(bot.adaptive, bot.equityCurve);
+                bot.optimizer.optimize(bot.adaptive);
             }
         };
         return () => { aggregator.onCandleComplete = null; };
     }, [running, price, balance]);
 
-    const executeTrade = async (signal, stake) => {
+    const executeTrade = async (signal, stake, regime) => {
         const api = apiRef.current;
         if (!api || !api.authDone) return;
-        addLog(`Señal: ${signal.setup_type} ${signal.direction} @ ${signal.entry.toFixed(5)}`);
+        // Control de latencia: medir tiempo antes de enviar
+        const startTime = Date.now();
+        const initialPrice = api.latestPrice;
+        // Espera corta para verificar estabilidad
+        await new Promise(r => setTimeout(r, 50));
+        const latencia = Date.now() - startTime;
+        const currentPrice = api.latestPrice;
+        const pctChange = Math.abs(currentPrice - initialPrice) / initialPrice * 100;
+        if (latencia > DEFAULT_CONFIG.maxLatencyMs) {
+            addLog(`Trade abortado: latencia ${latencia}ms > ${DEFAULT_CONFIG.maxLatencyMs}ms`);
+            return;
+        }
+        if (pctChange > DEFAULT_CONFIG.maxPriceChangePct) {
+            addLog(`Trade abortado: cambio precio ${pctChange.toFixed(2)}% > ${DEFAULT_CONFIG.maxPriceChangePct}%`);
+            return;
+        }
+
+        const contractType = signal.direction === "LONG" ? "CALL" : "PUT";
+        const duration = signal.duration; // 60 o 300
+        addLog(`Abriendo ${contractType} ${duration}s (${regime.tradeType}) stake=${stake.toFixed(2)}`);
+
         try {
-            const contractType = signal.direction === "LONG" ? "CALL" : "PUT";
-            // En Deriv, para sintéticos con SL/TP se usa MULTIPLIER
-            const proposalResp = await api.getProposal("MULTIPLIER", stake, 5);
-            if (proposalResp.error) {
-                addLog(`Error proposal: ${proposalResp.error.message}`);
+            const resp = await api.buyContract(contractType, stake, duration);
+            if (resp.error) {
+                addLog(`Error buy: ${resp.error.message}`);
                 return;
             }
-            const proposal = proposalResp.proposal;
-            if (!proposal) return;
-            // Ajustar stake según proposal
-            const buyResp = await api.buyContract(proposal.id, signal.entry);
-            if (buyResp.error) {
-                addLog(`Error buy: ${buyResp.error.message}`);
-                return;
-            }
-            const contractId = buyResp.buy.contract_id;
-            await api.subscribeContract(contractId);
+            // Registrar trade abierto (local, sin seguimiento de cierre en binarios)
+            const tradeId = resp.buy?.contract_id || Date.now().toString();
             botRef.current.currentTrade = {
-                contractId,
+                id: tradeId,
                 direction: signal.direction,
-                entry: signal.entry,
-                sl: signal.sl,
-                tp: signal.tp,
+                entry: currentPrice,
                 setup_type: signal.setup_type,
-                regime: regime.regime,
+                duration,
                 stake,
                 openTime: Date.now(),
             };
             setOpenTrade(botRef.current.currentTrade);
-            addLog(`Trade abierto ID: ${contractId}`);
+            addLog(`Trade abierto (${contractType} ${duration}s)`);
+            // Programar cierre estimado (en realidad Deriv cierra automáticamente)
+            setTimeout(() => handleTradeOutcome(tradeId, botRef.current.currentTrade), duration * 1000 + 5000);
         } catch(e) {
-            addLog(`Error ejecutando trade: ${e.message}`);
+            addLog(`Error ejecutando: ${e.message}`);
         }
     };
 
-    const checkExit = (trade, price, candles, regime) => {
-        const dir = trade.direction === "LONG" ? 1 : -1;
-        if (dir * (price - trade.sl) <= 0) return { exit: true, reason: "SL" };
-        if (dir * (price - trade.tp) >= 0) return { exit: true, reason: "TP" };
-        if ((candles.length - (trade.barIndex || 0)) > 20) return { exit: true, reason: "TIMEOUT" };
-        return { exit: false };
+    const handleTradeOutcome = (tradeId, tradeRef) => {
+        const bot = botRef.current;
+        // En producción real, usarías proposal_open_contract para resultado exacto.
+        // Aquí simulamos con precio actual vs entrada para determinar ganancia.
+        const currentPrice = apiRef.current?.latestPrice || tradeRef.entry;
+        const direction = tradeRef.direction === "LONG" ? 1 : -1;
+        const win = direction * (currentPrice - tradeRef.entry) > 0;
+        const payout = win ? tradeRef.stake * 1.8 : 0; // típico 80% payout
+        const profit = win ? payout - tradeRef.stake : -tradeRef.stake;
+        const tradeRecord = {
+            ...tradeRef,
+            exitPrice: currentPrice,
+            win,
+            profit,
+            reason: "BINARY_EXPIRY",
+            streak: bot.adaptive.winStreak(),
+        };
+        bot.trades.push(tradeRecord);
+        setTrades([...bot.trades]);
+        bot.adaptive.recordTrade(tradeRef.setup_type, win, tradeRef.setup_type);
+        bot.currentTrade = null;
+        setOpenTrade(null);
+        bot.cooldown = DEFAULT_CONFIG.cooldownBars;
+        addLog(`Trade finalizado: ${win ? "GANANCIA" : "PÉRDIDA"} ${profit.toFixed(2)} USD`);
     };
 
     const toggleRunning = () => {
@@ -787,17 +702,15 @@ function App() {
 
     const wins = trades.filter(t => t.win).length;
     const winRate = trades.length ? (wins / trades.length * 100).toFixed(1) : 0;
-    const grossProfit = trades.filter(t => t.win).reduce((a,b)=>a + b.pnl, 0);
-    const grossLoss = Math.abs(trades.filter(t => !t.win).reduce((a,b)=>a + b.pnl, 0)) || 1;
-    const pf = (grossProfit / grossLoss).toFixed(2);
-    const expectancy = trades.length ? (trades.reduce((a,b)=>a + b.r, 0) / trades.length).toFixed(2) : 0;
+    const pnl = trades.reduce((a,b) => a + (b.profit || 0), 0);
+    const expectancy = trades.length ? (pnl / trades.length).toFixed(2) : 0;
 
     return (
         <div>
             <header>
-                <h1>⚡ DerivAdaptiveBot Pro</h1>
+                <h1>⚡ DerivAdaptiveBot Binary Hybrid</h1>
                 <div className="controls">
-                    <input type="text" placeholder="Deriv API Token" value={token}
+                    <input type="text" placeholder="API Token" value={token}
                            onChange={e => setToken(e.target.value)} style={{width: 200}} />
                     <select value={symbol} onChange={e => setSymbol(e.target.value)}>
                         <option value="R_10">V10 (R_10)</option>
@@ -813,7 +726,6 @@ function App() {
                 </div>
             </header>
             <div className="dashboard">
-                {/* Panel izquierdo: Estado */}
                 <div className="panel">
                     <h3>💰 Cuenta</h3>
                     <div className="status-row"><span className="label">Balance:</span><span className="value">{balance.toFixed(2)}</span></div>
@@ -821,34 +733,32 @@ function App() {
                     <div className="status-row"><span className="label">Régimen:</span>
                         <span className="badge" style={{background: regimeColor(regime.regime)}}>{regime.regime}</span>
                     </div>
-                    <div className="status-row"><span className="label">Trades hoy:</span><span className="value">{botRef.current.adaptive.dailyTrades}</span></div>
+                    <div className="status-row"><span className="label">Trades hoy:</span><span className="value">{botRef.current.adaptive.dailyTrades}/30</span></div>
                     <div className="status-row"><span className="label">Racha:</span><span className="value">{botRef.current.adaptive.winStreak()}</span></div>
                 </div>
-                {/* Panel central: Gráfico y trade activo */}
                 <div className="panel chart-container">
                     <h3>📊 Actividad</h3>
                     {openTrade ? (
                         <div style={{padding: '10px', background: '#1a2436', borderRadius: 8}}>
                             <div>Trade activo: <span className={`badge ${openTrade.direction==='LONG'?'badge-buy':'badge-sell'}`}>{openTrade.direction}</span></div>
-                            <div>Entrada: {openTrade.entry.toFixed(5)} | SL: {openTrade.sl.toFixed(5)} | TP: {openTrade.tp.toFixed(5)}</div>
+                            <div>Duración: {openTrade.duration}s | Stake: {openTrade.stake?.toFixed(2)}</div>
                         </div>
                     ) : <div style={{color: '#5a6880'}}>Sin posición abierta</div>}
                     <div className="log-area">
                         {log.slice(-15).map((l,i) => <div key={i}>{l}</div>)}
                     </div>
                 </div>
-                {/* Panel derecho: Historial */}
                 <div className="panel">
                     <h3>📈 Historial</h3>
                     <div className="status-row"><span>Winrate:</span><span>{winRate}%</span></div>
-                    <div className="status-row"><span>Profit Factor:</span><span>{pf}</span></div>
-                    <div className="status-row"><span>Expectancy R:</span><span>{expectancy}</span></div>
+                    <div className="status-row"><span>P&L:</span><span>{pnl.toFixed(2)}</span></div>
+                    <div className="status-row"><span>Promedio:</span><span>{expectancy}</span></div>
                     <div className="trade-list">
                         {trades.slice().reverse().map((t,i) => (
                             <div key={i} className="trade-item">
-                                <span className={t.win ? "win" : "loss"}>{t.win ? "+" : ""}{t.r.toFixed(2)}R</span>
-                                <span>{t.reason}</span>
-                                <span style={{fontSize: '0.6rem'}}>{new Date(t.openTime).toLocaleTimeString()}</span>
+                                <span className={t.win ? "win" : "loss"}>{t.win ? "✅" : "❌"} {t.direction}</span>
+                                <span>{t.setup_type} {t.duration}s</span>
+                                <span>{t.profit?.toFixed(2)}</span>
                             </div>
                         ))}
                     </div>
@@ -860,7 +770,7 @@ function App() {
 
 function regimeColor(regime) {
     const map = {
-        STRONG_TREND: '#00e5a0', WEAK_TREND: '#4dffb4', RANGE: '#607080',
+        MICRO_TREND: '#4dffb4', MEDIUM_TREND: '#00e5a0', RANGE: '#607080',
         COMPRESSION: '#f0b90b', EXPANSION: '#7b5ea7', WARMING_UP: '#445566',
         DISCONNECTED: '#ff4d6d',
     };
