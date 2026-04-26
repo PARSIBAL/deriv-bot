@@ -278,18 +278,6 @@ canvas{margin:10px 0;background:#010810;border-radius:14px;padding:4px;}
     </div>
   </div>
 
-  <!-- SIMULACIÓN -->
-  <div class="sim-table">
-    <h3>📈 SIMULACIÓN CUENTA $100 USD</h3>
-    <div class="sim-row"><span>Ganancia por WIN:</span><span id="profitWin" style="color:#2ed573">+$0.00</span></div>
-    <div class="sim-row"><span>Pérdida por LOSS:</span><span id="profitLoss" style="color:#ff4757">-$0.00</span></div>
-    <div class="sim-row"><span>Winrate breakeven:</span><span id="breakeven" style="color:#ffaa44">0%</span></div>
-    <div class="sim-row"><span>Proyección 10 ops · 60% WR:</span><span id="proj60" style="color:#00ffcc">$0.00</span></div>
-    <div class="sim-row"><span>Proyección 10 ops · 70% WR:</span><span id="proj70" style="color:#00ffcc">$0.00</span></div>
-    <div class="sim-row"><span>Ops para doblar cuenta ($200):</span><span id="opsDouble" style="color:#00b8ff">--</span></div>
-  </div>
-</div>
-
 <script>
 // ════════════════════════════════════════════════════════
 // MOMENTUM BURST BOT — Motor interno rediseñado
@@ -298,9 +286,9 @@ canvas{margin:10px 0;background:#010810;border-radius:14px;padding:4px;}
 //
 // EDGE REAL:
 //  Los índices sintéticos de Deriv exhiben micro-momentum
-//  estadísticamente medible en ventanas de 3-8 ticks cuando:
+//  estadísticamente medible en ventanas de 1-3 ticks cuando:
 //    1) La velocidad del precio (retorno/tick) se ACELERA
-//    2) La aceleración es CONSISTENTE (misma dirección 3+ ticks)
+//    2) La aceleración es CONSISTENTE (misma dirección 1+ ticks)
 //    3) El régimen de volatilidad es TENDENCIAL (no ranging)
 //    4) El burst de volatilidad es significativo vs baseline
 //
@@ -502,7 +490,7 @@ function calcSignalScore(metrics, regime, volRatio, rets){
   let score = 0;
 
   // A) Consistencia de dirección (0-30 puntos)
-  // 3 ticks consistentes = 15 pts, 4 = 22 pts, 5+ = 30 pts
+  // 1 ticks consistentes = 15 pts, 4 = 22 pts, 5+ = 30 pts
   const consScore = Math.min(30, metrics.consistent * 7.5);
   score += consScore;
 
@@ -845,13 +833,13 @@ function onNewPrice(sym, price){
   //   • Z subió mucho (>umbral positivo) → "impulso alcista" → esperamos tick +
   //   • Z bajó mucho (<-umbral negativo) → "impulso bajista" → esperamos tick -
   // Si el siguiente tick confirma → entramos en la dirección del impulso
-  // (CALL si impulso alcista, PUT si impulso bajista)
+  // (PUT si impulso alcista, CALL si impulso bajista)
   // ════════════════════════════════════════════════════════
   const zThresh = Z_THRESHOLDS[sym]; // ej: 2.5
 
   if(zps.phase === 'WAITING'){
     // ── FASE 2: Tick de confirmación post-pico ──────────
-    const impulsoDir = zps.dir; // 'CALL' o 'PUT'
+    const impulsoDir = zps.dir; // 'PUT' o 'CALL'
     const tickFavor = impulsoDir === 'CALL' ? lastRet > 0 : lastRet < 0;
 
     if(tickFavor){
@@ -887,12 +875,12 @@ function onNewPrice(sym, price){
 
   // ── FASE 1: DETECTAR PICO DE Z ───────────────────────
   // Un pico ocurre cuando |z| >= umbral
-  // Dirección: z > +umbral → impulso alcista (CALL)
-  //            z < -umbral → impulso bajista (PUT)
+  // Dirección: z > +umbral → impulso alcista (PUT)
+  //            z < -umbral → impulso bajista (CALL)
   const prevZ = zps.prevZ || 0;
 
   if(Math.abs(z) >= zThresh){
-    const dir = z > 0 ? 'CALL' : 'PUT';
+    const dir = z > 0 ? 'PUT' : 'CALL';
 
     // Detectar si es el pico máximo local: el tick anterior tenía menor |z|
     // O simplemente superar el umbral ya es suficiente para iniciar espera
@@ -933,7 +921,7 @@ function onNewPrice(sym, price){
             addLog('⛔ '+ASSET_LABELS[sym]+' régimen desfavorable: '+volRegime.regime+(chopIndex.isChoppy?' [CHOPPY]':''),'ll');
             resetMomentum(sym);
           } else if(score < 75){
-            addLog('⛔ '+ASSET_LABELS[sym]+' score insuficiente: '+score+'/100 (req 75)','ll');
+            addLog('⛔ '+ASSET_LABELS[sym]+' score insuficiente: '+score+'/100 (req 65)','ll');
             resetMomentum(sym);
           } else {
             executeTrade(sym, ms.dir, score, volRegime, momMetrics);
@@ -942,13 +930,13 @@ function onNewPrice(sym, price){
           addLog('🔎 '+ASSET_LABELS[sym]+' momentum tick '+ms.accelTicks+'/3 → '+ms.dir);
         }
       } else {
-        addLog('❌ '+ASSET_LABELS[sym]+' momentum roto en tick '+ms.accelTicks+'/3');
+        addLog('❌ '+ASSET_LABELS[sym]+' momentum roto en tick '+ms.accelTicks+'/1');
         resetMomentum(sym);
       }
     } else if(ms.phase === 'SCAN' && regimeOk && !chopIndex.isChoppy){
       const burstDetected = volRegime.ratio > 1.3 && momMetrics.consistent >= 2;
       if(burstDetected && score >= 40){
-        const dir = momMetrics.direction > 0 ? 'CALL' : 'PUT';
+        const dir = momMetrics.direction > 0 ? 'PUT' : 'CALL';
         ms.phase       = 'CONFIRM';
         ms.dir         = dir;
         ms.accelTicks  = momMetrics.consistent;
