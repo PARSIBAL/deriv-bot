@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Z-PEAK BOT v3 | V10·V25·V50</title>
+<title>Z-PEAK BOT v4 | REVERSAL ENGINE</title>
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <style>
 *{margin:0;padding:0;box-sizing:border-box;}
@@ -23,8 +23,9 @@ h2{
   font-size:1.4rem;
   background:linear-gradient(135deg,#00ffcc,#00b8ff);
   -webkit-background-clip:text;background-clip:text;color:transparent;
-  margin-bottom:16px;letter-spacing:2px;
+  margin-bottom:4px;letter-spacing:2px;
 }
+.subtitle{font-size:9px;color:#3a4a5e;letter-spacing:3px;margin-bottom:16px;}
 h3{color:#00ffcc;font-size:.85rem;margin:12px 0 8px;letter-spacing:1px;}
 
 /* STATS ROW */
@@ -44,6 +45,18 @@ h3{color:#00ffcc;font-size:.85rem;margin:12px 0 8px;letter-spacing:1px;}
   outline:none;transition:border .2s;
 }
 .input-group input:focus{border-color:#00ffcc;}
+
+/* Z THRESHOLD ROW */
+.thresh-row{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:16px;}
+.thresh-card{background:#010810;border-radius:16px;padding:12px;border:1px solid #1e2a3a;text-align:center;}
+.thresh-sym{font-size:13px;font-weight:700;color:#00ffcc;margin-bottom:6px;}
+.thresh-label{font-size:9px;color:#6c7a8e;margin-bottom:6px;}
+.thresh-inp{
+  width:70px;background:#02091a;border:1px solid #2a3a4a;
+  padding:5px 8px;border-radius:10px;color:#ff4757;
+  text-align:center;font-size:16px;font-weight:700;font-family:monospace;
+  outline:none;
+}
 
 /* TICKS CONFIGURABLES POR ACTIVO */
 .ticks-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:16px;}
@@ -96,15 +109,27 @@ h3{color:#00ffcc;font-size:.85rem;margin:12px 0 8px;letter-spacing:1px;}
 }
 .signal-value{color:#ffaa44;}
 
-/* INDICATOR PANEL */
-.ind-panel{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin:10px 0;}
-.ind{background:#010810;padding:8px;text-align:center;border-radius:12px;border:1px solid #1e2a3a;}
-.ind-lbl{font-size:8px;color:#6c7a8e;letter-spacing:1px;text-transform:uppercase;}
-.ind-val{font-size:13px;font-weight:700;color:#00ffcc;font-family:monospace;margin-top:2px;}
+/* ZPEAK PANEL — CENTRAL */
+.zpeak-panel{
+  border-radius:18px;padding:14px;margin:10px 0;
+  border:1px solid rgba(255,60,60,0.3);
+  background:rgba(255,30,30,0.04);
+}
+.zpeak-title{font-size:9px;color:#ff6b6b;letter-spacing:2px;margin-bottom:10px;}
+.zpeak-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;}
+.zpeak-box{background:#02091a;border-radius:12px;padding:10px;text-align:center;}
+.zpeak-lbl{font-size:8px;color:#6c7a8e;letter-spacing:1px;text-transform:uppercase;}
+.zpeak-val{font-size:16px;font-weight:800;font-family:monospace;margin-top:4px;}
+.zpeak-val.wait{color:#ffaa44;animation:pulse 1s infinite;}
+.zpeak-val.ok{color:#2ed573;}
+.zpeak-val.no{color:#ff4757;}
+.zpeak-val.idle{color:#2a3555;}
+@keyframes pulse{0%,100%{opacity:1;}50%{opacity:.4;}}
 
 /* ASSETS GRID */
 .assets-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin:12px 0;}
-.asset-card{background:#010810;border-radius:16px;padding:12px;border:1px solid #1e2a3a;}
+.asset-card{background:#010810;border-radius:16px;padding:12px;border:1px solid #1e2a3a;position:relative;}
+.asset-card.zpeak-active{border-color:rgba(255,170,0,0.5);background:rgba(255,170,0,0.03);}
 .asset-title{font-size:14px;font-weight:700;color:#00ffcc;text-align:center;margin-bottom:8px;}
 .lb-row{
   display:flex;justify-content:space-between;align-items:center;
@@ -113,20 +138,7 @@ h3{color:#00ffcc;font-size:.85rem;margin:12px 0 8px;letter-spacing:1px;}
 .lb-name{color:#6c7a8e;}
 .lb-z{font-family:monospace;font-weight:700;}
 .lb-bar{height:3px;border-radius:2px;margin-top:3px;transition:width .3s;}
-
-/* CONFIRMACIÓN VISUAL */
-.confirm-panel{
-  background:#010810;border-radius:16px;padding:12px;
-  margin:10px 0;border:1px solid rgba(0,255,200,0.15);
-}
-.confirm-title{font-size:9px;color:#6c7a8e;letter-spacing:2px;margin-bottom:8px;}
-.confirm-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;}
-.cbox{background:#02091a;border-radius:10px;padding:7px;text-align:center;}
-.cbox-lbl{font-size:8px;color:#6c7a8e;letter-spacing:1px;}
-.cbox-val{font-size:11px;font-weight:700;font-family:monospace;margin-top:3px;}
-.cbox-val.ok{color:#2ed573;}.cbox-val.warn{color:#ff4757;}.cbox-val.neutral{color:#ffaa44;}
-.cbox-chk{font-size:9px;margin-top:2px;}
-.cbox-chk.ok{color:#2ed573;}.cbox-chk.no{color:#ff4757;}
+.asset-state{font-size:9px;display:block;text-align:center;margin-top:6px;letter-spacing:1px;font-weight:700;}
 
 /* GRÁFICO */
 canvas{margin:10px 0;background:#010810;border-radius:14px;padding:4px;}
@@ -134,29 +146,13 @@ canvas{margin:10px 0;background:#010810;border-radius:14px;padding:4px;}
 /* LOG */
 .log{
   background:#010810;border-radius:16px;
-  height:130px;overflow-y:auto;padding:8px 10px;
+  height:160px;overflow-y:auto;padding:8px 10px;
   font-size:10px;font-family:monospace;color:#6c7a8e;
   border:1px solid #1e2a3a;
 }
 .log div{padding:2px 0;border-bottom:1px solid #0d1520;}
 .lw{color:#2ed573;}.ll{color:#ff4757;}.li{color:#00b8ff;}
-.lk{color:#ffaa44;font-weight:700;}
-
-/* ZPEAK CONFIRM PANEL */
-.zpeak-panel{
-  background:rgba(255,170,0,0.05);border-radius:16px;
-  padding:12px;margin:10px 0;
-  border:1px solid rgba(255,170,0,0.25);
-}
-.zpeak-title{font-size:9px;color:#ffaa44;letter-spacing:2px;margin-bottom:8px;}
-.zpeak-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;}
-.zpeak-box{background:#010810;border-radius:10px;padding:8px;text-align:center;}
-.zpeak-lbl{font-size:8px;color:#6c7a8e;letter-spacing:1px;}
-.zpeak-val{font-size:13px;font-weight:700;font-family:monospace;margin-top:3px;}
-.zpeak-val.wait{color:#ffaa44;}.zpeak-val.ok{color:#2ed573;}.zpeak-val.no{color:#ff4757;}.zpeak-val.idle{color:#2a3555;}
-.sim-table{background:#010810;border-radius:16px;padding:14px;margin-top:14px;border:1px solid #1e2a3a;}
-.sim-row{display:flex;justify-content:space-between;padding:5px 0;font-size:12px;border-bottom:1px solid #0d1520;}
-.sim-row:last-child{border:none;}
+.lk{color:#ffaa44;font-weight:700;font-size:11px;}
 
 /* SEGURIDAD CUENTA */
 .safety-panel{
@@ -165,7 +161,7 @@ canvas{margin:10px 0;background:#010810;border-radius:14px;padding:4px;}
   border:1px solid rgba(255,170,0,0.2);
 }
 .safety-title{font-size:9px;color:#ffaa44;letter-spacing:2px;margin-bottom:8px;}
-.safety-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
+.safety-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;}
 .sbox{background:#010810;border-radius:10px;padding:8px;text-align:center;}
 .sbox-lbl{font-size:8px;color:#6c7a8e;letter-spacing:1px;}
 .sbox-val{font-size:15px;font-weight:700;font-family:monospace;color:#ffaa44;margin-top:2px;}
@@ -173,7 +169,8 @@ canvas{margin:10px 0;background:#010810;border-radius:14px;padding:4px;}
 </head>
 <body>
 <div class="container">
-  <h2>📊 Z-PEAK BOT v3 | V10 · V25 · V50</h2>
+  <h2>⚡ Z-PEAK BOT v4 | REVERSAL ENGINE</h2>
+  <div class="subtitle">Z-SCORE EXTREMO → CONFIRMAR 1 TICK → ENTRAR EN CONTRA</div>
 
   <!-- STATS -->
   <div class="stats-row">
@@ -187,7 +184,7 @@ canvas{margin:10px 0;background:#010810;border-radius:14px;padding:4px;}
   <div class="input-row">
     <div class="input-group">
       <label>🔑 API TOKEN DERIV</label>
-      <input type="password" id="apiToken" placeholder="e1lRgxNoxWwBkzx">
+      <input type="password" id="apiToken" placeholder="Tu token API">
     </div>
     <div class="input-group">
       <label>💰 STAKE POR OPERACIÓN ($)</label>
@@ -195,170 +192,116 @@ canvas{margin:10px 0;background:#010810;border-radius:14px;padding:4px;}
     </div>
   </div>
 
+  <!-- UMBRALES Z -->
+  <h3>🎯 UMBRAL Z-SCORE POR ACTIVO (mayor = más selectivo)</h3>
+  <div class="thresh-row" id="threshGrid"></div>
+
   <!-- TICKS POR ACTIVO -->
   <h3>⚙️ DURACIÓN DEL CONTRATO POR ACTIVO (ticks)</h3>
-  <div class="ticks-grid" id="ticksGrid">
-    <!-- JS generado -->
-  </div>
+  <div class="ticks-grid" id="ticksGrid"></div>
 
   <button class="btn" id="toggleBtn">▶ INICIAR BOT</button>
   <div class="status" id="statusDiv">⚙️ STATUS: OFFLINE</div>
-  <div class="signal-box">🎯 SEÑAL: <span id="activeSignal" class="signal-value">---</span></div>
+  <div class="signal-box">🎯 ÚLTIMA SEÑAL: <span id="activeSignal" class="signal-value">---</span></div>
 
-  <!-- INDICADORES ACTIVOS -->
-  <div class="ind-panel">
-    <div class="ind"><div class="ind-lbl">MEJOR ACTIVO</div><div id="indAsset" class="ind-val">---</div></div>
-    <div class="ind"><div class="ind-lbl">SCORE</div><div id="indZ" class="ind-val">0</div></div>
-    <div class="ind"><div class="ind-lbl">RÉGIMEN</div><div id="indRSI" class="ind-val">---</div></div>
-    <div class="ind"><div class="ind-lbl">ACELERACIÓN</div><div id="indVol" class="ind-val">---</div></div>
-  </div>
-
-  <!-- PANEL DE CONFIRMACIONES -->
-  <div class="confirm-panel">
-    <div class="confirm-title">CONFIRMACIONES DE ENTRADA (deben estar todas ✅)</div>
-    <div class="confirm-grid">
-      <div class="cbox">
-        <div class="cbox-lbl">SCORE</div>
-        <div class="cbox-val" id="cZ">--</div>
-        <div class="cbox-chk" id="cZchk">--</div>
-      </div>
-      <div class="cbox">
-        <div class="cbox-lbl">2 TICKS CONFIRM</div>
-        <div class="cbox-val" id="cTick">--</div>
-        <div class="cbox-chk" id="cTickchk">--</div>
-      </div>
-      <div class="cbox">
-        <div class="cbox-lbl">RÉGIMEN</div>
-        <div class="cbox-val" id="cRSI">--</div>
-        <div class="cbox-chk" id="cRSIchk">--</div>
-      </div>
-      <div class="cbox">
-        <div class="cbox-lbl">ACELERACIÓN</div>
-        <div class="cbox-val" id="cVol">--</div>
-        <div class="cbox-chk" id="cVolchk">--</div>
-      </div>
-    </div>
-  </div>
-
-  <!-- ZPEAK CONFIRMACIÓN -->
+  <!-- ZPEAK STATE PANEL -->
   <div class="zpeak-panel">
-    <div class="zpeak-title">⚡ Z-PEAK CONFIRMATION — ESPERA TICK DE CONFIRMACIÓN POST-PICO</div>
+    <div class="zpeak-title">⚡ MOTOR Z-PEAK — ESTADO EN TIEMPO REAL</div>
     <div class="zpeak-grid">
       <div class="zpeak-box">
         <div class="zpeak-lbl">ESTADO</div>
-        <div class="zpeak-val idle" id="zpState">SCAN</div>
+        <div class="zpeak-val idle" id="zpState">IDLE</div>
       </div>
       <div class="zpeak-box">
-        <div class="zpeak-lbl">PICO Z</div>
+        <div class="zpeak-lbl">ACTIVO · Z PICO</div>
         <div class="zpeak-val idle" id="zpPeak">--</div>
       </div>
       <div class="zpeak-box">
-        <div class="zpeak-lbl">TICK CONFIRM</div>
-        <div class="zpeak-val idle" id="zpTick">--</div>
+        <div class="zpeak-lbl">ENTRADA</div>
+        <div class="zpeak-val idle" id="zpEntry">--</div>
       </div>
     </div>
   </div>
 
+  <!-- ASSETS GRID -->
   <div class="assets-grid" id="assetsGrid"></div>
 
-  <!-- GRÁFICO DE BALANCE -->
+  <!-- CHART -->
   <canvas id="chart" height="80"></canvas>
 
   <!-- LOG -->
   <div class="log" id="logDiv"></div>
 
-  <!-- SEGURIDAD CUENTA -->
+  <!-- SEGURIDAD -->
   <div class="safety-panel">
-    <div class="safety-title">🛡 PROTECCIÓN CUENTA $100 USD</div>
+    <div class="safety-title">🛡 PROTECCIÓN DE CUENTA</div>
     <div class="safety-grid">
-      <div class="sbox"><div class="sbox-lbl">DRAWDOWN ACTUAL</div><div class="sbox-val" id="drawdown">$0.00</div></div>
+      <div class="sbox"><div class="sbox-lbl">DRAWDOWN</div><div class="sbox-val" id="drawdown">$0.00</div></div>
       <div class="sbox"><div class="sbox-lbl">STOP SESIÓN (5%)</div><div class="sbox-val" id="stopLimit">$5.00</div></div>
-      <div class="sbox"><div class="sbox-lbl">RACHA PÉRDIDAS</div><div class="sbox-val" id="lossStreak">0</div></div>
-      <div class="sbox"><div class="sbox-lbl">PAUSA TRAS 3 LOSS</div><div class="sbox-val" id="pauseStatus">--</div></div>
+      <div class="sbox"><div class="sbox-lbl">RACHA LOSS</div><div class="sbox-val" id="lossStreakEl">0</div></div>
+      <div class="sbox"><div class="sbox-lbl">COOLDOWN</div><div class="sbox-val" id="pauseStatus">ACTIVO</div></div>
     </div>
   </div>
+</div>
 
 <script>
 // ════════════════════════════════════════════════════════
-// MOMENTUM BURST BOT — Motor interno rediseñado
+// Z-PEAK BOT v4 — REVERSAL ENGINE
 //
-// ESTRATEGIA: MICRO-MOMENTUM + VOLATILITY BURST + RÉGIMEN
+// ESTRATEGIA: REVERSIÓN A LA MEDIA VÍA Z-SCORE EXTREMO
 //
-// EDGE REAL:
-//  Los índices sintéticos de Deriv exhiben micro-momentum
-//  estadísticamente medible en ventanas de 1-3 ticks cuando:
-//    1) La velocidad del precio (retorno/tick) se ACELERA
-//    2) La aceleración es CONSISTENTE (misma dirección 1+ ticks)
-//    3) El régimen de volatilidad es TENDENCIAL (no ranging)
-//    4) El burst de volatilidad es significativo vs baseline
+// FLUJO EXACTO:
+//  1) Calcular Z-score de los últimos N precios
+//  2) Si |Z| >= umbral → guardar pico, ESPERAR 1 tick
+//  3) En el tick siguiente:
+//     - Si tick va A FAVOR del impulso (Z+→precio sube / Z-→precio baja)
+//       → Asumir que el extremo se confirmó → ENTRAR EN CONTRA
+//         · Z extremo positivo + tick sube → PUT (reversión)
+//         · Z extremo negativo + tick baja → CALL (reversión)
+//     - Si tick va EN CONTRA → cancelar (el pico ya se revirtió)
 //
-// La lógica NO usa reversión a la media (Z-score reversión).
-// Usa CONTINUACIÓN de momentum en bursts cortos.
-//
-// LÓGICA NUEVA vs VIEJA:
-//  ANTES: detecta pico de Z → espera rebote → entra en rebote (reversión)
-//  AHORA: detecta aceleración → confirma consistencia → entra en continuación (momentum)
+// FILTROS ACTIVOS:
+//  - Drawdown máximo 5% de sesión
+//  - Contratos abiertos por activo
+//  - Cooldown 10s entre trades por activo
+//  - Pausa 45s tras 3 pérdidas seguidas
 // ════════════════════════════════════════════════════════
 
 // ── ACTIVOS ───────────────────────────────────────────
-const ASSETS = ["R_10","R_25","R_50"];
-const ASSET_LABELS = { "R_10":"V_10","R_25":"V_25","R_50":"V_50" };
+const ASSETS       = ["R_10","R_25","R_50"];
+const ASSET_LABELS = { "R_10":"V10","R_25":"V25","R_50":"V50" };
 
-// Umbrales Z por activo (solo para display en grid, no para lógica de entrada)
-const Z_THRESHOLDS = { "R_10":2.5, "R_25":2.3, "R_50":2.5 };
+// Lookback para calcular Z (ventana de precios)
+const Z_LOOKBACK = 50;
 
-// RSI umbrales (solo referencia display)
-const RSI_OB = 80;
-const RSI_OS = 20;
+// ── CONFIGURACIÓN DINÁMICA ────────────────────────────
+// Umbrales Z por activo — configurables desde UI
+let zThresholds = { "R_10":2.5, "R_25":2.3, "R_50":2.5 };
+let ticksPerAsset = { "R_10":5, "R_25":4, "R_50":3 };
 
-// ── ESTADO ────────────────────────────────────────────
-let ws, running=false, refreshInterval;
-let balance=100.00, sessionStart=100.00;
-let wins=0, losses=0, lossStreak=0, pauseUntil=0;
-let lastTradeTime={};
-let tradeHistory=[];
-let opLog=[];
+// ── ESTADO GLOBAL ─────────────────────────────────────
+let ws, running = false;
+let balance = 100, sessionStart = 100;
+let wins = 0, losses = 0, lossStreak = 0, pauseUntil = 0;
+let tradeHistory = [], tradeTimestamps = [];
 
-let prices    = { "R_10":[],"R_25":[],"R_50":[] };
-let zHist     = { "R_10":[],"R_25":[],"R_50":[] };
-
-// Estado de momentum por activo
-let momentumState = {
-  "R_10":{ phase:'SCAN', dir:null, accelTicks:0, burstStart:0, score:0, peakAcc:0 },
-  "R_25":{ phase:'SCAN', dir:null, accelTicks:0, burstStart:0, score:0, peakAcc:0 },
-  "R_50":{ phase:'SCAN', dir:null, accelTicks:0, burstStart:0, score:0, peakAcc:0 }
-};
-
-// Estado Z-Peak: detecta pico de Z y espera tick de confirmación
-// Lógica: cuando Z supera umbral Y en el tick siguiente Z retrocede (peak) → esperar 1 tick
-// Si ese tick va a favor del impulso → ENTRAR
-let zPeakState = {
-  "R_10":{ phase:'IDLE', dir:null, peakZ:0, prevZ:0, confirming:false },
-  "R_25":{ phase:'IDLE', dir:null, peakZ:0, prevZ:0, confirming:false },
-  "R_50":{ phase:'IDLE', dir:null, peakZ:0, prevZ:0, confirming:false }
-};
-
-// Alias para compatibilidad display
-let confirmState = {
-  "R_10":{ pending:false, dir:null, count:0, peakZ:0 },
-  "R_25":{ pending:false, dir:null, count:0, peakZ:0 },
-  "R_50":{ pending:false, dir:null, count:0, peakZ:0 }
-};
-
-ASSETS.forEach(a=>lastTradeTime[a]=0);
-let ticksPerAsset = { "R_10":5,"R_25":4,"R_50":3 };
+let prices        = { "R_10":[], "R_25":[], "R_50":[] };
+let openContracts = { "R_10":null, "R_25":null, "R_50":null };
+let lastTradeTime = { "R_10":0,   "R_25":0,   "R_50":0   };
 let contractToAsset = {};
-let openContracts   = {};
-ASSETS.forEach(a=>openContracts[a]=null);
 
-// Historial de retornos por activo (velocidades tick a tick)
-let retHistory = { "R_10":[],"R_25":[],"R_50":[] };
-
-// Trades por minuto (control de frecuencia)
-let tradeTimestamps = [];
+// Estado Z-Peak por activo
+// phase: 'IDLE' | 'WAITING'
+// IDLE    → buscando extremo
+// WAITING → extremo detectado, esperando 1 tick de confirmación
+let zPeak = {
+  "R_10": { phase:'IDLE', dir:null, peakZ:0 },
+  "R_25": { phase:'IDLE', dir:null, peakZ:0 },
+  "R_50": { phase:'IDLE', dir:null, peakZ:0 }
+};
 
 // ── CHART ─────────────────────────────────────────────
-const chart = new Chart(document.getElementById('chart'),{
+const chart = new Chart(document.getElementById('chart'), {
   type:'line',
   data:{
     labels:[],
@@ -366,12 +309,12 @@ const chart = new Chart(document.getElementById('chart'),{
       label:'Balance USD',
       data:[100],
       borderColor:'#00ffcc',
-      borderWidth:2,fill:false,tension:0.3,
-      pointRadius:3,pointBackgroundColor:'#00ffcc'
+      borderWidth:2, fill:false, tension:0.3,
+      pointRadius:3, pointBackgroundColor:'#00ffcc'
     }]
   },
   options:{
-    responsive:true,maintainAspectRatio:true,
+    responsive:true, maintainAspectRatio:true,
     plugins:{legend:{labels:{color:'#6c7a8e',font:{size:10}}}},
     scales:{
       x:{ticks:{color:'#6c7a8e',font:{size:9}},grid:{color:'rgba(255,255,255,.03)'}},
@@ -380,368 +323,166 @@ const chart = new Chart(document.getElementById('chart'),{
   }
 });
 
-// ── LOG ───────────────────────────────────────────────
-function addLog(msg,cls=''){
-  const t=new Date().toLocaleTimeString();
-  const d=document.createElement('div');
-  d.className=cls;
-  d.textContent='['+t+'] '+msg;
-  const logDiv=document.getElementById('logDiv');
-  logDiv.appendChild(d);
-  logDiv.scrollTop=logDiv.scrollHeight;
+// ── UTILIDADES ────────────────────────────────────────
+function addLog(msg, cls=''){
+  const t = new Date().toLocaleTimeString();
+  const d = document.createElement('div');
+  d.className = cls;
+  d.textContent = '['+t+'] '+msg;
+  const el = document.getElementById('logDiv');
+  el.appendChild(d);
+  el.scrollTop = el.scrollHeight;
 }
 
-// ── TICKS CONFIG UI ───────────────────────────────────
+// ── CÁLCULO Z-SCORE ───────────────────────────────────
+// Único cálculo necesario — rápido y directo
+function calcZ(arr){
+  const n = arr.length;
+  if(n < 2) return 0;
+  let sum = 0;
+  for(let i=0; i<n; i++) sum += arr[i];
+  const mean = sum / n;
+  let sq = 0;
+  for(let i=0; i<n; i++) sq += (arr[i]-mean)*(arr[i]-mean);
+  const std = Math.sqrt(sq/n);
+  if(std === 0) return 0;
+  return (arr[n-1] - mean) / std;
+}
+
+// ── UI — CONSTRUCCIÓN DE GRIDS ────────────────────────
+function buildThreshGrid(){
+  document.getElementById('threshGrid').innerHTML = ASSETS.map(a=>{
+    return `<div class="thresh-card">
+      <div class="thresh-sym">${ASSET_LABELS[a]}</div>
+      <div class="thresh-label">Umbral |Z|</div>
+      <input type="number" class="thresh-inp" id="thresh_${a}"
+        value="${zThresholds[a]}" min="1.5" max="5" step="0.1"
+        onchange="zThresholds['${a}']=parseFloat(this.value);addLog('⚙️ ${ASSET_LABELS[a]} umbral Z → '+this.value)">
+    </div>`;
+  }).join('');
+}
+
 function buildTicksGrid(){
-  const presets=[1,2,3,4,5,6,8,10];
-  document.getElementById('ticksGrid').innerHTML=ASSETS.map(a=>{
-    const lbl=ASSET_LABELS[a];
-    const v=ticksPerAsset[a];
-    const pHtml=presets.map(p=>`<span class="tp${p===v?' on':''}" onclick="setTick('${a}',${p},this)">${p}</span>`).join('');
+  const presets = [1,2,3,4,5,6,8,10];
+  document.getElementById('ticksGrid').innerHTML = ASSETS.map(a=>{
+    const lbl = ASSET_LABELS[a];
+    const v   = ticksPerAsset[a];
+    const ph  = presets.map(p=>`<span class="tp${p===v?' on':''}" onclick="setTick('${a}',${p},this)">${p}</span>`).join('');
     return `<div class="tick-card">
       <div class="tick-sym">${lbl}</div>
       <div class="tick-label">Duración contrato</div>
       <input type="number" class="tick-inp" id="tick_${a}" value="${v}" min="1" max="10"
         onchange="ticksPerAsset['${a}']=parseInt(this.value);addLog('⚙️ ${lbl} ticks → '+this.value)">
-      <div class="tick-presets">${pHtml}</div>
+      <div class="tick-presets">${ph}</div>
     </div>`;
   }).join('');
 }
 
-function setTick(asset,val,el){
-  ticksPerAsset[asset]=val;
-  document.getElementById('tick_'+asset).value=val;
+function setTick(asset, val, el){
+  ticksPerAsset[asset] = val;
+  document.getElementById('tick_'+asset).value = val;
   el.closest('.tick-card').querySelectorAll('.tp').forEach(e=>e.classList.remove('on'));
   el.classList.add('on');
   addLog('⚙️ '+ASSET_LABELS[asset]+' ticks → '+val);
 }
 
-// ══════════════════════════════════════════════════════
-// MOTOR DE ANÁLISIS — MOMENTUM BURST ENGINE
-// ══════════════════════════════════════════════════════
-
-// ── 1. VOLATILIDAD ADAPTATIVA (baseline dinámico) ────
-// Calcula la volatilidad realizada en ventana corta vs larga
-// Retorna: { shortVol, longVol, ratio, regime }
-function calcVolRegime(rets){
-  if(rets.length < 30) return { shortVol:0, longVol:0, ratio:1, regime:'CALC' };
-
-  const short = rets.slice(-8);
-  const long  = rets.slice(-30);
-
-  const shortVol = Math.sqrt(short.map(r=>r*r).reduce((a,b)=>a+b,0)/short.length);
-  const longVol  = Math.sqrt(long.map(r=>r*r).reduce((a,b)=>a+b,0)/long.length);
-
-  const ratio = longVol > 0 ? shortVol/longVol : 1;
-
-  // Régimen:
-  //   BURST    → volatilidad corta >> larga (expansión, bueno para momentum)
-  //   TREND    → volatilidad moderada, direccional
-  //   RANGE    → volatilidad baja vs baseline (malo, mercado lateral)
-  //   EXTREME  → volatilidad extrema (demasiado ruido, malo)
-  let regime;
-  if(ratio > 2.5)       regime='EXTREME';
-  else if(ratio > 1.4)  regime='BURST';
-  else if(ratio > 0.7)  regime='TREND';
-  else                  regime='RANGE';
-
-  return { shortVol, longVol, ratio, regime };
-}
-
-// ── 2. VELOCIDAD Y ACELERACIÓN DEL PRECIO ────────────
-// Velocidad  = retorno del tick actual
-// Aceleración = cambio en velocidad (¿está acelerando?)
-// Retorna: { vel, acc, consistent }
-function calcMomentumMetrics(rets, n=5){
-  if(rets.length < n+2) return { vel:0, acc:0, jerk:0, consistent:false, direction:0 };
-
-  const recent = rets.slice(-n);
-
-  // Velocidad promedio de los últimos N ticks
-  const vel = recent.reduce((a,b)=>a+b,0)/n;
-
-  // Aceleración: diferencia entre segunda mitad y primera mitad
-  const half = Math.floor(n/2);
-  const firstHalf  = recent.slice(0, half).reduce((a,b)=>a+b,0)/half;
-  const secondHalf = recent.slice(half).reduce((a,b)=>a+b,0)/(n-half);
-  const acc = secondHalf - firstHalf; // positivo = acelerando en esa dirección
-
-  // Consistencia: ¿cuántos ticks van en la misma dirección del último?
-  const lastDir = Math.sign(recent[recent.length-1]);
-  let consistent = 0;
-  for(let i=recent.length-1;i>=0;i--){
-    if(Math.sign(recent[i])===lastDir) consistent++;
-    else break;
-  }
-
-  // Jerk (cambio en aceleración) — señal de agotamiento si negativo
-  const jerk = rets.length>=n+3 ?
-    (rets.slice(-3).reduce((a,b)=>a+b,0)/3) - (rets.slice(-6,-3).reduce((a,b)=>a+b,0)/3) : 0;
-
-  return { vel, acc, jerk, consistent, direction: lastDir };
-}
-
-// ── 3. SCORE DE SEÑAL (0-100) ────────────────────────
-// Combina: aceleración, consistencia, régimen, volumen del burst
-// Score ≥ 75 requerido para entrar
-function calcSignalScore(metrics, regime, volRatio, rets){
-  if(!metrics || !regime) return 0;
-
-  let score = 0;
-
-  // A) Consistencia de dirección (0-30 puntos)
-  // 1 ticks consistentes = 15 pts, 4 = 22 pts, 5+ = 30 pts
-  const consScore = Math.min(30, metrics.consistent * 7.5);
-  score += consScore;
-
-  // B) Magnitud de aceleración normalizada (0-25 puntos)
-  // Aceleración significativa vs baseline
-  if(rets.length >= 10){
-    const baseAcc = Math.sqrt(rets.slice(-15).map(r=>r*r).reduce((a,b)=>a+b,0)/15);
-    const relAcc = baseAcc > 0 ? Math.abs(metrics.acc)/baseAcc : 0;
-    const accScore = Math.min(25, relAcc * 12.5);
-    score += accScore;
-  }
-
-  // C) Régimen favorable (0-25 puntos)
-  const regimeScore = { 'BURST':25, 'TREND':15, 'RANGE':0, 'EXTREME':0, 'CALC':0 };
-  score += (regimeScore[regime] || 0);
-
-  // D) Ratio de volumen del burst (0-20 puntos)
-  // Un burst de 1.5x baseline = 10 pts, 2x = 20 pts
-  const volScore = Math.min(20, (volRatio - 1.0) * 20);
-  score += Math.max(0, volScore);
-
-  // Penalización: jerk negativo (señal de agotamiento inminente)
-  if(metrics.jerk !== undefined && Math.sign(metrics.jerk) !== Math.sign(metrics.vel) && Math.abs(metrics.jerk) > 0){
-    score -= 10; // el momentum está perdiendo fuerza
-  }
-
-  return Math.max(0, Math.min(100, Math.round(score)));
-}
-
-// ── 4. DETECCIÓN DE RÉGIMEN DE TENDENCIA CORTA ───────
-// Detecta si hay una tendencia real en los últimos N ticks
-// usando regresión lineal simple sobre los precios
-function calcTrendRegime(arr, n=20){
-  if(arr.length < n) return { slope:0, r2:0, isTrending:false };
-  const slice = arr.slice(-n);
-  const xs = Array.from({length:n}, (_,i)=>i);
-  const xm = (n-1)/2;
-  const ym = slice.reduce((a,b)=>a+b,0)/n;
-
-  let num=0, den=0;
-  for(let i=0;i<n;i++){
-    num += (xs[i]-xm)*(slice[i]-ym);
-    den += (xs[i]-xm)**2;
-  }
-  const slope = den>0 ? num/den : 0;
-
-  // R² para medir calidad de tendencia
-  const yHat = xs.map(x=>ym + slope*(x-xm));
-  const ssTot = slice.reduce((a,y,i)=>a+(y-ym)**2,0);
-  const ssRes = slice.reduce((a,y,i)=>a+(y-yHat[i])**2,0);
-  const r2 = ssTot>0 ? 1-(ssRes/ssTot) : 0;
-
-  return { slope, r2, isTrending: r2 > 0.35 && Math.abs(slope) > 0 };
-}
-
-// ── 5. ANTI-CHOP FILTER ───────────────────────────────
-// Detecta mercados en rango/choppy con alta frecuencia de reversiones
-// Si hay demasiadas reversiones de signo → bloquea trading
-function calcChopIndex(rets, n=12){
-  if(rets.length < n) return { chop:0.5, isChoppy:false };
-  const recent = rets.slice(-n);
-  let reversions=0;
-  for(let i=1;i<recent.length;i++){
-    if(Math.sign(recent[i]) !== Math.sign(recent[i-1])) reversions++;
-  }
-  const chop = reversions / (n-1); // 0=muy tendencial, 1=muy choppy
-  return { chop, isChoppy: chop > 0.65 };
-}
-
-// ── CÁLCULO Z PARA DISPLAY ───────────────────────────
-function calcZ(arr){
-  if(arr.length<2) return 0;
-  const mean=arr.reduce((a,b)=>a+b,0)/arr.length;
-  const std=Math.sqrt(arr.map(x=>(x-mean)**2).reduce((a,b)=>a+b,0)/arr.length);
-  if(std===0) return 0;
-  return (arr[arr.length-1]-mean)/std;
-}
-
-// RSI para display
-function calcRSI(arr,period=14){
-  if(arr.length<period+1) return 50;
-  let gains=0,losses=0;
-  for(let i=arr.length-period;i<arr.length;i++){
-    const d=arr[i]-arr[i-1];
-    if(d>0) gains+=d; else losses-=d;
-  }
-  const ag=gains/period,al=losses/period;
-  if(al===0) return 100;
-  return 100-(100/(1+(ag/al)));
-}
-
-// Volumen proxy legacy para display
-function calcVolProxy(arr){
-  if(arr.length<15) return {ratio:1,label:'CALC...'};
-  const rets=[];
-  for(let i=1;i<arr.length;i++) rets.push(Math.abs(arr[i]-arr[i-1]));
-  const avg=rets.slice(-14).reduce((a,b)=>a+b,0)/14;
-  const last=rets[rets.length-1];
-  const ratio=avg>0?last/avg:1;
-  const label=ratio>1.5?'ALTO':ratio>0.8?'NORMAL':'BAJO';
-  return {ratio,label};
-}
-
-// ── PANEL CONFIRMACIONES ──────────────────────────────
-function updateConfirmPanel(score,scoreOk,tickConf,tickTotal,regime,regimeOk,accLabel,accOk){
-  const scoreColor = score>=75?'ok':score>=50?'neutral':'warn';
-  document.getElementById('cZ').innerText=score;
-  document.getElementById('cZ').className='cbox-val '+scoreColor;
-  document.getElementById('cZchk').innerText=scoreOk?'✅ SCORE OK':'⏳ Bajo';
-  document.getElementById('cZchk').className='cbox-chk '+(scoreOk?'ok':'no');
-
-  document.getElementById('cTick').innerText=tickConf+'/'+tickTotal;
-  document.getElementById('cTick').className='cbox-val '+(tickConf>=tickTotal?'ok':'neutral');
-  document.getElementById('cTickchk').innerText=tickConf>=tickTotal?'✅ CONFIRMADO':'⏳ Contando';
-  document.getElementById('cTickchk').className='cbox-chk '+(tickConf>=tickTotal?'ok':'no');
-
-  document.getElementById('cRSI').innerText=regime;
-  document.getElementById('cRSI').className='cbox-val '+(regimeOk?'ok':'warn');
-  document.getElementById('cRSIchk').innerText=regimeOk?'✅ TENDENCIAL':'⛔ RANGO/EXTREMO';
-  document.getElementById('cRSIchk').className='cbox-chk '+(regimeOk?'ok':'no');
-
-  document.getElementById('cVol').innerText=accLabel;
-  document.getElementById('cVol').className='cbox-val '+(accOk?'ok':'neutral');
-  document.getElementById('cVolchk').innerText=accOk?'✅ ACELERANDO':'⏳ Sin impulso';
-  document.getElementById('cVolchk').className='cbox-chk '+(accOk?'ok':'no');
+// ── ZPEAK PANEL ───────────────────────────────────────
+function updateZPeakPanel(state, peak, entry){
+  const stEl = document.getElementById('zpState');
+  const pkEl = document.getElementById('zpPeak');
+  const enEl = document.getElementById('zpEntry');
+  stEl.innerText = state;
+  stEl.className = 'zpeak-val ' + (state==='ESPERANDO'?'wait': state==='✅ ENTRADA'?'ok': state==='❌ CANCELADO'?'no':'idle');
+  pkEl.innerText = peak;
+  pkEl.className = 'zpeak-val ' + (peak!=='--' && peak!==''?'wait':'idle');
+  enEl.innerText = entry;
+  enEl.className = 'zpeak-val ' + (entry==='--'||entry===''?'idle': entry.startsWith('✅')?'ok':'no');
 }
 
 // ── ASSETS GRID ───────────────────────────────────────
 function updateAssetsGrid(){
-  const lookbacks=[10,25,50];
-  document.getElementById('assetsGrid').innerHTML=ASSETS.map(a=>{
-    const lbl=ASSET_LABELS[a];
-    const arr=prices[a];
-    const rows=lookbacks.map(lb=>{
-      if(arr.length<lb) return `<div class="lb-row"><span class="lb-name">LB${lb}</span><span class="lb-z" style="color:#2a3555">--</span></div>`;
-      const z=calcZ(arr.slice(-lb));
-      const abs=Math.abs(z);
-      const col=abs>=Z_THRESHOLDS[a]?'#ff4757':abs>=1.5?'#ffaa44':'#2ed573';
-      const barW=Math.min(100,abs*25);
-      const barCol=z>0?'#ff4757':'#2ed573';
+  document.getElementById('assetsGrid').innerHTML = ASSETS.map(a=>{
+    const lbl  = ASSET_LABELS[a];
+    const arr  = prices[a];
+    const zps  = zPeak[a];
+    const rows = [10,25,50].map(lb=>{
+      if(arr.length < lb) return `<div class="lb-row"><span class="lb-name">LB${lb}</span><span class="lb-z" style="color:#2a3555">--</span></div>`;
+      const z   = calcZ(arr.slice(-lb));
+      const abs = Math.abs(z);
+      const thr = zThresholds[a];
+      const col = abs >= thr ? '#ff4757' : abs >= 1.5 ? '#ffaa44' : '#2ed573';
+      const bW  = Math.min(100, abs*25);
+      const bC  = z>0 ? '#ff4757' : '#2ed573';
       return `<div class="lb-row">
         <span class="lb-name">LB${lb}</span>
         <div style="flex:1;margin:0 8px;">
-          <div class="lb-bar" style="width:${barW}%;background:${barCol};"></div>
+          <div class="lb-bar" style="width:${bW}%;background:${bC};"></div>
         </div>
         <span class="lb-z" style="color:${col}">${z.toFixed(2)}</span>
       </div>`;
     }).join('');
-    const ms=momentumState[a];
-    const stTxt=ms.phase==='CONFIRM'?`CONF ${ms.accelTicks}/3`:ms.phase==='BURST'?'BURST!':'SCAN';
-    const stCol=ms.phase==='CONFIRM'?'#ffaa44':ms.phase==='BURST'?'#00ffcc':'#2a3555';
-    return `<div class="asset-card">
-      <div class="asset-title">${lbl} <span style="font-size:9px;color:${stCol}">${stTxt}</span></div>
+
+    const stTxt = zps.phase==='WAITING'
+      ? `⏳ Z${zps.peakZ>=0?'+':''}${zps.peakZ.toFixed(2)} → ${zps.dir==='CALL'?'PUT?':'CALL?'}`
+      : openContracts[a] ? '🔒 ABIERTO' : 'SCAN';
+    const stCol = zps.phase==='WAITING'?'#ffaa44': openContracts[a]?'#00b8ff':'#2a3555';
+    const active = zps.phase==='WAITING' ? ' zpeak-active' : '';
+
+    return `<div class="asset-card${active}">
+      <div class="asset-title">${lbl}</div>
       ${rows}
+      <span class="asset-state" style="color:${stCol}">${stTxt}</span>
     </div>`;
   }).join('');
 }
 
-// ── SEGURIDAD CUENTA ──────────────────────────────────
-function updateSafety(){
-  const dd=sessionStart-balance;
-  const ddStr=dd>0?'-$'+dd.toFixed(2):'$0.00';
-  document.getElementById('drawdown').innerText=ddStr;
-  document.getElementById('drawdown').style.color=dd>0?'#ff4757':'#2ed573';
-  document.getElementById('stopLimit').innerText='$'+(sessionStart*0.05).toFixed(2);
-  document.getElementById('lossStreak').innerText=lossStreak;
-  document.getElementById('lossStreak').style.color=lossStreak>=3?'#ff4757':'#ffaa44';
-  const now=Date.now();
-  if(pauseUntil>now){
-    const s=Math.ceil((pauseUntil-now)/1000);
-    document.getElementById('pauseStatus').innerText='PAUSA '+s+'s';
-    document.getElementById('pauseStatus').style.color='#ff4757';
+// ── STATS ─────────────────────────────────────────────
+function updateStats(){
+  document.getElementById('statWins').innerText  = wins;
+  document.getElementById('statLosses').innerText = losses;
+  const tot = wins+losses;
+  document.getElementById('statWR').innerText    = tot>0 ? ((wins/tot)*100).toFixed(1)+'%' : '0%';
+  document.getElementById('balDisplay').innerText = '$'+balance.toFixed(2);
+  // Safety panel
+  const dd = sessionStart - balance;
+  const ddEl = document.getElementById('drawdown');
+  ddEl.innerText = dd>0 ? '-$'+dd.toFixed(2) : '$0.00';
+  ddEl.style.color = dd>0 ? '#ff4757' : '#2ed573';
+  document.getElementById('stopLimit').innerText = '$'+(sessionStart*0.05).toFixed(2);
+  const lsEl = document.getElementById('lossStreakEl');
+  lsEl.innerText = lossStreak;
+  lsEl.style.color = lossStreak>=2 ? '#ff4757' : '#ffaa44';
+  const now = Date.now();
+  const pEl = document.getElementById('pauseStatus');
+  if(pauseUntil > now){
+    pEl.innerText = 'PAUSA '+Math.ceil((pauseUntil-now)/1000)+'s';
+    pEl.style.color = '#ff4757';
   } else {
-    document.getElementById('pauseStatus').innerText='ACTIVO';
-    document.getElementById('pauseStatus').style.color='#2ed573';
+    pEl.innerText = 'ACTIVO';
+    pEl.style.color = '#2ed573';
   }
 }
 
-// ── SIMULACIÓN ────────────────────────────────────────
-function updateSim(){
-  const stake=parseFloat(document.getElementById('stake').value)||1;
-  const payout=0.87;
-  const win=stake*payout;
-  const loss=stake;
-  const be=(loss/(win+loss)*100);
-  const p60=(win*6)-(loss*4);
-  const p70=(win*7)-(loss*3);
-  const opsDouble=win>0?Math.ceil((100*0.87)/(win-loss*(1-0.6))):'-';
-  document.getElementById('profitWin').innerText='+$'+win.toFixed(2);
-  document.getElementById('profitLoss').innerText='-$'+loss.toFixed(2);
-  document.getElementById('breakeven').innerText=be.toFixed(1)+'%';
-  document.getElementById('proj60').innerText='$'+p60.toFixed(2);
-  document.getElementById('proj70').innerText='$'+p70.toFixed(2);
-  document.getElementById('opsDouble').innerText='~'+(balance>0?Math.ceil((200-balance)/win):'-')+' ops';
-}
-
-// ── STATS ─────────────────────────────────────────────
-function updateStats(){
-  document.getElementById('statWins').innerText=wins;
-  document.getElementById('statLosses').innerText=losses;
-  const tot=wins+losses;
-  const wr=tot>0?((wins/tot)*100).toFixed(1):0;
-  document.getElementById('statWR').innerText=wr+'%';
-  document.getElementById('balDisplay').innerText='$'+balance.toFixed(2);
-  updateSafety();
-  updateSim();
-}
-
-// ── CONTROL DE FRECUENCIA ─────────────────────────────
-function tradesPerMinute(){
-  const now = Date.now();
-  tradeTimestamps = tradeTimestamps.filter(t => now-t < 60000);
-  return tradeTimestamps.length;
-}
-
 // ── STAKE ADAPTATIVO ─────────────────────────────────
-// Reduce el stake en drawdown para proteger capital
-function getAdaptiveStake(){
-  const base = parseFloat(document.getElementById('stake').value)||1;
-  const dd   = sessionStart - balance;
-  const ddPct= sessionStart > 0 ? dd/sessionStart : 0;
-
-  if(ddPct > 0.03)       return Math.max(0.35, base * 0.5);  // >3% DD → mitad del stake
-  else if(ddPct > 0.015) return Math.max(0.35, base * 0.75); // >1.5% DD → 75%
-  else                   return base;
+function getStake(){
+  const base   = parseFloat(document.getElementById('stake').value) || 1;
+  const ddPct  = sessionStart > 0 ? (sessionStart-balance)/sessionStart : 0;
+  if(ddPct > 0.03)       return Math.max(0.35, base * 0.5);
+  else if(ddPct > 0.015) return Math.max(0.35, base * 0.75);
+  return base;
 }
 
-// ── ZPEAK PANEL UPDATE ───────────────────────────────
-function updateZPeakPanel(state, peak, tickResult){
-  const stEl = document.getElementById('zpState');
-  const pkEl = document.getElementById('zpPeak');
-  const tkEl = document.getElementById('zpTick');
-  if(!stEl) return;
-  stEl.innerText = state;
-  stEl.className = 'zpeak-val ' + (state==='ESPERANDO'?'wait': state==='CONFIRMADO'?'ok': state==='RECHAZADO'?'no':'idle');
-  pkEl.innerText = peak;
-  pkEl.className = 'zpeak-val ' + (peak!=='--'?'wait':'idle');
-  tkEl.innerText = tickResult;
-  tkEl.className = 'zpeak-val ' + (tickResult==='A FAVOR'?'ok': tickResult==='EN CONTRA'?'no': tickResult!=='--'?'wait':'idle');
-}
+// ── EJECUCIÓN INMEDIATA ───────────────────────────────
+function executeTrade(sym, signal, peakZ){
+  const stake  = getStake();
+  const ticks  = ticksPerAsset[sym];
+  const now    = Date.now();
 
-// ── EJECUTAR TRADE ────────────────────────────────────
-function executeTrade(sym, signal, score, volRegime, momMetrics){
-  const now   = Date.now();
-  const ticks = ticksPerAsset[sym];
-  const stake = getAdaptiveStake();
+  addLog(`⚡ REVERSAL ${ASSET_LABELS[sym]} → ${signal} | Z-Pico:${peakZ.toFixed(2)} | Stake:$${stake} | ${ticks}t`, 'lk');
+  document.getElementById('activeSignal').innerText = signal+' '+ASSET_LABELS[sym]+' Z:'+peakZ.toFixed(2);
 
-  addLog(`⚡ ENTRADA ${ASSET_LABELS[sym]} → ${signal} | Score:${score} | Régimen:${volRegime.regime} | VR:${volRegime.ratio.toFixed(2)} | Stake:$${stake} | ${ticks}t`,'lk');
-  document.getElementById('activeSignal').innerText = signal+' en '+ASSET_LABELS[sym]+' sc:'+score;
-
-  resetMomentum(sym);
+  // Reset peak state ANTES de enviar
+  zPeak[sym] = { phase:'IDLE', dir:null, peakZ:0 };
   lastTradeTime[sym] = now;
   openContracts[sym] = 'pending';
   tradeTimestamps.push(now);
@@ -756,357 +497,256 @@ function executeTrade(sym, signal, score, volRegime, momMetrics){
 }
 
 // ════════════════════════════════════════════════════════
-// NÚCLEO: onNewPrice — Motor completo con Z-Peak Confirmation
+// NÚCLEO — onNewPrice
+// Procesamiento mínimo, máxima velocidad de ejecución
 // ════════════════════════════════════════════════════════
 function onNewPrice(sym, price){
   const arr = prices[sym];
   arr.push(price);
-  if(arr.length>200) arr.shift();
+  if(arr.length > 200) arr.shift();
 
-  if(arr.length<30) return;
+  // Necesitamos al menos Z_LOOKBACK precios
+  if(arr.length < Z_LOOKBACK) return;
 
-  const now = Date.now();
-  const ms  = momentumState[sym];
-  const zps = zPeakState[sym];
-
-  // Calcular retorno del tick actual
+  const zps     = zPeak[sym];
+  const now     = Date.now();
   const lastRet = arr[arr.length-1] - arr[arr.length-2];
-  const rets = retHistory[sym];
-  rets.push(lastRet);
-  if(rets.length>60) rets.shift();
 
-  if(rets.length < 15) return;
-
-  // ── INDICADORES PRINCIPALES ──────────────────────────
-  const volRegime    = calcVolRegime(rets);
-  const momMetrics   = calcMomentumMetrics(rets, 5);
-  const trendRegime  = calcTrendRegime(arr, 20);
-  const chopIndex    = calcChopIndex(rets, 12);
-  const score        = calcSignalScore(momMetrics, volRegime.regime, volRegime.ratio, rets);
-
-  // Z-score actual para display y lógica de peak
-  const z    = calcZ(arr.slice(-50));
-  const rsi  = calcRSI(arr, 14);
-  const vol  = calcVolProxy(arr);
-
-  zHist[sym].push(z);
-  if(zHist[sym].length>20) zHist[sym].shift();
-
-  const regimeOk = (volRegime.regime==='BURST' || volRegime.regime==='TREND') && !chopIndex.isChoppy;
-  const accOk    = momMetrics.consistent >= 3;
-
-  // Actualizar display indicadores
-  document.getElementById('indAsset').innerText = ASSET_LABELS[sym];
-  document.getElementById('indZ').innerText     = score;
-  document.getElementById('indZ').style.color   = score>=75?'#2ed573':score>=50?'#ffaa44':'#ff4757';
-  document.getElementById('indRSI').innerText   = volRegime.regime;
-  document.getElementById('indRSI').style.color = regimeOk?'#2ed573':'#ff4757';
-  document.getElementById('indVol').innerText   = accOk?'+'+momMetrics.consistent+'T':'--';
-  document.getElementById('indVol').style.color = accOk?'#00ffcc':'#6c7a8e';
-
-  const cs = confirmState[sym];
-  cs.pending = ms.phase !== 'SCAN';
-  cs.count   = ms.accelTicks;
-  cs.dir     = ms.dir;
-
-  updateConfirmPanel(
-    score, score>=75,
-    ms.accelTicks, 3,
-    volRegime.regime, regimeOk,
-    accOk ? momMetrics.consistent+'T CONSEC' : 'BUSCANDO',
-    accOk
-  );
-
-  // ── GUARDIANES GLOBALES ──────────────────────────────
-  if(now < pauseUntil) { updateAssetsGrid(); return; }
-  if(openContracts[sym] && openContracts[sym] !== null) { updateAssetsGrid(); return; }
-  if(now - lastTradeTime[sym] < 30000) { updateAssetsGrid(); return; }
+  // ── GUARDIANES — evaluación en O(1) ──────────────────
+  if(now < pauseUntil)         { updateAssetsGrid(); return; }
+  if(openContracts[sym])       { updateAssetsGrid(); return; }
+  if(now-lastTradeTime[sym] < 10000) { updateAssetsGrid(); return; }
   const dd = sessionStart - balance;
-  if(dd >= sessionStart*0.05){ addLog('🛑 STOP DE SESIÓN — drawdown 5% alcanzado','ll'); stopBot(); return; }
-  if(tradesPerMinute() >= 3){ updateAssetsGrid(); return; }
+  if(dd >= sessionStart*0.05){
+    addLog('🛑 STOP DE SESIÓN — drawdown 5% alcanzado','ll');
+    stopBot(); return;
+  }
 
-  // ════════════════════════════════════════════════════════
-  // LÓGICA Z-PEAK CONFIRMATION
-  //
-  // Cuando el Z-score supera el umbral → guardamos como "pico"
-  // En el siguiente tick verificamos si el precio va a FAVOR del impulso:
-  //   • Z subió mucho (>umbral positivo) → "impulso alcista" → esperamos tick +
-  //   • Z bajó mucho (<-umbral negativo) → "impulso bajista" → esperamos tick -
-  // Si el siguiente tick confirma → entramos en la dirección del impulso
-  // (PUT si impulso alcista, CALL si impulso bajista)
-  // ════════════════════════════════════════════════════════
-  const zThresh = Z_THRESHOLDS[sym]; // ej: 2.5
+  // ── CALCULAR Z ───────────────────────────────────────
+  const z     = calcZ(arr.slice(-Z_LOOKBACK));
+  const absZ  = Math.abs(z);
+  const thr   = zThresholds[sym];
 
+  // ════════════════════════════════════════════════════
+  // FASE: WAITING — verificar tick de confirmación
+  // ════════════════════════════════════════════════════
   if(zps.phase === 'WAITING'){
-    // ── FASE 2: Tick de confirmación post-pico ──────────
-    const impulsoDir = zps.dir; // 'PUT' o 'CALL'
-    const tickFavor = impulsoDir === 'CALL' ? lastRet > 0 : lastRet < 0;
+    // Impulso de pico: si el pico fue positivo, "impulso alcista" = precio sube
+    // Confirmamos si el tick actual va EN LA MISMA DIRECCIÓN que el impulso
+    const impulsoContinua = zps.dir === 'PUT'
+      ? lastRet > 0   // pico Z+ → impulso alcista → tick sube → confirma
+      : lastRet < 0;  // pico Z- → impulso bajista → tick baja → confirma
 
-    if(tickFavor){
-      // ✅ Confirmado: el tick post-peak va a favor del impulso
-      addLog(`✅ Z-PEAK CONFIRMADO ${ASSET_LABELS[sym]} → ${impulsoDir} | PicoZ:${zps.peakZ.toFixed(2)} | TickRet:${lastRet.toFixed(5)}`,'lw');
-      updateZPeakPanel('CONFIRMADO', zps.peakZ.toFixed(2), 'A FAVOR');
-
-      // Ejecutar si el régimen también es favorable
-      if(!regimeOk){
-        addLog('⛔ Z-Peak confirmado pero régimen desfavorable: '+volRegime.regime,'ll');
-        zps.phase = 'IDLE';
-        updateZPeakPanel('IDLE', '--', '--');
-      } else if(score < 40){
-        addLog('⛔ Z-Peak confirmado pero score bajo: '+score,'ll');
-        zps.phase = 'IDLE';
-        updateZPeakPanel('IDLE', '--', '--');
-      } else {
-        executeTrade(sym, impulsoDir, score, volRegime, momMetrics);
-      }
+    if(impulsoContinua){
+      // ✅ Impulso confirmado → ENTRAR EN CONTRA
+      const signal = zps.dir; // ya está invertido desde la detección
+      addLog(`🔔 CONFIRMADO ${ASSET_LABELS[sym]} | ZPico:${zps.peakZ.toFixed(2)} | Tick:${lastRet>0?'↑':'↓'} → ${signal}`, 'li');
+      updateZPeakPanel('✅ ENTRADA', ASSET_LABELS[sym]+' Z'+zps.peakZ.toFixed(2), '✅ '+signal);
+      executeTrade(sym, signal, zps.peakZ);
     } else {
-      // ❌ Tick fue en contra — cancelar
-      addLog(`❌ Z-Peak rechazado ${ASSET_LABELS[sym]} | PicoZ:${zps.peakZ.toFixed(2)} | Tick fue en contra`,'ll');
-      updateZPeakPanel('RECHAZADO', zps.peakZ.toFixed(2), 'EN CONTRA');
-      zps.phase = 'IDLE';
-      // Resetear después de mostrar brevemente
-      setTimeout(()=>{ if(zps.phase==='IDLE') updateZPeakPanel('IDLE','--','--'); }, 1500);
+      // ❌ Tick fue en contra — pico ya revertió solo, no entrar
+      addLog(`↩ ${ASSET_LABELS[sym]} tick en contra del impulso — pico Z:${zps.peakZ.toFixed(2)} cancelado`);
+      updateZPeakPanel('❌ CANCELADO', '--', '--');
+      zPeak[sym] = { phase:'IDLE', dir:null, peakZ:0 };
+      setTimeout(()=>updateZPeakPanel('IDLE','--','--'), 1200);
     }
 
-    zps.prevZ = z;
     updateAssetsGrid();
     return;
   }
 
-  // ── FASE 1: DETECTAR PICO DE Z ───────────────────────
-  // Un pico ocurre cuando |z| >= umbral
-  // Dirección: z > +umbral → impulso alcista (PUT)
-  //            z < -umbral → impulso bajista (CALL)
-  const prevZ = zps.prevZ || 0;
+  // ════════════════════════════════════════════════════
+  // FASE: IDLE — detectar extremo de Z-score
+  // ════════════════════════════════════════════════════
+  if(absZ >= thr){
+    // Dirección de entrada = CONTRARIA al impulso
+    // Z positivo extremo → precio sobrecomprado → PUT (reversión)
+    // Z negativo extremo → precio sobrevendido  → CALL (reversión)
+    const entryDir = z > 0 ? 'PUT' : 'CALL';
 
-  if(Math.abs(z) >= zThresh){
-    const dir = z > 0 ? 'PUT' : 'CALL';
+    zps.phase  = 'WAITING';
+    zps.dir    = entryDir;
+    zps.peakZ  = z;
 
-    // Detectar si es el pico máximo local: el tick anterior tenía menor |z|
-    // O simplemente superar el umbral ya es suficiente para iniciar espera
-    if(zps.phase === 'IDLE'){
-      zps.phase   = 'WAITING';
-      zps.dir     = dir;
-      zps.peakZ   = z;
-      zps.confirming = true;
-      addLog(`🔔 Z-PEAK detectado ${ASSET_LABELS[sym]} | Z:${z.toFixed(2)} (umbral:${zThresh}) → ${dir} | Esperando tick de confirmación`,'li');
-      updateZPeakPanel('ESPERANDO', z.toFixed(2), '...');
-    } else if(zps.phase === 'WAITING' && Math.abs(z) > Math.abs(zps.peakZ)){
-      // El pico sigue creciendo → actualizar pico y seguir esperando
-      zps.peakZ = z;
-      updateZPeakPanel('ESPERANDO', z.toFixed(2), '...');
-    }
-  } else {
-    // Z volvió a rango normal
-    if(zps.phase === 'WAITING'){
-      // El Z ya bajó del umbral sin confirmar → resetear
-      addLog(`⚠️ Z-Peak ${ASSET_LABELS[sym]} volvió a rango sin confirmar (Z:${z.toFixed(2)})`);
-      zps.phase = 'IDLE';
-      updateZPeakPanel('IDLE', '--', '--');
-    }
-  }
-
-  zps.prevZ = z;
-
-  // ── MOTOR MOMENTUM BURST (sistema secundario) ────────
-  // Solo opera si Z-Peak no está en espera activa
-
-  if(zps.phase === 'IDLE'){
-    if(ms.phase === 'CONFIRM'){
-      const tickDir = ms.dir==='CALL' ? lastRet>0 : lastRet<0;
-      if(tickDir){
-        ms.accelTicks++;
-        if(ms.accelTicks >= 3){
-          if(!regimeOk){
-            addLog('⛔ '+ASSET_LABELS[sym]+' régimen desfavorable: '+volRegime.regime+(chopIndex.isChoppy?' [CHOPPY]':''),'ll');
-            resetMomentum(sym);
-          } else if(score < 75){
-            addLog('⛔ '+ASSET_LABELS[sym]+' score insuficiente: '+score+'/100 (req 65)','ll');
-            resetMomentum(sym);
-          } else {
-            executeTrade(sym, ms.dir, score, volRegime, momMetrics);
-          }
-        } else {
-          addLog('🔎 '+ASSET_LABELS[sym]+' momentum tick '+ms.accelTicks+'/3 → '+ms.dir);
-        }
-      } else {
-        addLog('❌ '+ASSET_LABELS[sym]+' momentum roto en tick '+ms.accelTicks+'/1');
-        resetMomentum(sym);
-      }
-    } else if(ms.phase === 'SCAN' && regimeOk && !chopIndex.isChoppy){
-      const burstDetected = volRegime.ratio > 1.3 && momMetrics.consistent >= 2;
-      if(burstDetected && score >= 40){
-        const dir = momMetrics.direction > 0 ? 'PUT' : 'CALL';
-        ms.phase       = 'CONFIRM';
-        ms.dir         = dir;
-        ms.accelTicks  = momMetrics.consistent;
-        ms.burstStart  = now;
-        ms.score       = score;
-        addLog(`🚀 BURST detectado ${ASSET_LABELS[sym]} → ${dir} | VR:${volRegime.ratio.toFixed(2)} | Cons:${momMetrics.consistent}T | Score:${score}`);
-        document.getElementById('activeSignal').innerText='BURST '+ASSET_LABELS[sym]+' → '+dir+' sc:'+score;
-      }
-    } else if(ms.phase === 'CONFIRM'){
-      if(now - ms.burstStart > 8000){
-        addLog('⏱ '+ASSET_LABELS[sym]+' timeout de burst — reseteando');
-        resetMomentum(sym);
-      }
-    }
+    addLog(`📍 Z-PEAK ${ASSET_LABELS[sym]} | Z:${z.toFixed(2)} (≥${thr}) → esperando confirm tick → ${entryDir}`, 'li');
+    updateZPeakPanel('ESPERANDO', ASSET_LABELS[sym]+' Z'+z.toFixed(2), '...');
+  } else if(zps.phase === 'WAITING' && absZ > Math.abs(zps.peakZ)){
+    // Pico sigue creciendo — actualizar
+    zps.peakZ = z;
+    updateZPeakPanel('ESPERANDO', ASSET_LABELS[sym]+' Z'+z.toFixed(2), '...');
   }
 
   updateAssetsGrid();
 }
 
-function resetMomentum(sym){
-  momentumState[sym] = { phase:'SCAN', dir:null, accelTicks:0, burstStart:0, score:0, peakAcc:0 };
-  confirmState[sym]  = { pending:false, dir:null, count:0, peakZ:0 };
-  zPeakState[sym]    = { phase:'IDLE', dir:null, peakZ:0, prevZ:0, confirming:false };
-  updateZPeakPanel('IDLE', '--', '--');
-}
-
 // ── RESULTADO ─────────────────────────────────────────
 function onResult(sym, pnl){
-  const lbl=ASSET_LABELS[sym]||sym;
-  openContracts[sym]=null;
-  balance+=pnl;
-  const isWin=pnl>0;
+  openContracts[sym] = null;
+  balance += pnl;
+  const isWin = pnl > 0;
 
   if(isWin){ wins++; lossStreak=0; }
-  else {
+  else{
     losses++; lossStreak++;
-    if(lossStreak>=3){
-      pauseUntil=Date.now()+45000;
+    if(lossStreak >= 3){
+      pauseUntil = Date.now()+45000;
       addLog('⏸ 3 pérdidas seguidas — pausa 45s','ll');
-      lossStreak=0;
+      lossStreak = 0;
     }
   }
 
   tradeHistory.push(isWin?1:0);
   if(tradeHistory.length>100) tradeHistory.shift();
+  const wr = tradeHistory.length>3
+    ? (tradeHistory.reduce((a,b)=>a+b,0)/tradeHistory.length*100).toFixed(1)+'%'
+    : 'N/A';
 
-  // Log con contexto
-  const wr = tradeHistory.length>5 ?
-    (tradeHistory.reduce((a,b)=>a+b,0)/tradeHistory.length*100).toFixed(1)+'%' : 'N/A';
-  addLog((isWin?'✅ WIN':'❌ LOSS')+' '+lbl+' PnL:$'+pnl.toFixed(2)+' Bal:$'+balance.toFixed(2)+' WR:'+wr, isWin?'lw':'ll');
+  addLog((isWin?'✅ WIN':'❌ LOSS')+' '+ASSET_LABELS[sym]+' PnL:$'+pnl.toFixed(2)+' Bal:$'+balance.toFixed(2)+' WR:'+wr, isWin?'lw':'ll');
 
   chart.data.labels.push('');
   chart.data.datasets[0].data.push(balance);
-  if(chart.data.labels.length>30){ chart.data.labels.shift(); chart.data.datasets[0].data.shift(); }
+  if(chart.data.labels.length>40){ chart.data.labels.shift(); chart.data.datasets[0].data.shift(); }
   chart.update();
 
   updateStats();
+  updateAssetsGrid();
 }
 
 // ════════════════════════════════════════════════════════
 // WEBSOCKET
 // ════════════════════════════════════════════════════════
 function startBot(){
-  const token=document.getElementById('apiToken').value.trim();
+  const token = document.getElementById('apiToken').value.trim();
   if(!token){ addLog('❌ Ingresa tu token API','ll'); return; }
   if(running) return;
 
-  // Reset
+  // Reset completo de estado
   balance=100; sessionStart=100;
   wins=0; losses=0; lossStreak=0; pauseUntil=0;
   tradeHistory=[]; tradeTimestamps=[];
   ASSETS.forEach(a=>{
-    prices[a]=[]; zHist[a]=[];
-    retHistory[a]=[];
-    resetMomentum(a);
-    openContracts[a]=null;
-    lastTradeTime[a]=0;
-    zPeakState[a]={ phase:'IDLE', dir:null, peakZ:0, prevZ:0, confirming:false };
+    prices[a]       = [];
+    openContracts[a]= null;
+    lastTradeTime[a]= 0;
+    zPeak[a]        = { phase:'IDLE', dir:null, peakZ:0 };
   });
-  contractToAsset={};
-  chart.data.labels=[]; chart.data.datasets[0].data=[100]; chart.update();
-  updateStats();
+  contractToAsset = {};
 
-  running=true;
-  document.getElementById('statusDiv').innerText='🟢 STATUS: CONECTANDO...';
-  const btn=document.getElementById('toggleBtn');
+  chart.data.labels=[]; chart.data.datasets[0].data=[100]; chart.update();
+  updateStats(); updateAssetsGrid();
+  updateZPeakPanel('IDLE','--','--');
+
+  running = true;
+  document.getElementById('statusDiv').innerText = '🟢 STATUS: CONECTANDO...';
+  const btn = document.getElementById('toggleBtn');
   btn.innerText='⏹ DETENER'; btn.className='btn stop';
 
-  ws=new WebSocket('wss://ws.binaryws.com/websockets/v3?app_id=1089');
+  ws = new WebSocket('wss://ws.binaryws.com/websockets/v3?app_id=1089');
 
-  ws.onopen=()=>{
+  ws.onopen = ()=>{
     ws.send(JSON.stringify({authorize:token}));
-    addLog('🔌 Conectando...');
+    addLog('🔌 Conectando a Deriv WebSocket...','li');
   };
 
-  ws.onmessage=(e)=>{
-    const d=JSON.parse(e.data);
+  ws.onmessage = (e)=>{
+    const d = JSON.parse(e.data);
 
+    // ── AUTORIZACIÓN ──────────────────────────────────
     if(d.authorize){
-      addLog('✅ Autorizado · $'+d.authorize.balance.toFixed(2),'li');
-      document.getElementById('statusDiv').innerText='🟢 STATUS: ONLINE — MOMENTUM ENGINE v3';
+      balance = d.authorize.balance;
+      sessionStart = balance;
+      addLog('✅ Autorizado · Balance: $'+balance.toFixed(2),'li');
+      document.getElementById('statusDiv').innerText = '🟢 STATUS: ONLINE — Z-PEAK REVERSAL ENGINE v4';
       ASSETS.forEach(a=>{
-        ws.send(JSON.stringify({ticks:a,subscribe:1}));
-        addLog('🔗 Suscrito a '+ASSET_LABELS[a]+' · ticks en vivo','li');
+        ws.send(JSON.stringify({ticks:a, subscribe:1}));
+        addLog('🔗 Suscrito a '+ASSET_LABELS[a],'li');
       });
       ws.send(JSON.stringify({balance:1}));
-      updateSim();
+      updateStats();
     }
 
-    if(d.balance){ balance=d.balance.balance; updateStats(); }
+    // ── BALANCE REAL-TIME ─────────────────────────────
+    if(d.balance){
+      balance = d.balance.balance;
+      updateStats();
+    }
 
+    // ── TICKS — ruta crítica, mínimo overhead ─────────
     if(d.tick){
-      const sym=d.tick.symbol;
-      if(prices[sym]!==undefined && running)
+      const sym = d.tick.symbol;
+      if(prices[sym] !== undefined && running)
         onNewPrice(sym, parseFloat(d.tick.quote));
     }
 
-    if(d.proposal&&d.proposal.id){
-      const pendSym=ASSETS.find(a=>openContracts[a]==='pending');
-      if(pendSym) contractToAsset[d.proposal.id]=pendSym;
-      ws.send(JSON.stringify({buy:d.proposal.id,price:parseFloat(document.getElementById('stake').value)||1}));
+    // ── PROPOSAL → BUY INMEDIATO ──────────────────────
+    if(d.proposal && d.proposal.id){
+      const pendSym = ASSETS.find(a=>openContracts[a]==='pending');
+      if(pendSym) contractToAsset[d.proposal.id] = pendSym;
+      ws.send(JSON.stringify({
+        buy:d.proposal.id,
+        price:parseFloat(document.getElementById('stake').value)||1
+      }));
     }
 
+    // ── BUY CONFIRMADO ────────────────────────────────
     if(d.buy){
-      const cid=d.buy.contract_id;
-      const sym=ASSETS.find(a=>openContracts[a]==='pending')||
-                Object.keys(contractToAsset).map(k=>contractToAsset[k]).find(Boolean);
-      if(sym) openContracts[sym]=cid;
-      Object.keys(contractToAsset).forEach(k=>{ if(contractToAsset[k]===sym) delete contractToAsset[k]; });
-      ws.send(JSON.stringify({proposal_open_contract:1,contract_id:cid,subscribe:1}));
+      const cid = d.buy.contract_id;
+      const sym = ASSETS.find(a=>openContracts[a]==='pending') ||
+                  Object.keys(contractToAsset).map(k=>contractToAsset[k]).find(Boolean);
+      if(sym){
+        openContracts[sym] = cid;
+        Object.keys(contractToAsset).forEach(k=>{ if(contractToAsset[k]===sym) delete contractToAsset[k]; });
+        ws.send(JSON.stringify({proposal_open_contract:1, contract_id:cid, subscribe:1}));
+        addLog('📋 Contrato abierto '+ASSET_LABELS[sym]+' · ID:'+cid,'li');
+      }
     }
 
-    if(d.proposal_open_contract&&d.proposal_open_contract.is_sold){
-      const poc=d.proposal_open_contract;
-      const sym=ASSETS.find(a=>openContracts[a]===poc.contract_id)
-             || ASSETS.find(a=>poc.underlying===a);
+    // ── RESULTADO ─────────────────────────────────────
+    if(d.proposal_open_contract && d.proposal_open_contract.is_sold){
+      const poc = d.proposal_open_contract;
+      const sym = ASSETS.find(a=>openContracts[a]===poc.contract_id)
+                  || ASSETS.find(a=>poc.underlying===a);
       if(sym){
-        openContracts[sym]=null;
+        openContracts[sym] = null;
         onResult(sym, parseFloat(poc.profit));
       }
     }
 
-    if(d.error) addLog('⚠️ '+d.error.message,'ll');
+    // ── ERRORES ───────────────────────────────────────
+    if(d.error) addLog('⚠️ '+d.error.message+' (code:'+d.error.code+')','ll');
   };
 
-  ws.onerror=()=>{ addLog('❌ Error WebSocket','ll'); stopBot(); };
-  ws.onclose=()=>{ if(running){ addLog('🔌 Desconectado'); running=false; } };
+  ws.onerror = ()=>{ addLog('❌ Error WebSocket','ll'); stopBot(); };
+  ws.onclose = ()=>{ if(running){ addLog('🔌 Conexión cerrada','ll'); running=false; updateBtn(); } };
+}
+
+function updateBtn(){
+  const btn = document.getElementById('toggleBtn');
+  btn.innerText = running ? '⏹ DETENER' : '▶ INICIAR BOT';
+  btn.className = running ? 'btn stop' : 'btn';
 }
 
 function stopBot(){
   if(!running) return;
-  running=false;
-  clearInterval(refreshInterval);
-  if(ws) ws.close();
+  running = false;
+  if(ws){ try{ ws.close(); }catch(e){} }
   document.getElementById('statusDiv').innerText='⚫ STATUS: OFFLINE';
-  const btn=document.getElementById('toggleBtn');
-  btn.innerText='▶ INICIAR BOT'; btn.className='btn';
-  addLog('🛑 Bot detenido');
+  updateBtn();
+  addLog('🛑 Bot detenido. Ops: '+(wins+losses)+' | WR: '+(wins+losses>0?((wins/(wins+losses))*100).toFixed(1):0)+'%');
   updateStats();
 }
 
 // ── INICIALIZACIÓN ────────────────────────────────────
-document.getElementById('toggleBtn').onclick=()=>running?stopBot():startBot();
-document.getElementById('stake').addEventListener('input',updateSim);
+document.getElementById('toggleBtn').onclick = ()=> running ? stopBot() : startBot();
 
+buildThreshGrid();
 buildTicksGrid();
 updateStats();
-updateSim();
-addLog('🤖 Z-PEAK BOT v3 | V10·V25·V50 | Momentum Burst + Z-Peak Confirmation');
-addLog('📊 MODO: Z-Peak detecta pico → espera tick a favor → entra en dirección del impulso','li');
+updateAssetsGrid();
+
+addLog('⚡ Z-PEAK BOT v4 | REVERSAL ENGINE cargado','li');
+addLog('📊 Estrategia: Z extremo → confirmar 1 tick a favor del impulso → entrar en CONTRA','li');
+addLog('⚙️ Ajusta umbrales Z y duración de contrato antes de iniciar');
 </script>
 </body>
 </html>
