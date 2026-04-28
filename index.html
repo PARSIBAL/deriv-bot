@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Z-PEAK BOT v6 | ULTRA PRECISION</title>
+<title>Z-PEAK BOT v6.2 PRO | EXHAUSTION ENGINE</title>
 <script src="https://cdn.jsdelivr.net/npm/chart.js">
 </script>
 <style>
@@ -57,7 +57,7 @@ h3{color:#00ffcc;font-size:.85rem;margin:12px 0 8px;letter-spacing:1px;}
 .score-title{font-size:9px;color:#00ffcc;letter-spacing:2px;}
 .score-total{font-size:24px;font-weight:900;font-family:monospace;}
 .score-total.ok{color:#2ed573;}.score-total.warn{color:#ffaa44;}.score-total.bad{color:#ff4757;}
-.score-grid{display:grid;grid-template-columns:repeat(6,1fr);gap:6px;}
+.score-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:6px;}
 .sc-box{background:#02091a;border-radius:10px;padding:7px;text-align:center;}
 .sc-lbl{font-size:7px;color:#6c7a8e;letter-spacing:1px;text-transform:uppercase;line-height:1.3;}
 .sc-val{font-size:11px;font-weight:700;font-family:monospace;margin-top:3px;}
@@ -74,20 +74,6 @@ h3{color:#00ffcc;font-size:.85rem;margin:12px 0 8px;letter-spacing:1px;}
   text-align:center;font-size:16px;font-weight:700;font-family:monospace;
   outline:none;
 }
-.ticks-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:16px;}
-.tick-card{background:#010810;border-radius:16px;padding:12px;border:1px solid #1e2a3a;text-align:center;}
-.tick-sym{font-size:13px;font-weight:700;color:#00ffcc;margin-bottom:6px;}
-.tick-label{font-size:9px;color:#6c7a8e;margin-bottom:6px;}
-.tick-inp{
-  width:70px;background:#02091a;border:1px solid #2a3a4a;
-  padding:5px 8px;border-radius:10px;color:#00ffcc;
-  text-align:center;font-size:16px;font-weight:700;font-family:monospace;
-  outline:none;
-}
-.tick-presets{display:flex;gap:4px;justify-content:center;margin-top:6px;flex-wrap:wrap;}
-.tp{font-size:9px;padding:3px 7px;border:1px solid #2a3a4a;border-radius:8px;color:#6c7a8e;background:#010810;cursor:pointer;transition:all .2s;font-family:monospace;}
-.tp:hover,.tp.on{border-color:#00ffcc;color:#00ffcc;}
-.tp.on{background:rgba(0,255,200,0.1);}
 
 /* BOTÓN */
 .btn{width:100%;background:linear-gradient(90deg,#00d4aa,#00b8ff);border:none;padding:13px;border-radius:32px;font-weight:700;font-size:14px;color:#01050c;cursor:pointer;margin:12px 0;letter-spacing:2px;transition:all .2s;}
@@ -115,10 +101,10 @@ h3{color:#00ffcc;font-size:.85rem;margin:12px 0 8px;letter-spacing:1px;}
 /* ASSETS GRID */
 .assets-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin:12px 0;}
 .asset-card{background:#010810;border-radius:16px;padding:12px;border:1px solid #1e2a3a;position:relative;}
-.asset-card.zpeak-active{border-color:rgba(255,170,0,0.5);background:rgba(255,170,0,0.03);}
-.asset-card.zpeak-pullback{border-color:rgba(0,180,255,0.5);background:rgba(0,180,255,0.03);}
-.asset-card.blocked{border-color:rgba(255,71,87,0.4);background:rgba(255,0,0,0.03);}
-.asset-card.trend-blocked{border-color:rgba(255,0,100,0.5);background:rgba(255,0,80,0.03);}
+.asset-card.scan-active{border-color:rgba(0,255,200,0.4);background:rgba(0,255,200,0.03);}
+.asset-card.trend-lock{border-color:rgba(255,71,87,0.5);background:rgba(255,0,0,0.04);}
+.asset-card.blocked{border-color:rgba(255,100,50,0.5);background:rgba(255,50,0,0.03);}
+.asset-card.exhaustion-ready{border-color:rgba(255,170,0,0.7);background:rgba(255,170,0,0.05);}
 .asset-title{font-size:14px;font-weight:700;color:#00ffcc;text-align:center;margin-bottom:8px;}
 .lb-row{display:flex;justify-content:space-between;align-items:center;padding:5px 0;border-bottom:1px solid #1a2533;font-size:11px;}
 .lb-name{color:#6c7a8e;}
@@ -143,8 +129,8 @@ canvas{margin:10px 0;background:#010810;border-radius:14px;padding:4px;}
 </head>
 <body>
 <div class="container">
-    <h2>⚡ Z-PEAK BOT v6 | ULTRA PRECISION</h2>
-    <div class="subtitle">DOBLE INTENTO · DESACELERACIÓN · FILTRO KILLER · SCORE NO LINEAL · 2-3 TICKS</div>
+    <h2>⚡ Z-PEAK BOT v6.2 PRO | EXHAUSTION ENGINE</h2>
+    <div class="subtitle">DETECCIÓN REAL DE AGOTAMIENTO · DESBLOQUEO INTELIGENTE · ENTRADA QUIRÚRGICA 2-3 TICKS</div>
 
     <!-- STATS -->
     <div class="stats-row">
@@ -167,29 +153,24 @@ canvas{margin:10px 0;background:#010810;border-radius:14px;padding:4px;}
         </div>
     </div>
 
-    <!-- SCORE DE CALIDAD v6 - NO LINEAL -->
+    <!-- SCORE DE CALIDAD v6.2 -->
     <div class="score-panel">
         <div class="score-header">
-            <div class="score-title">🎯 SCORE v6 · OBLIGATORIAS (3/3) + APOYO (min 2/3) para operar</div>
+            <div class="score-title">🎯 SCORE v6.2 · AGOTAMIENTO REAL (≥6 para operar, ≥8 = 2 ticks)</div>
             <div><span class="score-total bad" id="scoreTotal">⛔</span></div>
         </div>
         <div class="score-grid">
-            <div class="sc-box"><div class="sc-lbl">OBL: Z EXTREMO</div><div class="sc-val na" id="scZ">✗</div></div>
-            <div class="sc-box"><div class="sc-lbl">OBL: DESACEL.</div><div class="sc-val na" id="scDecel">✗</div></div>
-            <div class="sc-box"><div class="sc-lbl">OBL: DOBLE INT.</div><div class="sc-val na" id="scDouble">✗</div></div>
-            <div class="sc-box"><div class="sc-lbl">APOYO: PERSIST.</div><div class="sc-val na" id="scPersist">✗</div></div>
-            <div class="sc-box"><div class="sc-lbl">APOYO: VOL NORM</div><div class="sc-val na" id="scVol">✗</div></div>
-            <div class="sc-box"><div class="sc-lbl">APOYO: SIN TEND.</div><div class="sc-val na" id="scTrend">✗</div></div>
+            <div class="sc-box"><div class="sc-lbl">Z EXTREMO</div><div class="sc-val na" id="scZ">✗</div></div>
+            <div class="sc-box"><div class="sc-lbl">DESACEL.</div><div class="sc-val na" id="scDecel">✗</div></div>
+            <div class="sc-box"><div class="sc-lbl">µ RETROCESO</div><div class="sc-val na" id="scPullback">✗</div></div>
+            <div class="sc-box"><div class="sc-lbl">WEAK PUSH</div><div class="sc-val na" id="scWeak">✗</div></div>
+            <div class="sc-box"><div class="sc-lbl">VOL OK</div><div class="sc-val na" id="scVol">✗</div></div>
         </div>
     </div>
 
     <!-- UMBRALES Z -->
-    <h3>🎯 UMBRAL Z-SCORE POR ACTIVO (v6 optimizado)</h3>
+    <h3>🎯 UMBRAL Z-SCORE POR ACTIVO (v6.2 PRO)</h3>
     <div class="thresh-row" id="threshGrid"></div>
-
-    <!-- TICKS POR ACTIVO (ahora con duración dinámica: 2-3 ticks) -->
-    <h3>⚙️ DURACIÓN BASE DEL CONTRATO (ticks) — v6 usa 2-3 dinámico</h3>
-    <div class="ticks-grid" id="ticksGrid"></div>
 
     <button class="btn" id="toggleBtn">▶ INICIAR BOT</button>
     <div class="status" id="statusDiv">⚙️ STATUS: OFFLINE</div>
@@ -197,24 +178,12 @@ canvas{margin:10px 0;background:#010810;border-radius:14px;padding:4px;}
 
     <!-- ZPEAK PANEL -->
     <div class="zpeak-panel">
-        <div class="zpeak-title">⚡ MOTOR Z-PEAK v6 — DOBLE INTENTO + DESACELERACIÓN</div>
+        <div class="zpeak-title">⚡ MOTOR DE AGOTAMIENTO v6.2 — DETECCIÓN REAL DEL FINAL DEL MOVIMIENTO</div>
         <div class="zpeak-grid">
-            <div class="zpeak-box">
-                <div class="zpeak-lbl">ESTADO</div>
-                <div class="zpeak-val idle" id="zpState">IDLE</div>
-            </div>
-            <div class="zpeak-box">
-                <div class="zpeak-lbl">ACTIVO · Z PICO</div>
-                <div class="zpeak-val idle" id="zpPeak">--</div>
-            </div>
-            <div class="zpeak-box">
-                <div class="zpeak-lbl">PERSIST. / PULLBACK</div>
-                <div class="zpeak-val idle" id="zpPersist">0/2</div>
-            </div>
-            <div class="zpeak-box">
-                <div class="zpeak-lbl">ENTRADA</div>
-                <div class="zpeak-val idle" id="zpEntry">--</div>
-            </div>
+            <div class="zpeak-box"><div class="zpeak-lbl">MODO</div><div class="zpeak-val idle" id="zpMode">SCAN</div></div>
+            <div class="zpeak-box"><div class="zpeak-lbl">ACTIVO DETECTADO</div><div class="zpeak-val idle" id="zpActive">--</div></div>
+            <div class="zpeak-box"><div class="zpeak-lbl">Z-SCORE / SCORE</div><div class="zpeak-val idle" id="zpScore">--/--</div></div>
+            <div class="zpeak-box"><div class="zpeak-lbl">ÚLTIMA ENTRADA</div><div class="zpeak-val idle" id="zpEntry">--</div></div>
         </div>
     </div>
 
@@ -241,96 +210,93 @@ canvas{margin:10px 0;background:#010810;border-radius:14px;padding:4px;}
 
 <script>
     // ════════════════════════════════════════════════════════════════════════
-    // Z-PEAK BOT v6 — ULTRA PRECISION REVERSAL ENGINE
+    // Z-PEAK BOT v6.2 PRO — EXHAUSTION ENGINE
     //
-    // EVOLUCIÓN v5 → v6:
-    //   - Doble intento (agotamiento real): Z extremo → persistencia → micro
-    //     retroceso → intento débil de continuar → ENTRADA
-    //   - Score NO LINEAL: 3 condiciones obligatorias + al menos 2 de 3 de
-    //     apoyo. Sin suma simple.
-    //   - Filtro KILLER: 8+/10 ticks en misma dirección → bloqueo inmediato.
-    //   - Entrada ultra precisa: solo si el tick de confirmación es MENOR en
-    //     magnitud que los anteriores (desaceleración real).
-    //   - Duración dinámica: 3 ticks estándar, 2 ticks en condición perfecta.
-    //   - Umbrales optimizados: V10≥2.6, V25≥2.4, V50≥2.2.
+    // EVOLUCIÓN v6 → v6.2 PRO:
+    //   - detectExhaustion(): función determinística que identifica el FINAL
+    //     real de movimientos fuertes (no el inicio).
+    //   - Sistema de estados SCAN / TREND_LOCK con desbloqueo inteligente.
+    //   - Buffer de datos corto (20 ticks) con returns y absReturns.
+    //   - Entrada quirúrgica solo cuando se cumplen 6 condiciones estrictas.
+    //   - Duración dinámica 2-3 ticks según score de calidad.
+    //   - Bloqueo por pérdidas: 2 consecutivas → 2 minutos.
     //
-    // PIPELINE POR TICK (v6):
-    //  1. calcZ()                   → Z-score del precio actual
-    //  2. checkKillerFilter()       → ¿tendencia fuerte? → bloquear activo
-    //  3. checkVolFilter()          → ¿volatilidad normal?
-    //  4. checkTrendFilter()        → ¿mercado lateral?
-    //  5. checkDecel()              → ¿desaceleración del impulso?
-    //  6. Máquina de estados DOBLE INTENTO:
-    //     IDLE → PERSISTING → PULLBACK → WAITING → EXECUTE
-    //  7. Validación final: 3 obligatorias + ≥2 apoyo → ENTRADA
-    //  8. Duración dinámica: 2-3 ticks según calidad
+    // CÓMO DETECTEXHAUSTION IDENTIFICA EL FINAL REAL:
+    //   1. Z-score extremo → el precio está en un nivel anormal.
+    //   2. Desaceleración progresiva (v3>v2>v1) → el impulso pierde fuerza.
+    //   3. Micro retroceso → el precio intentó revertir (prueba de agotamiento).
+    //   4. Segundo intento débil (weakPush) → el precio intenta continuar pero
+    //      con mucha menos fuerza → confirma que no hay convicción.
+    //   5. Volatilidad controlada → descarta mercados erráticos.
+    //   6. No hipertendencia → evita operar contra tendencias masivas.
+    //
+    // DESBLOQUEO INTELIGENTE:
+    //   Cuando un activo está en TREND_LOCK, se sigue evaluando detectExhaustion.
+    //   Si se detecta agotamiento real, se desbloquea antes de que expire el
+    //   tiempo, permitiendo entradas oportunas en el momento exacto del
+    //   debilitamiento de la tendencia.
     // ════════════════════════════════════════════════════════════════════════
 
     const ASSETS = ["R_10", "R_25", "R_50"];
     const ASSET_LABELS = { "R_10": "V10", "R_25": "V25", "R_50": "V50" };
 
     // ── CONSTANTES DE ANÁLISIS ──────────────────────────
-    const Z_LOOKBACK = 50; // Ventana para Z-score
-    const PERSIST_REQ = 2; // Ticks consecutivos en zona extrema para considerar persistencia
-    const VOL_WINDOW = 20; // Ventana para volatilidad promedio
-    const TREND_WINDOW = 12; // Ventana para micro-tendencia
-    const DECEL_WINDOW = 5; // Ventana para desaceleración
-    const KILLER_WINDOW = 10; // Ventana para filtro killer
-    const KILLER_THRESHOLD = 8; // 8+ de 10 en misma dirección = tendencia fuerte
-
-    // ── BLOQUEO POR ACTIVO ──────────────────────────────
+    const BUFFER_SIZE = 20; // Tamaño máximo de buffers
+    const TREND_LOCK_MS = 60000; // Duración del bloqueo por tendencia (1 minuto)
+    const LOSS_BLOCK_MS = 120000; // Bloqueo por pérdidas: 2 minutos
     const ASSET_LOSS_BLOCK_AFTER = 2; // Pérdidas consecutivas para bloquear
-    const ASSET_LOSS_BLOCK_MS = 180000; // 3 minutos
-    const TREND_BLOCK_MS = 60000; // Bloqueo por tendencia killer: 1 minuto
+    const KILLER_WINDOW = 10; // Ventana para detección de hipertendencia
+    const KILLER_THRESHOLD = 9; // 9+ de 10 = hipertendencia
 
-    // ── CONFIGURACIÓN v6 (umbrales optimizados) ──────────
+    // ── CONFIGURACIÓN v6.2 (umbrales optimizados) ──────────
     let zThresholds = { "R_10": 2.6, "R_25": 2.4, "R_50": 2.2 };
-    let ticksPerAsset = { "R_10": 3, "R_25": 3, "R_50": 2 };
 
     // ── ESTADO GLOBAL ─────────────────────────────────────
     let ws, running = false;
-    let balance = 100,
-        sessionStart = 100;
-    let wins = 0,
-        losses = 0,
-        lossStreak = 0,
-        pauseUntil = 0;
-    let tradeHistory = [],
-        tradeTimestamps = [];
+    let balance = 100, sessionStart = 100;
+    let wins = 0, losses = 0, lossStreak = 0, pauseUntil = 0;
+    let tradeHistory = [], tradeTimestamps = [];
     let filteredCount = 0;
 
-    // Precios y contratos
-    let prices = { "R_10": [], "R_25": [], "R_50": [] };
+    // ════════════════════════════════════════════════════════
+    // BUFFERS POR ACTIVO (v6.2: arrays cortos, O(1))
+    //   prices[]    → últimos 20 precios
+    //   returns[]   → diferencias entre ticks consecutivos (length = prices-1)
+    //   absReturns[]→ magnitud absoluta de cada retorno
+    // ════════════════════════════════════════════════════════
+    let buffers = {};
+    ASSETS.forEach(a => {
+        buffers[a] = {
+            prices: [],      // Precios (máx 20)
+            returns: [],     // Retornos (máx 19)
+            absReturns: []   // |Retornos| (máx 19)
+        };
+    });
+
+    // ════════════════════════════════════════════════════════
+    // ESTADO POR ACTIVO v6.2
+    //   mode: "SCAN" | "TREND_LOCK"
+    //   lockStartTime: timestamp de cuando entró en TREND_LOCK
+    //   lossStreak: contador de pérdidas consecutivas
+    //   blockedUntil: timestamp hasta el que está bloqueado por pérdidas
+    // ════════════════════════════════════════════════════════
+    let assetState = {};
+    ASSETS.forEach(a => {
+        assetState[a] = {
+            mode: "SCAN",
+            lockStartTime: 0,
+            lossStreak: 0,
+            blockedUntil: 0
+        };
+    });
+
+    // Contratos abiertos
     let openContracts = { "R_10": null, "R_25": null, "R_50": null };
     let lastTradeTime = { "R_10": 0, "R_25": 0, "R_50": 0 };
     let contractToAsset = {};
 
-    // ════════════════════════════════════════════════════════
-    // ESTADO Z-PEAK v6 — MÁQUINA DE DOBLE INTENTO
-    //
-    // fases: 'IDLE' | 'PERSISTING' | 'PULLBACK' | 'WAITING'
-    //
-    // Secuencia completa:
-    //   IDLE + |Z|≥umbral → PERSISTING
-    //   PERSISTING + persistCount≥2 + tick en contra → PULLBACK
-    //   PULLBACK + tick a favor (impulso) pero débil (desaceleración) → WAITING
-    //   WAITING → ejecutar entrada
-    //
-    // Si en cualquier momento |Z| cae bajo umbral → volver a IDLE
-    // ════════════════════════════════════════════════════════
-    let zPeak = {
-        "R_10": { phase: 'IDLE', dir: null, peakZ: 0, persistCount: 0, pullbackDetected: false,
-            scoreObl: 0, scoreApoyo: 0 },
-        "R_25": { phase: 'IDLE', dir: null, peakZ: 0, persistCount: 0, pullbackDetected: false,
-            scoreObl: 0, scoreApoyo: 0 },
-        "R_50": { phase: 'IDLE', dir: null, peakZ: 0, persistCount: 0, pullbackDetected: false,
-            scoreObl: 0, scoreApoyo: 0 }
-    };
-
-    // Bloqueo por activo: pérdidas consecutivas + filtro killer
-    let assetLossStreak = { "R_10": 0, "R_25": 0, "R_50": 0 };
-    let assetBlockedUntil = { "R_10": 0, "R_25": 0, "R_50": 0 };
-    let assetTrendBlockedUntil = { "R_10": 0, "R_25": 0, "R_50": 0 }; // Bloqueo por killer
+    // Último activo que entró en estado de agotamiento (para panel Z-Peak)
+    let lastExhaustionAsset = null;
 
     // ── CHART ─────────────────────────────────────────────
     const chart = new Chart(document.getElementById('chart'), {
@@ -338,25 +304,17 @@ canvas{margin:10px 0;background:#010810;border-radius:14px;padding:4px;}
         data: {
             labels: [],
             datasets: [{
-                label: 'Balance USD',
-                data: [100],
-                borderColor: '#00ffcc',
-                borderWidth: 2,
-                fill: false,
-                tension: 0.3,
-                pointRadius: 3,
-                pointBackgroundColor: '#00ffcc'
+                label: 'Balance USD', data: [100],
+                borderColor: '#00ffcc', borderWidth: 2, fill: false,
+                tension: 0.3, pointRadius: 3, pointBackgroundColor: '#00ffcc'
             }]
         },
         options: {
-            responsive: true,
-            maintainAspectRatio: true,
+            responsive: true, maintainAspectRatio: true,
             plugins: { legend: { labels: { color: '#6c7a8e', font: { size: 10 } } } },
             scales: {
-                x: { ticks: { color: '#6c7a8e', font: { size: 9 } },
-                grid: { color: 'rgba(255,255,255,.03)' } },
-                y: { ticks: { color: '#6c7a8e', font: { size: 9 } },
-                grid: { color: 'rgba(255,255,255,.05)' } }
+                x: { ticks: { color: '#6c7a8e', font: { size: 9 } }, grid: { color: 'rgba(255,255,255,.03)' } },
+                y: { ticks: { color: '#6c7a8e', font: { size: 9 } }, grid: { color: 'rgba(255,255,255,.05)' } }
             }
         }
     });
@@ -373,186 +331,221 @@ canvas{margin:10px 0;background:#010810;border-radius:14px;padding:4px;}
     }
 
     // ════════════════════════════════════════════════════════
-    // ── FUNCIONES DE CÁLCULO (O(1) en cada llamada) ─────
+    // ── FUNCIONES DE CÁLCULO (O(1)) ─────────────────────
     // ════════════════════════════════════════════════════════
 
-    // F0 · Z-SCORE — Media y desviación estándar en un solo recorrido
-    function calcZ(arr) {
-        const n = arr.length;
+    // Z-SCORE sobre el buffer de precios (20 ticks)
+    function calcZ(prices) {
+        const n = prices.length;
         if (n < 2) return 0;
         let sum = 0;
-        for (let i = 0; i < n; i++) sum += arr[i];
+        for (let i = 0; i < n; i++) sum += prices[i];
         const mean = sum / n;
         let sq = 0;
-        for (let i = 0; i < n; i++) sq += (arr[i] - mean) * (arr[i] - mean);
+        for (let i = 0; i < n; i++) sq += (prices[i] - mean) * (prices[i] - mean);
         const std = Math.sqrt(sq / n);
-        return std === 0 ? 0 : (arr[n - 1] - mean) / std;
+        return std === 0 ? 0 : (prices[n - 1] - mean) / std;
     }
 
-    // F1 · FILTRO KILLER (ANTI-DESTRUCCIÓN) — NUEVO v6
-    // Si 8+ de los últimos 10 ticks van en la misma dirección → tendencia fuerte
-    // → bloquear activo inmediatamente por 1 minuto
-    function checkKillerFilter(arr) {
-        if (arr.length < KILLER_WINDOW + 1) return { ok: true, sameCount: 0 };
-        let ups = 0;
-        const start = arr.length - KILLER_WINDOW - 1;
-        for (let i = start; i < arr.length - 1; i++) {
-            if (arr[i + 1] > arr[i]) ups++;
-        }
-        const downs = KILLER_WINDOW - ups;
-        const maxSame = Math.max(ups, downs);
-        return { ok: maxSame < KILLER_THRESHOLD, sameCount: maxSame, direction: ups >= downs ? 'up' : 'down' };
-    }
-
-    // F2 · FILTRO DE VOLATILIDAD (+1 apoyo si pasa)
-    function checkVolFilter(arr) {
-        if (arr.length < VOL_WINDOW + 1) return { ok: false, ratio: 0 };
-        let sumRange = 0;
-        const start = arr.length - VOL_WINDOW - 1;
-        for (let i = start; i < arr.length - 1; i++) sumRange += Math.abs(arr[i + 1] - arr[i]);
-        const avgRange = sumRange / VOL_WINDOW;
-        const lastRange = Math.abs(arr[arr.length - 1] - arr[arr.length - 2]);
-        if (avgRange === 0) return { ok: false, ratio: 0 };
-        const ratio = lastRange / avgRange;
-        return { ok: ratio <= 1.5, ratio };
-    }
-
-    // F3 · FILTRO DE MICRO-TENDENCIA (+1 apoyo si pasa)
-    function checkTrendFilter(arr, entryDir) {
-        if (arr.length < TREND_WINDOW + 1) return { ok: true, upPct: 0.5 };
-        let ups = 0;
-        const start = arr.length - TREND_WINDOW - 1;
-        for (let i = start; i < arr.length - 1; i++) {
-            if (arr[i + 1] > arr[i]) ups++;
-        }
-        const upPct = ups / TREND_WINDOW;
-        const downPct = 1 - upPct;
-        const trendingUp = upPct > 0.70;
-        const trendingDown = downPct > 0.70;
-        let ok = true;
-        if (trendingUp && entryDir === 'CALL') ok = false;
-        if (trendingDown && entryDir === 'PUT') ok = false;
-        return { ok, upPct };
-    }
-
-    // F4 · FILTRO DE DESACELERACIÓN (OBLIGATORIO en v6)
-    // Analiza últimos DECEL_WINDOW ticks: el impulso debe continuar pero con
-    // magnitud decreciente. ratio < 1 indica desaceleración.
-    function checkDecel(arr, impulsoDir) {
-        if (arr.length < DECEL_WINDOW + 1) return { ok: false, ratio: 0, lastRet: 0, prevRet: 0 };
-        const rets = [];
-        const start = arr.length - DECEL_WINDOW - 1;
-        for (let i = start; i < arr.length - 1; i++) rets.push(arr[i + 1] - arr[i]);
-        const half = Math.floor(DECEL_WINDOW / 2);
-        let absFirst = 0,
-            absSecond = 0;
-        for (let i = 0; i < half; i++) absFirst += Math.abs(rets[i]);
-        for (let i = half; i < DECEL_WINDOW; i++) absSecond += Math.abs(rets[i]);
-        const avgFirst = absFirst / half;
-        const avgSecond = absSecond / (DECEL_WINDOW - half);
-        if (avgFirst === 0) return { ok: false, ratio: 0, lastRet: rets[rets.length - 1], prevRet: rets[rets.length -
-                2] || 0 };
-        const ratio = avgSecond / avgFirst;
-        const lastRet = rets[rets.length - 1];
-        const prevRet = rets.length >= 2 ? rets[rets.length - 2] : 0;
-        // El último retorno debe ser en la dirección del impulso Y menor en magnitud
-        const dirOk = impulsoDir === 'up' ? lastRet > 0 : lastRet < 0;
-        const magnitudDecay = Math.abs(lastRet) < Math.abs(prevRet) * 1.1; // permite hasta 10% más (tolerancia)
-        return { ok: dirOk && ratio < 0.90 && magnitudDecay, ratio, lastRet, prevRet };
+    // Promedio de un array (O(1) porque el array es corto)
+    function avg(arr) {
+        if (arr.length === 0) return 0;
+        let s = 0;
+        for (let i = 0; i < arr.length; i++) s += arr[i];
+        return s / arr.length;
     }
 
     // ════════════════════════════════════════════════════════
-    // ── SCORE NO LINEAL v6 ──────────────────────────────
-    //
-    // CONDICIONES OBLIGATORIAS (deben ser TODAS true):
-    //   O1: Z extremo (|Z| ≥ umbral)
-    //   O2: Desaceleración confirmada
-    //   O3: Doble intento completado (secuencia: persistencia → pullback → débil)
-    //
-    // CONDICIONES DE APOYO (al menos 2 de 3):
-    //   A1: Persistencia (persistCount ≥ PERSIST_REQ)
-    //   A2: Volatilidad normal (volCheck.ok)
-    //   A3: Sin micro-tendencia (trendCheck.ok)
-    //
-    // REGLA: operar solo si O1+O2+O3 = true Y (A1+A2+A3) ≥ 2
+    // ACTUALIZAR BUFFERS
+    // Se llama en cada tick. Mantiene los arrays en tamaño máximo
+    // BUFFER_SIZE. Retorna los últimos retornos para usar en detectExhaustion.
     // ════════════════════════════════════════════════════════
-    function evaluateScore(absZ, thr, persistCount, volOk, trendOk, decelOk, doubleIntentOk) {
-        const O1 = absZ >= thr;
-        const O2 = decelOk;
-        const O3 = doubleIntentOk;
-        const A1 = persistCount >= PERSIST_REQ;
-        const A2 = volOk;
-        const A3 = trendOk;
-        const obligCount = (O1 ? 1 : 0) + (O2 ? 1 : 0) + (O3 ? 1 : 0);
-        const apoyoCount = (A1 ? 1 : 0) + (A2 ? 1 : 0) + (A3 ? 1 : 0);
-        const allOblig = O1 && O2 && O3;
-        const minApoyo = apoyoCount >= 2;
-        const approved = allOblig && minApoyo;
+    function updateBuffers(asset, price) {
+        const buf = buffers[asset];
+        buf.prices.push(price);
+        if (buf.prices.length > BUFFER_SIZE) buf.prices.shift();
+
+        // Calcular returns
+        if (buf.prices.length >= 2) {
+            const ret = buf.prices[buf.prices.length - 1] - buf.prices[buf.prices.length - 2];
+            buf.returns.push(ret);
+            buf.absReturns.push(Math.abs(ret));
+            if (buf.returns.length > BUFFER_SIZE - 1) {
+                buf.returns.shift();
+                buf.absReturns.shift();
+            }
+        }
+    }
+
+    // ════════════════════════════════════════════════════════
+    // detectExhaustion(asset) — NÚCLEO DEL SISTEMA v6.2
+    //
+    // Analiza si el activo está en un punto de AGOTAMIENTO REAL.
+    // Retorna { exhausted, score, entryDir, z, details }
+    //
+    // CONDICIONES (todas deben cumplirse):
+    //  1. Z EXTREMO: |Z| ≥ umbral del activo
+    //  2. DESACELERACIÓN REAL: v3 > v2 > v1 (progresiva) O v1 < v2 * 0.7
+    //  3. MICRO RETROCESO: al menos 1 tick en contra en últimos 2
+    //  4. WEAK PUSH: intento débil de continuar (abs(ret_actual) < promedio de últimos 3)
+    //  5. VOLATILIDAD CONTROLADA: vol_5 ≤ vol_20 * 1.3
+    //  6. NO HIPERTENDENCIA: < 9 de 10 ticks en misma dirección
+    //
+    // SCORE INTERNO (para duración dinámica):
+    //  Z fuerte → +2
+    //  Desaceleración clara → +3
+    //  Micro retroceso limpio → +2
+    //  WeakPush claro → +2
+    //  Volatilidad baja → +1
+    //  TOTAL MÁXIMO = 10
+    // ════════════════════════════════════════════════════════
+    function detectExhaustion(asset) {
+        const buf = buffers[asset];
+        const prices = buf.prices;
+        const returns = buf.returns;
+        const absReturns = buf.absReturns;
+
+        // Necesitamos al menos 5 ticks para análisis completo
+        if (prices.length < 5 || returns.length < 4) {
+            return { exhausted: false, score: 0, entryDir: null, z: 0, details: {} };
+        }
+
+        const n = returns.length;
+        const lastRet = returns[n - 1];
+        const prevRet = returns[n - 2];
+        const prevPrevRet = n >= 3 ? returns[n - 3] : 0;
+
+        // Magnitudes
+        const v1 = Math.abs(lastRet);
+        const v2 = Math.abs(prevRet);
+        const v3 = Math.abs(prevPrevRet);
+
+        // ── 1. Z-SCORE EXTREMO ────────────────────────────
+        const z = calcZ(prices);
+        const absZ = Math.abs(z);
+        const thr = zThresholds[asset];
+        const zExtremo = absZ >= thr;
+        let score = 0;
+        if (zExtremo) score += 2; // Z fuerte
+
+        // ── 2. DESACELERACIÓN REAL ────────────────────────
+        // v3 > v2 > v1 (desaceleración progresiva)
+        // O v1 < v2 * 0.7 (caída brusca de velocidad)
+        const desacelProgresiva = v3 > v2 && v2 > v1;
+        const desacelBrusca = v2 > 0 && v1 < v2 * 0.7;
+        const desaceleracion = desacelProgresiva || desacelBrusca;
+        if (desacelProgresiva) score += 3;
+        else if (desacelBrusca) score += 2; // Brusca pero aún válida
+
+        // ── 3. MICRO RETROCESO ────────────────────────────
+        // Determinar dirección del impulso previo dominante
+        // (basado en los últimos 3 retornos antes del actual)
+        let impulsoDir = 0;
+        for (let i = Math.max(0, n - 4); i < n - 1; i++) {
+            impulsoDir += returns[i];
+        }
+        const dirDominante = impulsoDir >= 0 ? 'up' : 'down';
+
+        // Micro retroceso: al menos 1 tick en contra en últimos 2 ticks
+        const tick1Contra = dirDominante === 'up' ? prevRet < 0 : prevRet > 0;
+        const tick2Contra = n >= 3 ? (dirDominante === 'up' ? prevPrevRet < 0 : prevPrevRet > 0) : false;
+        const microRetroceso = tick1Contra || tick2Contra;
+        if (microRetroceso) score += 2;
+
+        // ── 4. WEAK PUSH (SEGUNDO INTENTO DÉBIL) ──────────
+        // El precio intenta continuar en la dirección original pero con poca fuerza.
+        // weakPush = abs(ret_actual) < promedio de últimos 3 impulsos fuertes
+        const last3Abs = absReturns.slice(-3);
+        const avgLast3 = last3Abs.length > 0 ? avg(last3Abs) : 0;
+        const weakPush = v1 < avgLast3 * 0.85 && v1 < v2; // Más débil que el promedio y que el anterior
+        if (weakPush) score += 2;
+
+        // ── 5. VOLATILIDAD CONTROLADA ─────────────────────
+        const vol5 = absReturns.length >= 5 ? avg(absReturns.slice(-5)) : avg(absReturns);
+        const vol20 = avg(absReturns);
+        const volatilidadOk = vol5 <= vol20 * 1.3;
+        if (volatilidadOk && vol5 <= vol20) score += 1;
+
+        // ── 6. NO HIPERTENDENCIA ──────────────────────────
+        let hiperTendencia = false;
+        if (prices.length >= KILLER_WINDOW + 1) {
+            let ups = 0;
+            const start = returns.length - KILLER_WINDOW;
+            for (let i = Math.max(0, start); i < returns.length; i++) {
+                if (returns[i] > 0) ups++;
+            }
+            const maxSame = Math.max(ups, KILLER_WINDOW - ups);
+            hiperTendencia = maxSame >= KILLER_THRESHOLD; // 9 o 10 de 10
+        }
+
+        // ── DETERMINAR DIRECCIÓN DE ENTRADA ───────────────
+        // Z positivo → sobrecomprado → VENDER (PUT)
+        // Z negativo → sobrevendido  → COMPRAR (CALL)
+        const entryDir = z > 0 ? 'PUT' : 'CALL';
+
+        // ── EVALUACIÓN FINAL ──────────────────────────────
+        const exhausted = zExtremo && desaceleracion && microRetroceso && weakPush && volatilidadOk && !hiperTendencia;
 
         return {
-            approved,
-            O1,
-            O2,
-            O3,
-            A1,
-            A2,
-            A3,
-            obligCount,
-            apoyoCount,
-            calidad: allOblig && apoyoCount === 3 ? 'PERFECTA' : allOblig && minApoyo ? 'ESTÁNDAR' : 'INSUFICIENTE'
+            exhausted,
+            score,
+            entryDir,
+            z,
+            details: {
+                zExtremo,
+                desaceleracion,
+                microRetroceso,
+                weakPush,
+                volatilidadOk,
+                hiperTendencia,
+                v1,
+                v2,
+                v3,
+                vol5,
+                vol20,
+                dirDominante,
+                desacelProgresiva,
+                desacelBrusca
+            }
         };
     }
 
-    // ── ACTUALIZAR PANEL DE SCORE v6 ──────────────────────
-    function updateScorePanel(evalResult) {
+    // ════════════════════════════════════════════════════════
+    // DURACIÓN DINÁMICA según score interno
+    //   score ≥ 8 → 2 ticks (condición perfecta)
+    //   score 6-7 → 3 ticks (condición estándar)
+    //   score < 6 → NO operar
+    // ════════════════════════════════════════════════════════
+    function getDynamicTicks(score) {
+        if (score >= 8) return 2;
+        if (score >= 6) return 3;
+        return 0; // No operar
+    }
+
+    // ════════════════════════════════════════════════════════
+    // ACTUALIZAR PANEL DE SCORE v6.2
+    // ════════════════════════════════════════════════════════
+    function updateScorePanel(details) {
         const el = document.getElementById('scoreTotal');
-        if (!evalResult) {
+        if (!details) {
             el.innerText = '⛔';
             el.className = 'score-total bad';
-            document.getElementById('scZ').innerText = '✗';
-            document.getElementById('scZ').className = 'sc-val na';
-            document.getElementById('scDecel').innerText = '✗';
-            document.getElementById('scDecel').className = 'sc-val na';
-            document.getElementById('scDouble').innerText = '✗';
-            document.getElementById('scDouble').className = 'sc-val na';
-            document.getElementById('scPersist').innerText = '✗';
-            document.getElementById('scPersist').className = 'sc-val na';
-            document.getElementById('scVol').innerText = '✗';
-            document.getElementById('scVol').className = 'sc-val na';
-            document.getElementById('scTrend').innerText = '✗';
-            document.getElementById('scTrend').className = 'sc-val na';
+            ['scZ', 'scDecel', 'scPullback', 'scWeak', 'scVol'].forEach(id => {
+                document.getElementById(id).innerText = '✗';
+                document.getElementById(id).className = 'sc-val na';
+            });
             return;
         }
-        const setObl = (id, val) => {
+        const setVal = (id, val, isObl = true) => {
             const e = document.getElementById(id);
             e.innerText = val ? '✓' : '✗';
-            e.className = 'sc-val ' + (val ? 'ok' : 'no');
+            e.className = 'sc-val ' + (val ? 'ok' : (isObl ? 'no' : 'na'));
         };
-        const setApoyo = (id, val) => {
-            const e = document.getElementById(id);
-            e.innerText = val ? '✓' : '✗';
-            e.className = 'sc-val ' + (val ? 'ok' : 'na');
-        };
-        setObl('scZ', evalResult.O1);
-        setObl('scDecel', evalResult.O2);
-        setObl('scDouble', evalResult.O3);
-        setApoyo('scPersist', evalResult.A1);
-        setApoyo('scVol', evalResult.A2);
-        setApoyo('scTrend', evalResult.A3);
-
-        if (evalResult.calidad === 'PERFECTA') {
-            el.innerText = '⚡ PERF';
-            el.className = 'score-total ok';
-        } else if (evalResult.calidad === 'ESTÁNDAR') {
-            el.innerText = '✅ STD';
-            el.className = 'score-total ok';
-        } else if (evalResult.obligCount >= 2) {
-            el.innerText = '⏳ ' + evalResult.obligCount + '/3+';
-            el.className = 'score-total warn';
-        } else {
-            el.innerText = '⛔';
-            el.className = 'score-total bad';
-        }
+        setVal('scZ', details.zExtremo);
+        setVal('scDecel', details.desaceleracion);
+        setVal('scPullback', details.microRetroceso);
+        setVal('scWeak', details.weakPush);
+        setVal('scVol', details.volatilidadOk, false);
     }
 
     // ── UI: GRIDS ─────────────────────────────────────────
@@ -567,107 +560,81 @@ canvas{margin:10px 0;background:#010810;border-radius:14px;padding:4px;}
         </div>`).join('');
     }
 
-    function buildTicksGrid() {
-        const presets = [1, 2, 3, 4, 5];
-        document.getElementById('ticksGrid').innerHTML = ASSETS.map(a => {
-            const lbl = ASSET_LABELS[a],
-                v = ticksPerAsset[a];
-            const ph = presets.map(p =>
-                `<span class="tp${p===v?' on':''}" onclick="setTick('${a}',${p},this)">${p}</span>`
-                ).join('');
-            return `<div class="tick-card">
-          <div class="tick-sym">${lbl}</div>
-          <div class="tick-label">Duración base</div>
-          <input type="number" class="tick-inp" id="tick_${a}" value="${v}" min="1" max="5"
-            onchange="ticksPerAsset['${a}']=parseInt(this.value);addLog('⚙️ ${lbl} ticks → '+this.value)">
-          <div class="tick-presets">${ph}</div>
-        </div>`;
-        }).join('');
-    }
-
-    function setTick(asset, val, el) {
-        ticksPerAsset[asset] = val;
-        document.getElementById('tick_' + asset).value = val;
-        el.closest('.tick-card').querySelectorAll('.tp').forEach(e => e.classList.remove('on'));
-        el.classList.add('on');
-        addLog('⚙️ ' + ASSET_LABELS[asset] + ' ticks → ' + val);
-    }
-
     // ── ZPEAK PANEL ───────────────────────────────────────
-    function updateZPeakPanel(state, peak, persist, entry) {
-        const stEl = document.getElementById('zpState');
-        stEl.innerText = state;
-        stEl.className = 'zpeak-val ' + (state === 'ESPERANDO' ? 'wait' : state.startsWith('✅') ? 'ok' : state
-            .startsWith('❌') ? 'no' : state === 'PULLBACK' ? 'wait' : 'idle');
-        const pkEl = document.getElementById('zpPeak');
-        pkEl.innerText = peak;
-        pkEl.className = 'zpeak-val ' + (peak !== '--' ? 'wait' : 'idle');
-        const prEl = document.getElementById('zpPersist');
-        prEl.innerText = persist;
-        prEl.className = 'zpeak-val ' + (persist.includes('PB') ? 'ok' : persist.startsWith('2') || persist.startsWith('3') ?
+    function updateZPeakPanel(mode, active, zScore, entry) {
+        document.getElementById('zpMode').innerText = mode;
+        document.getElementById('zpMode').className = 'zpeak-val ' + (mode === 'TREND_LOCK' ? 'no' : mode === 'SCAN' ?
+            'ok' : 'idle');
+        document.getElementById('zpActive').innerText = active;
+        document.getElementById('zpActive').className = 'zpeak-val ' + (active !== '--' ? 'wait' : 'idle');
+        document.getElementById('zpScore').innerText = zScore;
+        document.getElementById('zpScore').className = 'zpeak-val ' + (zScore.includes('/') && parseInt(zScore) >= 6 ?
             'ok' : 'wait');
-        const enEl = document.getElementById('zpEntry');
-        enEl.innerText = entry;
-        enEl.className = 'zpeak-val ' + (entry === '--' ? 'idle' : entry.startsWith('✅') ? 'ok' : 'no');
+        document.getElementById('zpEntry').innerText = entry;
+        document.getElementById('zpEntry').className = 'zpeak-val ' + (entry === '--' ? 'idle' : entry.startsWith('✅') ?
+            'ok' : 'no');
     }
 
     // ── ASSETS GRID ───────────────────────────────────────
     function updateAssetsGrid() {
         const now = Date.now();
         document.getElementById('assetsGrid').innerHTML = ASSETS.map(a => {
-            const lbl = ASSET_LABELS[a],
-                arr = prices[a],
-                zps = zPeak[a];
-            const blocked = assetBlockedUntil[a] > now;
-            const trendBlocked = assetTrendBlockedUntil[a] > now;
-            const rows = [10, 25, 50].map(lb => {
-                if (arr.length < lb)
-                    return `<div class="lb-row"><span class="lb-name">LB${lb}</span><span class="lb-z" style="color:#2a3555">--</span></div>`;
-                const z = calcZ(arr.slice(-lb)),
-                    abs = Math.abs(z),
-                    thr = zThresholds[a];
-                const col = abs >= thr ? '#ff4757' : abs >= 1.5 ? '#ffaa44' : '#2ed573';
-                const bW = Math.min(100, abs * 25),
-                    bC = z > 0 ? '#ff4757' : '#2ed573';
+            const lbl = ASSET_LABELS[a];
+            const buf = buffers[a];
+            const st = assetState[a];
+            const prices = buf.prices;
+            const blocked = st.blockedUntil > now;
+            const trendLocked = st.mode === 'TREND_LOCK';
+
+            // Mostrar Z-score en tiempo real
+            const z = prices.length >= 5 ? calcZ(prices) : 0;
+            const absZ = Math.abs(z);
+            const thr = zThresholds[a];
+            const zColor = absZ >= thr ? '#ff4757' : absZ >= 1.5 ? '#ffaa44' : '#2ed573';
+
+            // Barras de Z para LB10, LB25 (usando últimos 10 y 25 si hay datos)
+            const lbBars = [10, 20].map(lb => {
+                const slice = prices.slice(-lb);
+                const zSlice = slice.length >= 2 ? calcZ(slice) : 0;
+                const absSlice = Math.abs(zSlice);
+                const col = absSlice >= thr ? '#ff4757' : absSlice >= 1.5 ? '#ffaa44' : '#2ed573';
+                const bW = Math.min(100, absSlice * 30);
+                const bC = zSlice > 0 ? '#ff4757' : '#2ed573';
                 return `<div class="lb-row">
-            <span class="lb-name">LB${lb}</span>
-            <div style="flex:1;margin:0 8px;"><div class="lb-bar" style="width:${bW}%;background:${bC};"></div></div>
-            <span class="lb-z" style="color:${col}">${z.toFixed(2)}</span>
-          </div>`;
+              <span class="lb-name">Z${lb}</span>
+              <div style="flex:1;margin:0 8px;"><div class="lb-bar" style="width:${bW}%;background:${bC};"></div></div>
+              <span class="lb-z" style="color:${col}">${zSlice.toFixed(2)}</span>
+            </div>`;
             }).join('');
 
             let stTxt, stCol, cls = '';
-            if (trendBlocked) {
-                stTxt = '🔴 KILLER ' + Math.ceil((assetTrendBlockedUntil[a] - now) / 1000) + 's';
-                stCol = '#ff4757';
-                cls = ' trend-blocked';
-            } else if (blocked) {
-                stTxt = '🔴 BLOQUEADO ' + Math.ceil((assetBlockedUntil[a] - now) / 1000) + 's';
+            if (blocked) {
+                stTxt = '🔴 BLOQ ' + Math.ceil((st.blockedUntil - now) / 1000) + 's';
                 stCol = '#ff4757';
                 cls = ' blocked';
+            } else if (trendLocked) {
+                stTxt = '🔴 TREND LOCK ' + Math.ceil((st.lockStartTime + TREND_LOCK_MS - now) / 1000) + 's';
+                stCol = '#ff4757';
+                cls = ' trend-lock';
             } else if (openContracts[a]) {
                 stTxt = '🔒 ABIERTO';
                 stCol = '#00b8ff';
-            } else if (zps.phase === 'WAITING') {
-                stTxt = `⏳ CONFIRM ${zps.dir} | Z${zps.peakZ>=0?'+':''}${zps.peakZ.toFixed(2)}`;
+            } else if (lastExhaustionAsset === a) {
+                stTxt = '🔥 AGOTAMIENTO DETECTADO';
                 stCol = '#ffaa44';
-                cls = ' zpeak-active';
-            } else if (zps.phase === 'PULLBACK') {
-                stTxt = `↩ PULLBACK detectado → esperando débil`;
-                stCol = '#00b8ff';
-                cls = ' zpeak-pullback';
-            } else if (zps.phase === 'PERSISTING') {
-                stTxt = `📍 PERSISTIENDO [${zps.persistCount}/${PERSIST_REQ}] Z${zps.peakZ>=0?'+':''}${zps.peakZ.toFixed(2)}`;
-                stCol = '#ffaa44';
-                cls = ' zpeak-active';
+                cls = ' exhaustion-ready';
             } else {
                 stTxt = 'SCAN';
-                stCol = '#2a3555';
+                stCol = '#2ed573';
+                cls = ' scan-active';
             }
+
             return `<div class="asset-card${cls}">
-          <div class="asset-title">${lbl}</div>${rows}
-          <span class="asset-state" style="color:${stCol}">${stTxt}</span>
-        </div>`;
+            <div class="asset-title">${lbl}</div>
+            <div class="lb-row"><span class="lb-name">Z-SCORE</span><span class="lb-z" style="color:${zColor}">${z.toFixed(2)}</span></div>
+            ${lbBars}
+            <span class="asset-state" style="color:${stCol}">${stTxt}</span>
+          </div>`;
         }).join('');
     }
 
@@ -704,36 +671,26 @@ canvas{margin:10px 0;background:#010810;border-radius:14px;padding:4px;}
         return base;
     }
 
-    // ── DURACIÓN DINÁMICA v6 ────────────────────────────
-    // Condición estándar → 3 ticks (o lo configurado)
-    // Condición perfecta (3/3 apoyo) → 2 ticks (reduce exposición)
-    function getDynamicTicks(sym, calidad) {
-        const base = ticksPerAsset[sym] || 3;
-        if (calidad === 'PERFECTA') {
-            return Math.max(2, base - 1); // Reduce 1 tick, mínimo 2
-        }
-        return base;
-    }
-
     // ── EJECUCIÓN ─────────────────────────────────────────
-    function executeTrade(sym, signal, peakZ, calidad) {
-        const stake = getStake(),
-            ticks = getDynamicTicks(sym, calidad),
-            now = Date.now();
-        const calidadLabel = calidad === 'PERFECTA' ? '⚡PERFECTA' : '✅STD';
-        addLog(`⚡ REVERSAL ${ASSET_LABELS[sym]} → ${signal} | Z:${peakZ.toFixed(2)} | ${calidadLabel} | $${stake} | ${ticks}t`,'lk');
-        document.getElementById('activeSignal').innerText = signal + ' ' + ASSET_LABELS[sym] + ' Z:' + peakZ.toFixed(
-            2) + ' ' + calidadLabel + ' ' + ticks + 't';
-        zPeak[sym] = { phase: 'IDLE', dir: null, peakZ: 0, persistCount: 0, pullbackDetected: false, scoreObl: 0,
-            scoreApoyo: 0 };
+    function executeTrade(sym, entryDir, z, score, ticks) {
+        const stake = getStake();
+        const now = Date.now();
+        const calidad = score >= 8 ? '⚡PERFECTA' : '✅STD';
+        addLog(`🔥 ENTRADA POR AGOTAMIENTO ${ASSET_LABELS[sym]} → ${entryDir} | Z:${z.toFixed(2)} | Score:${score}/10 | ${calidad} | $${stake} | ${ticks}t`,'lk');
+        document.getElementById('activeSignal').innerText = entryDir + ' ' + ASSET_LABELS[sym] + ' Z:' + z.toFixed(2) +
+            ' Score:' + score + ' ' + calidad + ' ' + ticks + 't';
+
         lastTradeTime[sym] = now;
         openContracts[sym] = 'pending';
         tradeTimestamps.push(now);
+        lastExhaustionAsset = null;
+        updateZPeakPanel('SCAN', ASSET_LABELS[sym], z.toFixed(2) + '/' + score, '✅ ' + entryDir);
+
         ws.send(JSON.stringify({
             proposal: 1,
             amount: stake,
             basis: 'stake',
-            contract_type: signal,
+            contract_type: entryDir,
             currency: 'USD',
             duration: ticks,
             duration_unit: 't',
@@ -741,192 +698,104 @@ canvas{margin:10px 0;background:#010810;border-radius:14px;padding:4px;}
         }));
     }
 
-    // ════════════════════════════════════════════════════════════════════════
-    // NÚCLEO — onNewPrice (v6)
-    // Pipeline completo con DOBLE INTENTO y SCORE NO LINEAL
-    // ════════════════════════════════════════════════════════════════════════
+    // ════════════════════════════════════════════════════════
+    // NÚCLEO — onNewPrice (v6.2 PRO)
+    // Pipeline simplificado: actualizar buffers → evaluar agotamiento → decidir
+    // ════════════════════════════════════════════════════════
     function onNewPrice(sym, price) {
-        const arr = prices[sym];
-        arr.push(price);
-        if (arr.length > 250) arr.shift();
-        if (arr.length < Z_LOOKBACK) return;
-
-        const zps = zPeak[sym];
         const now = Date.now();
-        const lastRet = arr[arr.length - 1] - arr[arr.length - 2];
-        const prevRet = arr.length >= 3 ? arr[arr.length - 2] - arr[arr.length - 3] : 0;
+        const st = assetState[sym];
 
-        // ── GUARDIANES GLOBALES (O(1)) ────────────────────────
+        // Actualizar buffers
+        updateBuffers(sym, price);
+        const buf = buffers[sym];
+        if (buf.prices.length < 5) return;
+
+        // ── GUARDIANES GLOBALES (O(1)) ────────────────────
         if (now < pauseUntil) { updateAssetsGrid(); return; }
         if (openContracts[sym]) { updateAssetsGrid(); return; }
-        if (assetBlockedUntil[sym] > now) { updateAssetsGrid(); return; }
-        if (assetTrendBlockedUntil[sym] > now) { updateAssetsGrid(); return; }
+        if (st.blockedUntil > now) { updateAssetsGrid(); return; }
         if (now - lastTradeTime[sym] < 10000) { updateAssetsGrid(); return; }
         const dd = sessionStart - balance;
         if (dd >= sessionStart * 0.05) { addLog('🛑 STOP DE SESIÓN — drawdown 5%', 'll');
             stopBot(); return; }
 
-        // ── CALCULAR Z ────────────────────────────────────────
-        const z = calcZ(arr.slice(-Z_LOOKBACK));
-        const absZ = Math.abs(z);
-        const thr = zThresholds[sym];
+        // ── EVALUAR AGOTAMIENTO ──────────────────────────
+        const exhaustResult = detectExhaustion(sym);
 
-        // ── DIRECCIÓN DEL IMPULSO ──────────────────────────
-        const entryDir = z > 0 ? 'PUT' : 'CALL';
-        const impulsoDir = z > 0 ? 'up' : 'down';
-
-        // ── FILTRO KILLER (ANTI-DESTRUCCIÓN) ──────────────
-        const killerCheck = checkKillerFilter(arr);
-        if (!killerCheck.ok && zps.phase === 'IDLE') {
-            // Tendencia fuerte detectada → bloquear activo
-            assetTrendBlockedUntil[sym] = now + TREND_BLOCK_MS;
-            addLog(`🔴 KILLER ${ASSET_LABELS[sym]}: ${killerCheck.sameCount}/${KILLER_WINDOW} ticks en dirección ${killerCheck.direction} — bloqueado 1min`, 'll');
-            zPeak[sym] = { phase: 'IDLE', dir: null, peakZ: 0, persistCount: 0, pullbackDetected: false, scoreObl: 0,
-                scoreApoyo: 0 };
-            updateAssetsGrid();
-            return;
-        }
-
-        // ── CALCULAR FILTROS DE APOYO ──────────────────────
-        const volCheck = checkVolFilter(arr);
-        const trendCheck = checkTrendFilter(arr, entryDir);
-        const decelCheck = checkDecel(arr, impulsoDir);
-
-        // ── ACTUALIZAR PERSISTENCIA ────────────────────────
-        if (absZ >= thr) {
-            zps.persistCount++;
-            if (zps.phase === 'IDLE') {
-                zps.phase = 'PERSISTING';
-                zps.peakZ = z;
-                zps.dir = entryDir;
-                zps.pullbackDetected = false;
+        // ── DETECCIÓN DE HIPERTENDENCIA (para activar TREND_LOCK) ─
+        if (!exhaustResult.details.hiperTendencia && buf.returns.length >= KILLER_WINDOW) {
+            // Verificar manualmente si hay hipertendencia
+            let ups = 0;
+            const start = buf.returns.length - KILLER_WINDOW;
+            for (let i = Math.max(0, start); i < buf.returns.length; i++) {
+                if (buf.returns[i] > 0) ups++;
             }
-            if (Math.abs(z) > Math.abs(zps.peakZ)) zps.peakZ = z;
-        } else if (zps.phase !== 'IDLE') {
-            // Z cayó bajo umbral — verificar si estamos en fase que permite pullback
-            if (zps.phase === 'PERSISTING' && zps.persistCount >= PERSIST_REQ && !zps.pullbackDetected) {
-                // MICRO RETROCESO DETECTADO: Z cayó pero ya teníamos persistencia
-                // El tick actual va en contra del impulso original
-                const tickContraImpulso = zps.dir === 'PUT' ? lastRet < 0 : lastRet > 0;
-                if (tickContraImpulso) {
-                    zps.phase = 'PULLBACK';
-                    zps.pullbackDetected = true;
-                    addLog(`↩ PULLBACK ${ASSET_LABELS[sym]} | Z:${z.toFixed(2)} (bajó de ${zps.peakZ.toFixed(2)}) | Esperando intento débil de continuar...`, 'li');
-                    updateZPeakPanel('PULLBACK', ASSET_LABELS[sym] + ' Z' + zps.peakZ.toFixed(2), 'PB/' + zps
-                        .persistCount, '...');
-                    updateAssetsGrid();
-                    return;
-                }
-            }
-            if (zps.phase === 'WAITING') {
-                // Cancelar espera
-                addLog(`↩ ${ASSET_LABELS[sym]} Z bajó del umbral durante WAITING — cancelado`);
-                updateZPeakPanel('❌ CANCELADO', '--', '0/' + PERSIST_REQ, '--');
-                zPeak[sym] = { phase: 'IDLE', dir: null, peakZ: 0, persistCount: 0, pullbackDetected: false,
-                    scoreObl: 0, scoreApoyo: 0 };
-                setTimeout(() => updateZPeakPanel('IDLE', '--', '0/' + PERSIST_REQ, '--'), 1200);
+            const maxSame = Math.max(ups, KILLER_WINDOW - ups);
+            if (maxSame >= KILLER_THRESHOLD && st.mode === 'SCAN') {
+                // Activar TREND_LOCK
+                st.mode = 'TREND_LOCK';
+                st.lockStartTime = now;
+                addLog(`🔴 TREND LOCK ACTIVADO ${ASSET_LABELS[sym]}: ${maxSame}/${KILLER_WINDOW} ticks en misma dirección — buscando agotamiento...`, 'll');
+                updateZPeakPanel('TREND_LOCK', ASSET_LABELS[sym], '--/--', '--');
                 updateAssetsGrid();
                 return;
             }
-            // Reset si no hay pullback en curso
-            if (zps.phase !== 'PULLBACK') {
-                zPeak[sym] = { phase: 'IDLE', dir: null, peakZ: 0, persistCount: 0, pullbackDetected: false,
-                    scoreObl: 0, scoreApoyo: 0 };
-                updateZPeakPanel('IDLE', '--', '0/' + PERSIST_REQ, '--');
+        }
+
+        // ── DESBLOQUEO INTELIGENTE ────────────────────────
+        if (st.mode === 'TREND_LOCK') {
+            // Verificar si hay agotamiento real para desbloquear antes de tiempo
+            if (exhaustResult.exhausted) {
+                st.mode = 'SCAN';
+                st.lockStartTime = 0;
+                addLog(`🔥 UNLOCK POR AGOTAMIENTO REAL ${ASSET_LABELS[sym]} | Z:${exhaustResult.z.toFixed(2)} | Score:${exhaustResult.score}/10 — ¡entrando!`, 'lk');
+                lastExhaustionAsset = sym;
+                updateScorePanel(exhaustResult.details);
+                const ticks = getDynamicTicks(exhaustResult.score);
+                if (ticks > 0) {
+                    executeTrade(sym, exhaustResult.entryDir, exhaustResult.z, exhaustResult.score, ticks);
+                }
                 updateAssetsGrid();
                 return;
             }
-            // Si está en PULLBACK y Z sigue bajo, mantener estado (esperar)
-        }
-
-        // ── FASE: PULLBACK → WAITING (Doble Intento) ──────
-        if (zps.phase === 'PULLBACK') {
-            // Verificar si el precio intenta continuar en la dirección original PERO débil
-            const tickAFavorImpulso = zps.dir === 'PUT' ? lastRet > 0 : lastRet < 0;
-            if (tickAFavorImpulso) {
-                // El precio intenta continuar — verificar que sea DÉBIL (desaceleración)
-                const magnitudDecay = prevRet !== 0 ? Math.abs(lastRet) < Math.abs(prevRet) * 0.95 : true;
-                if (magnitudDecay || decelCheck.ok) {
-                    // ✅ DOBLE INTENTO COMPLETADO: impulso débil confirmado
-                    zps.phase = 'WAITING';
-                    addLog(`📍 DOBLE INTENTO ${ASSET_LABELS[sym]} | Z:${z.toFixed(2)} | Tick débil: ${lastRet.toFixed(4)} vs prev: ${prevRet.toFixed(4)} | → ${zps.dir}`, 'li');
-                    updateZPeakPanel('ESPERANDO', ASSET_LABELS[sym] + ' Z' + zps.peakZ.toFixed(2), '✓PB/' + zps
-                        .persistCount, '...');
-                } else {
-                    // Intento fuerte — no es agotamiento real, cancelar
-                    addLog(`↩ ${ASSET_LABELS[sym]} intento de continuar FUERTE (${lastRet.toFixed(4)}) — no es agotamiento real — cancelado`);
-                    zPeak[sym] = { phase: 'IDLE', dir: null, peakZ: 0, persistCount: 0, pullbackDetected: false,
-                        scoreObl: 0, scoreApoyo: 0 };
-                    updateZPeakPanel('❌ CANCELADO', '--', '0/' + PERSIST_REQ, '--');
-                    setTimeout(() => updateZPeakPanel('IDLE', '--', '0/' + PERSIST_REQ, '--'), 1200);
-                }
+            // Verificar expiración del bloqueo
+            if (now - st.lockStartTime > TREND_LOCK_MS) {
+                st.mode = 'SCAN';
+                st.lockStartTime = 0;
+                addLog(`⛔ BLOQUEO EXPIRADO ${ASSET_LABELS[sym]} — volviendo a SCAN`, 'li');
+                updateZPeakPanel('SCAN', ASSET_LABELS[sym], '--/--', '--');
             } else {
-                // Sigue en contra — el pullback se profundiza, esperar
-                updateZPeakPanel('PULLBACK', ASSET_LABELS[sym] + ' Z' + zps.peakZ.toFixed(2), 'PB/' + zps.persistCount,
+                addLog(`🟡 BUSCANDO AGOTAMIENTO ${ASSET_LABELS[sym]} | Z:${exhaustResult.z.toFixed(2)} | ${Math.ceil((st.lockStartTime + TREND_LOCK_MS - now) / 1000)}s restantes`);
+                updateZPeakPanel('TREND_LOCK', ASSET_LABELS[sym], exhaustResult.z.toFixed(2) + '/' + exhaustResult.score,
                     '...');
             }
             updateAssetsGrid();
             return;
         }
 
-        // ── FASE: WAITING → EJECUTAR ─────────────────────
-        if (zps.phase === 'WAITING') {
-            // Ya tenemos doble intento completado. Evaluar score completo.
-            const doubleIntentOk = true; // Llegamos aquí solo si pasó el doble intento
-            const evalResult = evaluateScore(absZ, thr, zps.persistCount, volCheck.ok, trendCheck.ok, decelCheck.ok,
-                doubleIntentOk);
+        // ── MODO SCAN: evaluar entrada ────────────────────
+        updateScorePanel(exhaustResult.details);
+        updateZPeakPanel('SCAN', ASSET_LABELS[sym], exhaustResult.z.toFixed(2) + '/' + exhaustResult.score, '...');
 
-            updateScorePanel(evalResult);
-
-            if (evalResult.approved) {
-                // ✅ ENTRADA ULTRA PRECISA
-                addLog(`✅ ENTRADA v6 ${ASSET_LABELS[sym]} | Z:${zps.peakZ.toFixed(2)} | ${evalResult.calidad} | Oblig:${evalResult.obligCount}/3 Apoyo:${evalResult.apoyoCount}/3 | → ${zps.dir}`, 'lk');
-                updateZPeakPanel('✅ ENTRADA', ASSET_LABELS[sym] + ' Z' + zps.peakZ.toFixed(2), zps.persistCount + '/' +
-                    PERSIST_REQ, '✅ ' + zps.dir);
-                executeTrade(sym, zps.dir, zps.peakZ, evalResult.calidad);
+        if (exhaustResult.exhausted) {
+            const ticks = getDynamicTicks(exhaustResult.score);
+            if (ticks > 0) {
+                lastExhaustionAsset = sym;
+                addLog(`🔥 AGOTAMIENTO DETECTADO ${ASSET_LABELS[sym]} | Z:${exhaustResult.z.toFixed(2)} | Score:${exhaustResult.score}/10 | v1:${exhaustResult.details.v1.toFixed(4)} v2:${exhaustResult.details.v2.toFixed(4)} v3:${exhaustResult.details.v3.toFixed(4)} | → ${exhaustResult.entryDir}`, 'lk');
+                executeTrade(sym, exhaustResult.entryDir, exhaustResult.z, exhaustResult.score, ticks);
             } else {
-                // No cumple score mínimo
                 filteredCount++;
-                addLog(`🚫 ${ASSET_LABELS[sym]} Doble intento OK pero score insuficiente | Oblig:${evalResult.obligCount}/3 Apoyo:${evalResult.apoyoCount}/3 (req ≥2) — cancelado`);
-                zPeak[sym] = { phase: 'IDLE', dir: null, peakZ: 0, persistCount: 0, pullbackDetected: false,
-                    scoreObl: 0, scoreApoyo: 0 };
-                updateZPeakPanel('❌ CANCELADO', '--', '0/' + PERSIST_REQ, '--');
-                setTimeout(() => updateZPeakPanel('IDLE', '--', '0/' + PERSIST_REQ, '--'), 1200);
+                addLog(`❌ SEÑAL INVALIDADA (score bajo: ${exhaustResult.score}/10) ${ASSET_LABELS[sym]}`);
                 updateStats();
             }
             updateAssetsGrid();
             return;
         }
 
-        // ── FASE: PERSISTING — seguir acumulando ────────
-        if (zps.phase === 'PERSISTING') {
-            if (zps.persistCount >= PERSIST_REQ) {
-                // Persistencia suficiente — verificar si hay micro retroceso
-                const tickContraImpulso = zps.dir === 'PUT' ? lastRet < 0 : lastRet > 0;
-                if (tickContraImpulso) {
-                    // MICRO RETROCESO — avanzar a PULLBACK
-                    zps.phase = 'PULLBACK';
-                    zps.pullbackDetected = true;
-                    addLog(`↩ PULLBACK ${ASSET_LABELS[sym]} tras ${zps.persistCount} ticks | Z:${z.toFixed(2)} | → esperando intento débil`, 'li');
-                    updateZPeakPanel('PULLBACK', ASSET_LABELS[sym] + ' Z' + zps.peakZ.toFixed(2), 'PB/' + zps
-                        .persistCount, '...');
-                } else {
-                    updateZPeakPanel('PERSISTIENDO', ASSET_LABELS[sym] + ' Z' + zps.peakZ.toFixed(2), zps.persistCount +
-                        '/' + PERSIST_REQ, '...');
-                }
-            } else {
-                updateZPeakPanel('PERSISTIENDO', ASSET_LABELS[sym] + ' Z' + zps.peakZ.toFixed(2), zps.persistCount + '/' +
-                    PERSIST_REQ, '...');
-            }
-            updateAssetsGrid();
-            return;
-        }
-
-        // ── FASE: IDLE — solo actualizar score visual ────
-        const idleEval = evaluateScore(absZ, thr, zps.persistCount, volCheck.ok, trendCheck.ok, decelCheck.ok, false);
-        updateScorePanel(idleEval);
-        updateZPeakPanel('IDLE', '--', '0/' + PERSIST_REQ, '--');
+        // Actualizar grid y stats
         updateAssetsGrid();
+        updateStats();
     }
 
     // ── RESULTADO ─────────────────────────────────────────
@@ -934,20 +803,22 @@ canvas{margin:10px 0;background:#010810;border-radius:14px;padding:4px;}
         openContracts[sym] = null;
         balance += pnl;
         const isWin = pnl > 0;
+        const st = assetState[sym];
 
         if (isWin) {
             wins++;
             lossStreak = 0;
-            assetLossStreak[sym] = 0;
+            st.lossStreak = 0;
         } else {
             losses++;
             lossStreak++;
-            assetLossStreak[sym]++;
+            st.lossStreak++;
 
-            if (assetLossStreak[sym] >= ASSET_LOSS_BLOCK_AFTER) {
-                assetBlockedUntil[sym] = Date.now() + ASSET_LOSS_BLOCK_MS;
-                assetLossStreak[sym] = 0;
-                addLog(`🔴 ${ASSET_LABELS[sym]} bloqueado 3min por ${ASSET_LOSS_BLOCK_AFTER} losses seguidos`, 'll');
+            // Bloqueo por pérdidas: 2 consecutivas → 2 minutos
+            if (st.lossStreak >= ASSET_LOSS_BLOCK_AFTER) {
+                st.blockedUntil = Date.now() + LOSS_BLOCK_MS;
+                st.lossStreak = 0;
+                addLog(`🔴 ${ASSET_LABELS[sym]} bloqueado 2min por ${ASSET_LOSS_BLOCK_AFTER} pérdidas consecutivas`, 'll');
             }
 
             if (lossStreak >= 3) {
@@ -975,10 +846,11 @@ canvas{margin:10px 0;background:#010810;border-radius:14px;padding:4px;}
         updateStats();
         updateAssetsGrid();
         updateScorePanel(null);
+        updateZPeakPanel(st.mode, '--', '--/--', '--');
     }
 
     // ════════════════════════════════════════════════════════
-    // WEBSOCKET
+    // WEBSOCKET (sin cambios estructurales)
     // ════════════════════════════════════════════════════════
     function startBot() {
         const token = document.getElementById('apiToken').value.trim();
@@ -994,23 +866,22 @@ canvas{margin:10px 0;background:#010810;border-radius:14px;padding:4px;}
         filteredCount = 0;
         tradeHistory = [];
         tradeTimestamps = [];
+        lastExhaustionAsset = null;
+
         ASSETS.forEach(a => {
-            prices[a] = [];
+            buffers[a] = { prices: [], returns: [], absReturns: [] };
             openContracts[a] = null;
             lastTradeTime[a] = 0;
-            zPeak[a] = { phase: 'IDLE', dir: null, peakZ: 0, persistCount: 0, pullbackDetected: false,
-                scoreObl: 0, scoreApoyo: 0 };
-            assetLossStreak[a] = 0;
-            assetBlockedUntil[a] = 0;
-            assetTrendBlockedUntil[a] = 0;
+            assetState[a] = { mode: 'SCAN', lockStartTime: 0, lossStreak: 0, blockedUntil: 0 };
         });
         contractToAsset = {};
+
         chart.data.labels = [];
         chart.data.datasets[0].data = [100];
         chart.update();
         updateStats();
         updateAssetsGrid();
-        updateZPeakPanel('IDLE', '--', '0/' + PERSIST_REQ, '--');
+        updateZPeakPanel('SCAN', '--', '--/--', '--');
         updateScorePanel(null);
 
         running = true;
@@ -1028,13 +899,11 @@ canvas{margin:10px 0;background:#010810;border-radius:14px;padding:4px;}
 
         ws.onmessage = (e) => {
             const d = JSON.parse(e.data);
-
             if (d.authorize) {
                 balance = d.authorize.balance;
                 sessionStart = balance;
                 addLog('✅ Autorizado · Balance: $' + balance.toFixed(2), 'li');
-                document.getElementById('statusDiv').innerText =
-                    '🟢 STATUS: ONLINE — Z-PEAK v6 ULTRA PRECISION';
+                document.getElementById('statusDiv').innerText = '🟢 STATUS: ONLINE — v6.2 EXHAUSTION ENGINE';
                 ASSETS.forEach(a => {
                     ws.send(JSON.stringify({ ticks: a, subscribe: 1 }));
                     addLog('🔗 Suscrito a ' + ASSET_LABELS[a], 'li');
@@ -1042,16 +911,13 @@ canvas{margin:10px 0;background:#010810;border-radius:14px;padding:4px;}
                 ws.send(JSON.stringify({ balance: 1 }));
                 updateStats();
             }
-
             if (d.balance) { balance = d.balance.balance;
                 updateStats(); }
-
             if (d.tick) {
                 const sym = d.tick.symbol;
-                if (prices[sym] !== undefined && running)
+                if (buffers[sym] !== undefined && running)
                     onNewPrice(sym, parseFloat(d.tick.quote));
             }
-
             if (d.proposal && d.proposal.id) {
                 const pendSym = ASSETS.find(a => openContracts[a] === 'pending');
                 if (pendSym) contractToAsset[d.proposal.id] = pendSym;
@@ -1060,21 +926,18 @@ canvas{margin:10px 0;background:#010810;border-radius:14px;padding:4px;}
                     price: parseFloat(document.getElementById('stake').value) || 1
                 }));
             }
-
             if (d.buy) {
                 const cid = d.buy.contract_id;
                 const sym = ASSETS.find(a => openContracts[a] === 'pending') ||
                     Object.keys(contractToAsset).map(k => contractToAsset[k]).find(Boolean);
                 if (sym) {
                     openContracts[sym] = cid;
-                    Object.keys(contractToAsset).forEach(k => { if (contractToAsset[k] === sym)
-                            delete contractToAsset[k]; });
-                    ws.send(JSON.stringify({ proposal_open_contract: 1, contract_id: cid,
-                        subscribe: 1 }));
+                    Object.keys(contractToAsset).forEach(k => { if (contractToAsset[k] === sym) delete contractToAsset[
+                            k]; });
+                    ws.send(JSON.stringify({ proposal_open_contract: 1, contract_id: cid, subscribe: 1 }));
                     addLog('📋 Contrato abierto ' + ASSET_LABELS[sym] + ' · ID:' + cid, 'li');
                 }
             }
-
             if (d.proposal_open_contract && d.proposal_open_contract.is_sold) {
                 const poc = d.proposal_open_contract;
                 const sym = ASSETS.find(a => openContracts[a] === poc.contract_id) ||
@@ -1082,7 +945,6 @@ canvas{margin:10px 0;background:#010810;border-radius:14px;padding:4px;}
                 if (sym) { openContracts[sym] = null;
                     onResult(sym, parseFloat(poc.profit)); }
             }
-
             if (d.error) addLog('⚠️ ' + d.error.message + ' (code:' + d.error.code + ')', 'll');
         };
 
@@ -1105,25 +967,24 @@ canvas{margin:10px 0;background:#010810;border-radius:14px;padding:4px;}
         if (ws) { try { ws.close(); } catch (e) {} }
         document.getElementById('statusDiv').innerText = '⚫ STATUS: OFFLINE';
         updateBtn();
-        addLog('🛑 Bot detenido | Ops:' + (wins + losses) + ' WR:' + (wins + losses > 0 ? ((wins / (wins + losses)) *
-            100).toFixed(1) : 0) + '% | Filtradas:' + filteredCount);
+        addLog('🛑 Bot detenido | Ops:' + (wins + losses) + ' WR:' + (wins + losses > 0 ? ((wins / (wins + losses)) * 100)
+            .toFixed(1) : 0) + '% | Filtradas:' + filteredCount);
         updateStats();
     }
 
     // ── INICIALIZACIÓN ────────────────────────────────────
     document.getElementById('toggleBtn').onclick = () => running ? stopBot() : startBot();
     buildThreshGrid();
-    buildTicksGrid();
     updateStats();
     updateAssetsGrid();
-    updateZPeakPanel('IDLE', '--', '0/' + PERSIST_REQ, '--');
+    updateZPeakPanel('SCAN', '--', '--/--', '--');
     updateScorePanel(null);
 
-    addLog('⚡ Z-PEAK BOT v6 | ULTRA PRECISION REVERSAL ENGINE cargado', 'li');
-    addLog('📊 Score NO LINEAL · Doble Intento · Desaceleración · Filtro Killer · 2-3 ticks', 'li');
-    addLog('🎯 Obligatorias: Z extremo + Desaceleración + Doble Intento | Apoyo: ≥2/3', 'li');
-    addLog('⚙️ Umbrales v6: V10≥2.6 V25≥2.4 V50≥2.2 | Duración dinámica 2-3t', 'li');
-    addLog('🛡 Filtro Killer: 8+/10 ticks misma dirección → bloqueo 1min', 'li');
+    addLog('⚡ Z-PEAK BOT v6.2 PRO | EXHAUSTION ENGINE cargado', 'li');
+    addLog('🔥 detectExhaustion(): Z extremo + Desaceleración + µRetroceso + WeakPush + Vol control + No hipertendencia','li');
+    addLog('🎯 Score ≥ 8 → 2 ticks | Score 6-7 → 3 ticks | Score < 6 → NO operar', 'li');
+    addLog('🛡 TREND_LOCK: 9+/10 misma dirección → bloqueo 1min con desbloqueo inteligente', 'li');
+    addLog('🔒 Bloqueo por pérdidas: 2 consecutivas → 2 minutos', 'li');
 </script>
 </body>
 </html>
