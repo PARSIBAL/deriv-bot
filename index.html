@@ -662,7 +662,7 @@ function detectExhaustion(asset){
 
   // FILTRO DE ACTIVACIÓN: |Z| < 2.0 → skip
   const z=calcZ(closes);
-  if(Math.abs(z)<1.8){
+  if(Math.abs(z)<1.3){
     return {exhausted:false,score:0,entryDir:null,z,details:{}};
   }
 
@@ -721,9 +721,8 @@ function detectExhaustion(asset){
   }
 
   const entryDir=z>0?'PUT':'CALL';
-  // exhausted = Z extremo obligatorio + score>=5 + sin hipertendencia
-  // (microRetroceso y weakPush son opcionales — contribuyen al score)
-  const exhausted=zExtremo&&desaceleracion&&score>=5&&!hiperTendencia;
+  // exhausted = Z extremo + sin hipertendencia (más frecuente)
+  const exhausted=zExtremo&&!hiperTendencia;
 
   return {
     exhausted, score, entryDir, z,
@@ -835,8 +834,8 @@ function analyzeCandle(sym){
     buf.rsi!==null?buf.rsi.toFixed(1):'--'
   );
 
-  // TRIPLE CONFIRMACIÓN
-  if(exhaustResult.exhausted && emaOk && rsiOk){
+  // DOBLE CONFIRMACIÓN: exhausted + EMA (RSI solo informativo)
+  if(exhaustResult.exhausted && emaOk){
     const dur=getDynamicDuration(exhaustResult.score);
     if(dur>0){
       lastExhaustionAsset=sym;
