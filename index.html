@@ -413,7 +413,7 @@ section-divider{display:block;height:1px;background:var(--border);margin:4px 0 1
       <div class="cbox" id="cb-w"><div class="cbox-lbl">WeakPush</div><div class="cbox-val na" id="scWeak">✗</div></div>
       <div class="cbox" id="cb-v"><div class="cbox-lbl">Vol OK</div><div class="cbox-val na" id="scVol">✗</div></div>
       <div class="cbox" id="cb-e"><div class="cbox-lbl">EMA 3/9</div><div class="cbox-val na" id="scEma">✗</div></div>
-      <div class="cbox" id="cb-r"><div class="cbox-lbl">RSI 80/20</div><div class="cbox-val na" id="scRsi">--</div></div>
+      <div class="cbox" id="cb-r"><div class="cbox-lbl">RSI 70/30</div><div class="cbox-val na" id="scRsi">--</div></div>
     </div>
   </div>
 
@@ -492,7 +492,7 @@ const LOSS_BLOCK_AFTER = 2;
 const KILLER_WINDOW    = 10;
 const KILLER_THRESHOLD = 9;
 
-let zThresholds = {'R_10':2.2, 'R_25':2.0};
+let zThresholds = {'R_10':1.9, 'R_25':1.8};
 
 // ── ESTADO GLOBAL ──────────────────────────────────────────────────────────
 let ws, running = false;
@@ -516,7 +516,7 @@ function initBuffer(a){
     closes:[], highs:[], lows:[], opens:[],
     ema3:null, ema9:null, rsi:null,
     currentTick:null, candleReady:false,
-    lastCandleEpoch:0
+    lastCandleEpoch:0, liveCandle:null
   };
 }
 ASSETS.forEach(initBuffer);
@@ -662,7 +662,7 @@ function detectExhaustion(asset){
 
   // FILTRO DE ACTIVACIÓN: |Z| < 2.0 → skip
   const z=calcZ(closes);
-  if(Math.abs(z)<2.0){
+  if(Math.abs(z)<1.8){
     return {exhausted:false,score:0,entryDir:null,z,details:{}};
   }
 
@@ -797,8 +797,8 @@ function analyzeCandle(sym){
   if(st.mode==='TREND_LOCK'){
     const emaOk=emaFilter(sym,exhaustResult.entryDir);
     const rsiOk=exhaustResult.entryDir==='PUT'
-      ?(buf.rsi!==null&&buf.rsi>=80)
-      :(buf.rsi!==null&&buf.rsi<=20);
+      ?(buf.rsi!==null&&buf.rsi>=70)
+      :(buf.rsi!==null&&buf.rsi<=30);
 
     if(exhaustResult.exhausted&&emaOk&&rsiOk){
       st.mode='SCAN'; st.lockStartTime=0;
@@ -822,8 +822,8 @@ function analyzeCandle(sym){
   // Filtro Z < 2.0 ya aplicado dentro de detectExhaustion
   const emaOk=emaFilter(sym,exhaustResult.entryDir);
   const rsiOk=exhaustResult.entryDir==='PUT'
-    ?(buf.rsi!==null&&buf.rsi>=80)
-    :(buf.rsi!==null&&buf.rsi<=20);
+    ?(buf.rsi!==null&&buf.rsi>=70)
+    :(buf.rsi!==null&&buf.rsi<=30);
 
   updateScorePanel(exhaustResult.details,emaOk,rsiOk);
   updateEnginePanel(
@@ -855,7 +855,7 @@ function analyzeCandle(sym){
   } else if(exhaustResult.exhausted && !rsiOk){
     filteredCount++;
     const rv=buf.rsi!==null?buf.rsi.toFixed(1):'N/A';
-    addLog(`🔶 Filtrado RSI ${ASSET_LABELS[sym]} Z:${exhaustResult.z.toFixed(2)} RSI:${rv} (necesita ${exhaustResult.entryDir==='PUT'?'≥80':'≤20'})`,'lf');
+    addLog(`🔶 Filtrado RSI ${ASSET_LABELS[sym]} Z:${exhaustResult.z.toFixed(2)} RSI:${rv} (necesita ${exhaustResult.entryDir==='PUT'?'≥70':'≤30'})`,'lf');
     updateStats();
   }
 
@@ -1053,7 +1053,7 @@ function buildThreshGrid(){
       <div class="thresh-sym">${ASSET_LABELS[a]}</div>
       <div class="thresh-lbl">Umbral |Z| velas</div>
       <input type="number" class="thresh-inp" id="thresh_${a}"
-        value="${zThresholds[a]}" min="1.5" max="5" step="0.1"
+        value="${zThresholds[a]}" min="1.2" max="5" step="0.1"
         onchange="zThresholds['${a}']=parseFloat(this.value);addLog('⚙️ ${ASSET_LABELS[a]} umbral Z → '+this.value)">
     </div>`).join('');
 }
@@ -1235,31 +1235,35 @@ function startBot(){
     }
 
     // ── OHLC — VELA NUEVA EN TIEMPO REAL ──────────────────────────────
-    // Deriv envía ohlc{} con cada tick cuando está suscrito a candles
-    // Una vela está CERRADA cuando el epoch cambia respecto a la anterior
+    // ohlc.open_time = epoch de APERTURA de la vela actual (cambia cada 60s)
+    // Cuando open_time cambia -> la vela anterior cerró
+    // Guardamos los OHLC de la vela viva para procesarlos cuando cierre
     if(d.ohlc){
       const ohlc=d.ohlc;
       const sym=ohlc.symbol;
       if(buffers[sym]!==undefined&&running){
-        const currentEpoch=parseInt(ohlc.epoch);
         const buf=buffers[sym];
+        const openTime=parseInt(ohlc.open_time);
 
-        // Nueva vela cerrada detectada cuando el epoch cambia
-        if(buf.lastCandleEpoch>0 && currentEpoch>buf.lastCandleEpoch){
-          // La vela anterior está CERRADA — procesarla
-          addLog(`🕯 Vela cerrada ${ASSET_LABELS[sym]} @ epoch ${buf.lastCandleEpoch}`);
-          processClosedCandle(sym,{
-            open:ohlc.open_time?ohlc.open:ohlc.open,
-            high:ohlc.high,
-            low:ohlc.low,
-            close:ohlc.close,
-            epoch:currentEpoch
-          });
-        } else if(buf.lastCandleEpoch===0){
-          buf.lastCandleEpoch=currentEpoch;
+        if(buf.lastCandleEpoch===0){
+          // Primera vela en tiempo real — inicializar tracker
+          buf.lastCandleEpoch=openTime;
+          buf.liveCandle={open:ohlc.open,high:ohlc.high,low:ohlc.low,close:ohlc.close,epoch:openTime};
+        } else if(openTime>buf.lastCandleEpoch){
+          // open_time cambio -> vela anterior CERRO
+          if(buf.liveCandle){
+            addLog(`🕯 Vela cerrada ${ASSET_LABELS[sym]} C:${parseFloat(buf.liveCandle.close).toFixed(3)} H:${parseFloat(buf.liveCandle.high).toFixed(3)} L:${parseFloat(buf.liveCandle.low).toFixed(3)}`);
+            processClosedCandle(sym, buf.liveCandle);
+          }
+          buf.lastCandleEpoch=openTime;
+          buf.liveCandle={open:ohlc.open,high:ohlc.high,low:ohlc.low,close:ohlc.close,epoch:openTime};
+        } else {
+          // Misma vela — actualizar datos live
+          if(!buf.liveCandle) buf.liveCandle={open:ohlc.open,high:ohlc.high,low:ohlc.low,close:ohlc.close,epoch:openTime};
+          buf.liveCandle.close=ohlc.close;
+          buf.liveCandle.high=ohlc.high;
+          buf.liveCandle.low=ohlc.low;
         }
-        // Actualizar el epoch de la vela actual
-        buf.lastCandleEpoch=currentEpoch;
       }
     }
 
@@ -1329,7 +1333,7 @@ addLog('📊 Fuente de datos: candles 1min de Deriv API (ticks_history + ohlc su
 addLog('📈 RSI 14 sobre CIERRES de vela reales — no sobre ticks','li');
 addLog('📉 EMA 3/9 sobre CIERRES de vela reales — contexto temporal correcto','li');
 addLog('⚡ Z-score sobre 40 cierres = ventana de 40 minutos','li');
-addLog('🎯 Triple confirm: exhausted + EMA estructural + RSI 80/20','li');
+addLog('🎯 Triple confirm: exhausted + EMA estructural + RSI 70/30','li');
 addLog('⏱ Expiración: score≥8 → 3min | score≥6 → 5min','li');
 addLog('🛡 Filtro activación: |Z| < 2.0 → skip automático','li');
 </script>
