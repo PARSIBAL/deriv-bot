@@ -721,7 +721,9 @@ function detectExhaustion(asset){
   }
 
   const entryDir=z>0?'PUT':'CALL';
-  const exhausted=zExtremo&&desaceleracion&&microRetroceso&&weakPush&&volatilidadOk&&!hiperTendencia;
+  // exhausted = Z extremo obligatorio + score>=5 + sin hipertendencia
+  // (microRetroceso y weakPush son opcionales — contribuyen al score)
+  const exhausted=zExtremo&&desaceleracion&&score>=5&&!hiperTendencia;
 
   return {
     exhausted, score, entryDir, z,
