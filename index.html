@@ -485,7 +485,7 @@ section-divider{display:block;height:1px;background:var(--border);margin:4px 0 1
 const ASSETS     = ['R_10','R_25'];
 const ASSET_LABELS = {'R_10':'V10','R_25':'V25'};
 const CANDLE_GRAN  = 60;        // 1 minuto en segundos
-const CANDLE_COUNT = 40;        // 40 velas históricas
+const CANDLE_COUNT = 20;        // 20 velas históricas
 const TREND_LOCK_MS   = 60000;
 const LOSS_BLOCK_MS   = 120000;
 const LOSS_BLOCK_AFTER = 2;
@@ -509,7 +509,7 @@ let tradeHistory = [], filteredCount = 0;
 // ema9        → EMA9 sobre cierres
 // rsi         → RSI14 sobre cierres
 // currentTick → último precio de tick (solo para display)
-// candleReady → true cuando tiene ≥15 velas cerradas
+// candleReady → true cuando tiene ≥10 velas cerradas
 let buffers = {};
 function initBuffer(a){
   buffers[a] = {
@@ -598,7 +598,7 @@ function calcEMA(period,price,prev){
 
 // RSI 14 sobre cierres de vela — CORRECTO (no sobre ticks)
 function calcRSI(closes){
-  if(closes.length<15) return null;
+  if(closes.length<11) return null;
   let gain=0,loss=0;
   for(let i=1;i<closes.length;i++){
     const diff=closes[i]-closes[i-1];
@@ -632,7 +632,7 @@ function processClosedCandle(asset, candle){
   // Actualizar RSI 14 sobre cierres — CORRECTO
   buf.rsi=calcRSI(buf.closes);
 
-  buf.candleReady = buf.closes.length>=15;
+  buf.candleReady = buf.closes.length>=10;
   buf.lastCandleEpoch = candle.epoch;
 
   // Actualizar strip de velas
@@ -1220,7 +1220,7 @@ function startBot(){
           buf.lastCandleEpoch=c.epoch;
         });
         buffers[sym].rsi=calcRSI(buffers[sym].closes);
-        buffers[sym].candleReady=buffers[sym].closes.length>=15;
+        buffers[sym].candleReady=buffers[sym].closes.length>=10;
         addLog('📊 '+ASSET_LABELS[sym]+': '+buffers[sym].closes.length+' velas cargadas | RSI:'+
           (buffers[sym].rsi!==null?buffers[sym].rsi.toFixed(1):'--')+
           ' | EMA3:'+buffers[sym].ema3.toFixed(4)+' EMA9:'+buffers[sym].ema9.toFixed(4),'li');
