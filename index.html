@@ -3,868 +3,765 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Z-PEAK BOT v9.0 | CANDLE ENGINE</title>
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<title>FUSION BOT | Z-PEAK + EMA TREND | V10 · V25</title>
 <style>
-@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;600;700;800&family=Syne:wght@400;600;800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@300;400;600;700&family=Archivo+Black&family=Archivo:wght@300;400;500&display=swap');
 
-*{margin:0;padding:0;box-sizing:border-box;}
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box;}
 
 :root{
-  --bg:#030508;
-  --surface:#07090f;
-  --surface2:#0c0f1a;
-  --border:#131a28;
-  --border-active:rgba(0,210,160,0.35);
-  --cyan:#00d2a0;
-  --cyan-dim:rgba(0,210,160,0.12);
-  --blue:#00a8e8;
-  --red:#f03a5f;
-  --red-dim:rgba(240,58,95,0.1);
-  --gold:#f5a623;
-  --gold-dim:rgba(245,166,35,0.1);
-  --green:#27c97a;
-  --muted:#2e3d52;
-  --text:#8a9bb5;
+  --bg:#08070e;
+  --s1:#0d0c18;
+  --s2:#121120;
+  --br:#1c1a2e;
+  --br2:rgba(255,255,255,0.04);
+  --pu:#a855f7;
+  --pu-dim:rgba(168,85,247,0.1);
+  --pu-glow:rgba(168,85,247,0.25);
+  --up:#22d3a0;
+  --up-dim:rgba(34,211,160,0.08);
+  --dn:#f43f6e;
+  --dn-dim:rgba(244,63,110,0.08);
+  --go:#f59e0b;
+  --go-dim:rgba(245,158,11,0.1);
+  --cy:#38bdf8;
+  --wh:#ddd8f0;
+  --mt:#4a4870;
 }
 
 body{
   background:var(--bg);
   background-image:
-    radial-gradient(ellipse 60% 40% at 10% 10%, rgba(0,210,160,0.04) 0%, transparent 60%),
-    radial-gradient(ellipse 50% 60% at 90% 80%, rgba(0,168,232,0.03) 0%, transparent 60%);
+    radial-gradient(ellipse 70% 45% at 20% 0%, rgba(168,85,247,0.06) 0%, transparent 55%),
+    radial-gradient(ellipse 50% 40% at 80% 100%, rgba(34,211,160,0.04) 0%, transparent 55%);
   min-height:100vh;
+  font-family:'Archivo',sans-serif;
+  color:var(--wh);
   display:flex;
   justify-content:center;
-  font-family:'JetBrains Mono', monospace;
-  padding:20px 16px;
-  color:var(--text);
+  padding:24px 16px;
 }
-
-.container{
-  max-width:1040px;
-  width:100%;
-  align-self:flex-start;
-}
+.wrap{max-width:1000px;width:100%;}
 
 /* ── HEADER ── */
-.header{
-  display:flex;
-  align-items:flex-start;
-  justify-content:space-between;
+.hdr{
+  display:grid;
+  grid-template-columns:1fr auto;
+  align-items:end;
+  gap:16px;
   margin-bottom:24px;
   padding-bottom:20px;
-  border-bottom:1px solid var(--border);
+  border-bottom:1px solid var(--br);
 }
-.header-left{}
-.version-tag{
+.hdr-eye{
+  font-family:'IBM Plex Mono',monospace;
+  font-size:8px;
+  letter-spacing:5px;
+  color:var(--pu);
+  opacity:.7;
+  margin-bottom:5px;
+}
+.hdr-title{
+  font-family:'Archivo Black',sans-serif;
+  font-size:2.6rem;
+  line-height:1;
+  letter-spacing:-1px;
+}
+.hdr-title .accent{color:var(--pu);}
+.hdr-title .accent2{color:var(--up);}
+.hdr-sub{
+  font-family:'IBM Plex Mono',monospace;
   font-size:9px;
-  letter-spacing:4px;
-  color:var(--cyan);
-  opacity:0.6;
-  text-transform:uppercase;
-  margin-bottom:6px;
+  color:var(--mt);
+  letter-spacing:2.5px;
+  margin-top:5px;
 }
-.title{
-  font-family:'Syne', sans-serif;
-  font-size:1.6rem;
-  font-weight:800;
-  color:#fff;
-  letter-spacing:-0.5px;
+.hdr-bal{text-align:right;}
+.hdr-bal-lbl{font-family:'IBM Plex Mono',monospace;font-size:8px;color:var(--mt);letter-spacing:2px;margin-bottom:3px;}
+.hdr-bal-val{
+  font-family:'Archivo Black',sans-serif;
+  font-size:2rem;
+  color:var(--up);
   line-height:1;
 }
-.title span{color:var(--cyan);}
-.subtitle{
-  font-size:9px;
-  color:var(--muted);
-  letter-spacing:2px;
-  margin-top:6px;
-  text-transform:uppercase;
+.dot{
+  display:inline-block;width:7px;height:7px;border-radius:50%;
+  background:var(--mt);margin-right:5px;vertical-align:middle;
 }
-.header-badge{
-  background:var(--cyan-dim);
-  border:1px solid var(--border-active);
-  border-radius:10px;
-  padding:8px 14px;
-  text-align:center;
-}
-.badge-label{font-size:8px;color:var(--cyan);letter-spacing:2px;opacity:0.7;}
-.badge-val{font-size:18px;font-weight:800;color:var(--cyan);line-height:1.2;margin-top:2px;}
+.dot.on{background:var(--up);box-shadow:0 0 8px var(--up);animation:pulse 1.5s ease infinite;}
+@keyframes pulse{0%,100%{opacity:1;}50%{opacity:.25;}}
 
-/* ── STATS ROW ── */
-.stats-row{
+/* ── MODE BADGE ── */
+.mode-badge{
   display:grid;
-  grid-template-columns:repeat(5,1fr);
+  grid-template-columns:1fr 1fr;
   gap:8px;
-  margin-bottom:20px;
+  margin-bottom:14px;
 }
-.stat{
-  background:var(--surface);
-  border:1px solid var(--border);
-  border-radius:12px;
-  padding:10px 8px;
-  text-align:center;
-}
-.stat-lbl{font-size:8px;color:var(--muted);letter-spacing:1.5px;text-transform:uppercase;margin-bottom:4px;}
-.stat-val{font-size:18px;font-weight:700;color:#fff;}
-.stat-val.g{color:var(--green);}
-.stat-val.r{color:var(--red);}
-.stat-val.c{color:var(--cyan);}
-.stat-val.o{color:var(--gold);}
-
-/* ── INPUTS ── */
-.input-row{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px;}
-.inp-group label{
-  display:block;
-  font-size:9px;
-  color:var(--muted);
-  letter-spacing:1.5px;
-  text-transform:uppercase;
-  margin-bottom:6px;
-}
-.inp-group input{
-  width:100%;
-  background:var(--surface);
-  border:1px solid var(--border);
+.mbadge{
   border-radius:10px;
   padding:10px 14px;
-  color:var(--cyan);
-  font-family:'JetBrains Mono',monospace;
-  font-size:13px;
+  border:1px solid var(--br);
+  display:flex;
+  align-items:center;
+  gap:10px;
+}
+.mbadge.zpeak{background:var(--pu-dim);border-color:rgba(168,85,247,0.25);}
+.mbadge.trend{background:var(--up-dim);border-color:rgba(34,211,160,0.25);}
+.mbadge-icon{font-size:1.4rem;}
+.mbadge-text{}
+.mbadge-name{font-family:'Archivo Black',sans-serif;font-size:11px;letter-spacing:1px;}
+.mbadge-desc{font-family:'IBM Plex Mono',monospace;font-size:8px;color:var(--mt);margin-top:1px;}
+
+/* ── INPUTS ── */
+.inp-row{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px;}
+.inp-g label{
+  display:block;
+  font-family:'IBM Plex Mono',monospace;
+  font-size:8px;
+  letter-spacing:2px;
+  color:var(--mt);
+  text-transform:uppercase;
+  margin-bottom:5px;
+}
+.inp-g input{
+  width:100%;
+  background:var(--s1);
+  border:1px solid var(--br);
+  border-radius:7px;
+  padding:9px 12px;
+  font-family:'IBM Plex Mono',monospace;
+  font-size:12px;
+  color:var(--pu);
   outline:none;
   transition:border-color .2s;
 }
-.inp-group input:focus{border-color:var(--border-active);}
-
-/* ── TRIPLE CONFIRM PANEL ── */
-.confirm-panel{
-  background:var(--surface);
-  border:1px solid var(--border);
-  border-radius:16px;
-  padding:16px;
-  margin-bottom:16px;
-}
-.confirm-header{
-  display:flex;
-  justify-content:space-between;
-  align-items:center;
-  margin-bottom:12px;
-}
-.confirm-title{font-size:9px;letter-spacing:2px;color:var(--cyan);text-transform:uppercase;}
-.confirm-score{font-size:26px;font-weight:800;color:var(--muted);}
-.confirm-score.ok{color:var(--green);}
-.confirm-score.warn{color:var(--gold);}
-.confirm-score.bad{color:var(--red);}
-.confirm-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:6px;}
-.cbox{
-  background:var(--surface2);
-  border-radius:8px;
-  padding:8px 4px;
-  text-align:center;
-  border:1px solid transparent;
-  transition:border-color .3s;
-}
-.cbox.active{border-color:rgba(39,201,122,0.4);}
-.cbox.fail{border-color:rgba(240,58,95,0.3);}
-.cbox-lbl{font-size:7px;color:var(--muted);letter-spacing:1px;text-transform:uppercase;line-height:1.4;}
-.cbox-val{font-size:12px;font-weight:700;margin-top:3px;}
-.cbox-val.ok{color:var(--green);}
-.cbox-val.no{color:var(--red);}
-.cbox-val.na{color:var(--muted);}
-
-/* ── THRESHOLDS ── */
-.thresh-row{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px;}
-.thresh-card{
-  background:var(--surface);
-  border:1px solid var(--border);
-  border-radius:12px;
-  padding:14px;
-  text-align:center;
-}
-.thresh-sym{font-size:14px;font-weight:700;color:var(--cyan);margin-bottom:4px;font-family:'Syne',sans-serif;}
-.thresh-lbl{font-size:8px;color:var(--muted);letter-spacing:1px;margin-bottom:8px;}
-.thresh-inp{
-  width:80px;
-  background:var(--surface2);
-  border:1px solid var(--border);
-  padding:6px 10px;
-  border-radius:8px;
-  color:var(--red);
-  text-align:center;
-  font-size:16px;
-  font-weight:700;
-  font-family:'JetBrains Mono',monospace;
-  outline:none;
-}
+.inp-g input:focus{border-color:var(--pu-glow);}
 
 /* ── BTN ── */
+.btn-row{display:flex;gap:8px;margin-bottom:14px;}
 .btn{
-  width:100%;
-  background:linear-gradient(90deg,var(--cyan),var(--blue));
-  border:none;
-  padding:14px;
-  border-radius:32px;
-  font-weight:700;
-  font-size:13px;
-  letter-spacing:3px;
-  color:#010810;
-  cursor:pointer;
-  margin:12px 0;
-  font-family:'Syne',sans-serif;
-  transition:all .25s;
-  text-transform:uppercase;
+  flex:1;padding:12px;border:none;border-radius:8px;
+  font-family:'Archivo Black',sans-serif;
+  font-size:.95rem;letter-spacing:3px;cursor:pointer;
+  transition:all .2s;
 }
-.btn:hover{box-shadow:0 0 24px rgba(0,210,160,0.3);transform:translateY(-1px);}
-.btn.stop{background:linear-gradient(90deg,#6b0020,var(--red));color:#fff;}
+.btn-go{background:linear-gradient(90deg,var(--pu),var(--cy));color:#050310;}
+.btn-go:hover{box-shadow:0 0 22px var(--pu-glow);transform:translateY(-1px);}
+.btn-st{background:linear-gradient(90deg,#5a0015,var(--dn));color:#fff;}
 
 /* ── STATUS ── */
 .status{
-  background:var(--surface);
-  border:1px solid var(--border);
-  border-radius:32px;
-  padding:9px 16px;
-  font-size:11px;
-  text-align:center;
-  margin-bottom:14px;
-  letter-spacing:1px;
+  background:var(--s1);border:1px solid var(--br);border-radius:8px;
+  padding:8px 14px;font-family:'IBM Plex Mono',monospace;font-size:10px;
+  letter-spacing:1px;margin-bottom:14px;display:flex;align-items:center;gap:8px;
 }
-.signal-box{
-  background:var(--surface);
-  border:1px solid var(--border);
-  border-radius:14px;
-  padding:10px 16px;
-  font-size:12px;
-  font-weight:600;
-  margin-bottom:14px;
-  text-align:center;
-}
-.signal-val{color:var(--gold);}
 
-/* ── ENGINE PANEL ── */
-.engine-panel{
-  background:var(--surface);
-  border:1px solid rgba(240,58,95,0.25);
-  border-radius:16px;
-  padding:14px;
-  margin-bottom:16px;
+/* ── STATS ── */
+.stats{display:grid;grid-template-columns:repeat(5,1fr);gap:7px;margin-bottom:16px;}
+.sc{background:var(--s1);border:1px solid var(--br);border-radius:9px;padding:9px 6px;text-align:center;}
+.sc-l{font-family:'IBM Plex Mono',monospace;font-size:7px;color:var(--mt);letter-spacing:1.5px;text-transform:uppercase;margin-bottom:3px;}
+.sc-v{font-family:'Archivo Black',sans-serif;font-size:1.5rem;letter-spacing:1px;}
+.g{color:var(--up);} .r{color:var(--dn);} .o{color:var(--go);} .c{color:var(--cy);} .w{color:var(--wh);}
+
+/* ── CONFIRM PANEL ── */
+.cpanel{
+  background:var(--s1);border:1px solid var(--br);border-radius:14px;
+  padding:14px;margin-bottom:14px;
 }
-.engine-title{font-size:8px;color:var(--red);letter-spacing:3px;text-transform:uppercase;margin-bottom:12px;}
-.engine-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;}
-.ebox{
-  background:var(--surface2);
-  border-radius:10px;
-  padding:10px;
-  text-align:center;
+.cpanel-hdr{
+  display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;
 }
-.ebox-lbl{font-size:8px;color:var(--muted);letter-spacing:1px;text-transform:uppercase;}
-.ebox-val{font-size:14px;font-weight:800;margin-top:4px;}
-.ebox-val.idle{color:var(--muted);}
-.ebox-val.wait{color:var(--gold);animation:pulse 1.2s ease-in-out infinite;}
-.ebox-val.ok{color:var(--green);}
-.ebox-val.no{color:var(--red);}
-@keyframes pulse{0%,100%{opacity:1;}50%{opacity:.3;}}
+.cpanel-title{font-family:'IBM Plex Mono',monospace;font-size:8px;color:var(--pu);letter-spacing:2px;text-transform:uppercase;}
+.cpanel-score{font-family:'Archivo Black',sans-serif;font-size:1.6rem;}
+.cpanel-score.ok{color:var(--up);}
+.cpanel-score.warn{color:var(--go);}
+.cpanel-score.bad{color:var(--mt);}
+.cgrid{display:grid;grid-template-columns:repeat(8,1fr);gap:5px;}
+.cbox{
+  background:var(--s2);border-radius:7px;padding:7px 3px;text-align:center;
+  border:1px solid transparent;transition:border-color .3s,background .3s;
+}
+.cbox.ok{border-color:rgba(34,211,160,0.4);background:rgba(34,211,160,0.05);}
+.cbox.no{border-color:rgba(244,63,110,0.2);}
+.cbox-l{font-size:6px;color:var(--mt);letter-spacing:.8px;text-transform:uppercase;line-height:1.3;}
+.cbox-v{font-size:11px;font-weight:700;font-family:'IBM Plex Mono',monospace;margin-top:2px;}
+.cbox-v.ok{color:var(--up);}
+.cbox-v.no{color:var(--dn);}
+.cbox-v.na{color:var(--mt);}
 
 /* ── ASSETS ── */
-.assets-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px;}
+.agrid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px;}
 .acard{
-  background:var(--surface);
-  border:1px solid var(--border);
-  border-radius:14px;
-  padding:14px;
+  background:var(--s1);border:1px solid var(--br);border-radius:14px;overflow:hidden;
   transition:border-color .3s;
 }
-.acard.scan{border-color:rgba(0,210,160,0.25);}
-.acard.lock{border-color:rgba(240,58,95,0.4);}
-.acard.blocked{border-color:rgba(245,166,35,0.4);}
-.acard.ready{border-color:rgba(245,166,35,0.7);}
-.acard-title{font-size:15px;font-weight:700;color:#fff;text-align:center;margin-bottom:10px;font-family:'Syne',sans-serif;}
+.acard.zpeak-sig{border-color:rgba(168,85,247,0.5);}
+.acard.trend-sig{border-color:rgba(34,211,160,0.5);}
+.acard.fusion-sig{
+  border-color:var(--go);
+  box-shadow:0 0 18px rgba(245,158,11,0.15);
+}
+.acard.blocked{border-color:rgba(244,63,110,0.3);}
+.ahead{
+  padding:11px 14px;
+  display:flex;justify-content:space-between;align-items:center;
+  border-bottom:1px solid var(--br);
+}
+.aname{font-family:'Archivo Black',sans-serif;font-size:1.3rem;letter-spacing:2px;}
+.aprice{font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--mt);}
+.abody{padding:11px 14px;}
 .arow{
-  display:flex;
-  justify-content:space-between;
-  align-items:center;
-  padding:4px 0;
-  border-bottom:1px solid var(--border);
-  font-size:10px;
+  display:flex;justify-content:space-between;align-items:center;
+  padding:4px 0;border-bottom:1px solid var(--br2);font-size:10px;
 }
-.arow-lbl{color:var(--muted);}
-.arow-val{font-weight:600;font-family:'JetBrains Mono',monospace;}
-.acard-state{
-  display:block;
-  text-align:center;
-  font-size:9px;
-  font-weight:700;
-  letter-spacing:1.5px;
-  margin-top:8px;
-  text-transform:uppercase;
-}
-.candle-info{
-  display:grid;
-  grid-template-columns:repeat(4,1fr);
-  gap:3px;
-  margin-top:6px;
-}
-.ci{background:var(--surface2);border-radius:6px;padding:4px;text-align:center;}
-.ci-lbl{font-size:7px;color:var(--muted);}
-.ci-val{font-size:10px;font-weight:700;color:var(--text);}
+.arow-l{font-family:'IBM Plex Mono',monospace;font-size:8px;color:var(--mt);letter-spacing:.8px;}
+.arow-v{font-family:'IBM Plex Mono',monospace;font-size:10px;font-weight:600;}
 
-/* ── CHART ── */
-canvas{margin:0 0 14px;background:var(--surface);border-radius:14px;padding:6px;border:1px solid var(--border);}
-
-/* ── LOG ── */
-.log{
-  background:var(--surface);
-  border:1px solid var(--border);
-  border-radius:14px;
-  height:180px;
-  overflow-y:auto;
-  padding:10px 12px;
-  font-size:10px;
-  font-family:'JetBrains Mono',monospace;
-  color:var(--muted);
-  margin-bottom:14px;
+/* FUSION INDICATOR */
+.fusion-ind{
+  margin-top:9px;
+  background:var(--s2);border-radius:8px;padding:8px 10px;
+  display:flex;align-items:center;justify-content:space-between;
 }
-.log div{padding:2px 0;border-bottom:1px solid var(--border);}
-.lw{color:var(--green);}
-.ll{color:var(--red);}
-.li{color:var(--blue);}
-.lk{color:var(--gold);font-weight:700;font-size:11px;}
-.lf{color:#7a5a20;}
+.fi-label{font-family:'IBM Plex Mono',monospace;font-size:7px;color:var(--mt);letter-spacing:1.5px;text-transform:uppercase;}
+.fi-dots{display:flex;gap:4px;}
+.fi-dot{
+  width:10px;height:10px;border-radius:50%;
+  background:var(--br);transition:background .3s,box-shadow .3s;
+}
+.fi-dot.zpeak{background:var(--pu);box-shadow:0 0 6px var(--pu);}
+.fi-dot.trend{background:var(--up);box-shadow:0 0 6px var(--up);}
+.fi-dot.both{background:var(--go);box-shadow:0 0 8px var(--go);}
+.astate{
+  text-align:center;font-family:'Archivo Black',sans-serif;
+  font-size:.85rem;letter-spacing:2px;margin-top:7px;
+}
+
+/* ── SIGNAL BOX ── */
+.sigbox{
+  background:var(--s1);border:1px solid var(--br);border-radius:12px;
+  padding:12px 16px;margin-bottom:14px;
+  display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;
+}
+.sig-l{font-family:'IBM Plex Mono',monospace;font-size:7px;color:var(--mt);letter-spacing:2px;text-transform:uppercase;margin-bottom:3px;}
+.sig-v{font-family:'Archivo Black',sans-serif;font-size:1.3rem;letter-spacing:2px;}
+.sig-d{font-family:'IBM Plex Mono',monospace;font-size:9px;color:var(--mt);}
+
+/* ── THRESH ── */
+.thr-sec{margin-bottom:14px;}
+.thr-title{font-family:'IBM Plex Mono',monospace;font-size:7px;color:var(--mt);letter-spacing:3px;text-transform:uppercase;margin-bottom:8px;}
+.thr-grid{display:grid;grid-template-columns:1fr 1fr;gap:9px;}
+.tcard{background:var(--s1);border:1px solid var(--br);border-radius:9px;padding:11px 13px;}
+.tcard-sym{font-family:'Archivo Black',sans-serif;font-size:1rem;letter-spacing:2px;color:var(--pu);margin-bottom:7px;}
+.trow{display:flex;align-items:center;justify-content:space-between;margin-bottom:5px;}
+.trow-l{font-family:'IBM Plex Mono',monospace;font-size:7px;color:var(--mt);letter-spacing:1px;}
+.trow-i{
+  background:var(--s2);border:1px solid var(--br);border-radius:5px;
+  padding:3px 7px;width:72px;text-align:center;
+  font-family:'IBM Plex Mono',monospace;font-size:11px;font-weight:700;
+  color:var(--go);outline:none;
+}
 
 /* ── SAFETY ── */
 .safety{
-  background:var(--gold-dim);
-  border:1px solid rgba(245,166,35,0.2);
-  border-radius:14px;
-  padding:14px;
+  background:var(--go-dim);border:1px solid rgba(245,158,11,0.15);
+  border-radius:12px;padding:12px 14px;margin-bottom:14px;
 }
-.safety-title{font-size:8px;color:var(--gold);letter-spacing:2px;text-transform:uppercase;margin-bottom:10px;}
-.safety-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;}
-.sbox{background:var(--surface);border-radius:10px;padding:8px;text-align:center;}
-.sbox-lbl{font-size:8px;color:var(--muted);letter-spacing:1px;text-transform:uppercase;}
-.sbox-val{font-size:14px;font-weight:700;color:var(--gold);margin-top:2px;}
+.safety-t{font-family:'IBM Plex Mono',monospace;font-size:7px;color:var(--go);letter-spacing:3px;text-transform:uppercase;margin-bottom:9px;}
+.safety-g{display:grid;grid-template-columns:repeat(4,1fr);gap:7px;}
+.sfb{background:var(--s1);border-radius:8px;padding:7px;text-align:center;}
+.sfb-l{font-family:'IBM Plex Mono',monospace;font-size:7px;color:var(--mt);letter-spacing:1px;}
+.sfb-v{font-family:'Archivo Black',sans-serif;font-size:1.1rem;color:var(--go);margin-top:2px;}
 
-/* ── CANDLE STATUS STRIP ── */
-.candle-strip{
-  display:flex;
-  align-items:center;
-  gap:8px;
-  background:var(--surface2);
-  border:1px solid var(--border);
-  border-radius:10px;
-  padding:8px 14px;
-  margin-bottom:14px;
-  font-size:10px;
+/* ── LOG ── */
+.log-t{font-family:'IBM Plex Mono',monospace;font-size:7px;color:var(--mt);letter-spacing:3px;text-transform:uppercase;margin-bottom:7px;}
+.log{
+  background:var(--s1);border:1px solid var(--br);border-radius:9px;
+  height:190px;overflow-y:auto;padding:9px 11px;
+  font-family:'IBM Plex Mono',monospace;font-size:9px;color:var(--mt);
+  scrollbar-width:thin;scrollbar-color:var(--br) transparent;
 }
-.cs-dot{width:8px;height:8px;border-radius:50%;background:var(--muted);flex-shrink:0;}
-.cs-dot.live{background:var(--green);box-shadow:0 0 8px var(--green);animation:pulse 1.5s infinite;}
-.cs-text{color:var(--text);}
-.cs-val{color:var(--cyan);font-weight:700;margin-left:auto;}
-
-section-divider{display:block;height:1px;background:var(--border);margin:4px 0 16px;}
+.log div{padding:2px 0;border-bottom:1px solid var(--br2);line-height:1.5;}
+.lw{color:var(--up);font-weight:700;}
+.ll{color:var(--dn);font-weight:700;}
+.li{color:var(--cy);}
+.lk{color:var(--go);font-weight:700;font-size:10px;}
+.lf{color:#3a3218;}
+.lfus{color:var(--pu);font-weight:700;font-size:10px;}
 </style>
 </head>
 <body>
-<div class="container">
+<div class="wrap">
 
   <!-- HEADER -->
-  <div class="header">
-    <div class="header-left">
-      <div class="version-tag">Z-PEAK ENGINE · v9.0 PRO</div>
-      <div class="title">CANDLE<span>BOT</span></div>
-      <div class="subtitle">Candles 1min · Triple Confirm · RSI Real · EMA Real · Expira 3–5min</div>
+  <div class="hdr">
+    <div>
+      <div class="hdr-eye">SISTEMA FUSION · V10 · V25 · VELAS 1MIN</div>
+      <div class="hdr-title">
+        <span class="accent">Z·PEAK</span> <span style="color:var(--mt)">+</span> <span class="accent2">EMA</span> FUSION
+      </div>
+      <div class="hdr-sub">REVERSIÓN EXTREMA × CRUCE TENDENCIAL · DOBLE MOTOR</div>
     </div>
-    <div class="header-badge">
-      <div class="badge-label">Balance</div>
-      <div class="badge-val" id="balDisplay">$--</div>
+    <div class="hdr-bal">
+      <div class="hdr-bal-lbl"><span class="dot" id="onlineDot"></span>BALANCE</div>
+      <div class="hdr-bal-val" id="balVal">$--</div>
     </div>
   </div>
 
-  <!-- STATS -->
-  <div class="stats-row">
-    <div class="stat"><div class="stat-lbl">Wins</div><div class="stat-val g" id="statWins">0</div></div>
-    <div class="stat"><div class="stat-lbl">Losses</div><div class="stat-val r" id="statLosses">0</div></div>
-    <div class="stat"><div class="stat-lbl">Winrate</div><div class="stat-val o" id="statWR">0%</div></div>
-    <div class="stat"><div class="stat-lbl">Filtradas</div><div class="stat-val" id="statFiltered">0</div></div>
-    <div class="stat"><div class="stat-lbl">P&amp;L Sesión</div><div class="stat-val c" id="statPnL">$0.00</div></div>
+  <!-- MODE BADGES -->
+  <div class="mode-badge">
+    <div class="mbadge zpeak">
+      <div class="mbadge-icon">⚡</div>
+      <div class="mbadge-text">
+        <div class="mbadge-name" style="color:var(--pu)">Z-PEAK ENGINE</div>
+        <div class="mbadge-desc">Z-score extremo + desaceleración → reversión</div>
+      </div>
+    </div>
+    <div class="mbadge trend">
+      <div class="mbadge-icon">📈</div>
+      <div class="mbadge-text">
+        <div class="mbadge-name" style="color:var(--up)">EMA 9/21 TREND</div>
+        <div class="mbadge-desc">Cruce EMA + fuerza → tendencia confirmada</div>
+      </div>
+    </div>
   </div>
 
   <!-- INPUTS -->
-  <div class="input-row">
-    <div class="inp-group">
+  <div class="inp-row">
+    <div class="inp-g">
       <label>🔑 API Token Deriv</label>
       <input type="password" id="apiToken" placeholder="Tu token API">
     </div>
-    <div class="inp-group">
-      <label>💰 Stake por operación ($)</label>
-      <input type="number" id="stake" value="1.00" step="0.25" min="0.35">
+    <div class="inp-g">
+      <label>💰 Stake ($)</label>
+      <input type="number" id="stake" value="1.00" min="0.35" step="0.25">
     </div>
   </div>
 
-  <!-- TRIPLE CONFIRM PANEL -->
-  <div class="confirm-panel">
-    <div class="confirm-header">
-      <div class="confirm-title">⚡ Triple Confirmación · Velas 1min · Score ≥6 para operar</div>
-      <div class="confirm-score bad" id="scoreTotal">--</div>
-    </div>
-    <div class="confirm-grid">
-      <div class="cbox" id="cb-z"><div class="cbox-lbl">Z Score</div><div class="cbox-val na" id="scZ">✗</div></div>
-      <div class="cbox" id="cb-d"><div class="cbox-lbl">Desacel.</div><div class="cbox-val na" id="scDecel">✗</div></div>
-      <div class="cbox" id="cb-p"><div class="cbox-lbl">µRetro</div><div class="cbox-val na" id="scPullback">✗</div></div>
-      <div class="cbox" id="cb-w"><div class="cbox-lbl">WeakPush</div><div class="cbox-val na" id="scWeak">✗</div></div>
-      <div class="cbox" id="cb-v"><div class="cbox-lbl">Vol OK</div><div class="cbox-val na" id="scVol">✗</div></div>
-      <div class="cbox" id="cb-e"><div class="cbox-lbl">EMA 3/9</div><div class="cbox-val na" id="scEma">✗</div></div>
-      <div class="cbox" id="cb-r"><div class="cbox-lbl">RSI 70/30</div><div class="cbox-val na" id="scRsi">--</div></div>
-    </div>
+  <!-- BTNS -->
+  <div class="btn-row">
+    <button class="btn btn-go" id="toggleBtn">▶ INICIAR FUSION BOT</button>
   </div>
 
-  <!-- UMBRALES -->
-  <div class="thresh-row" id="threshGrid"></div>
-
-  <!-- BTN -->
-  <button class="btn" id="toggleBtn">▶ INICIAR BOT</button>
-  <div class="status" id="statusDiv">⚙️ OFFLINE — Esperando conexión</div>
-  <div class="signal-box">Última señal: <span class="signal-val" id="activeSignal">---</span></div>
-
-  <!-- CANDLE STRIP -->
-  <div class="candle-strip">
-    <div class="cs-dot" id="candleDot"></div>
-    <span class="cs-text" id="candleStatus">Sin datos de velas</span>
-    <span class="cs-val" id="candleCount">0 velas</span>
+  <!-- STATUS -->
+  <div class="status">
+    <span class="dot" id="statusDot"></span>
+    <span id="statusTxt">OFFLINE — Ingresa token e inicia</span>
   </div>
 
-  <!-- ENGINE PANEL -->
-  <div class="engine-panel">
-    <div class="engine-title">Motor de Agotamiento v9.0 — Candles 1min Reales</div>
-    <div class="engine-grid">
-      <div class="ebox"><div class="ebox-lbl">Modo</div><div class="ebox-val idle" id="zpMode">SCAN</div></div>
-      <div class="ebox"><div class="ebox-lbl">Activo</div><div class="ebox-val idle" id="zpActive">--</div></div>
-      <div class="ebox"><div class="ebox-lbl">Z / Score</div><div class="ebox-val idle" id="zpScore">--/--</div></div>
-      <div class="ebox"><div class="ebox-lbl">RSI</div><div class="ebox-val idle" id="zpRsi">--</div></div>
+  <!-- STATS -->
+  <div class="stats">
+    <div class="sc"><div class="sc-l">Wins</div><div class="sc-v g" id="stW">0</div></div>
+    <div class="sc"><div class="sc-l">Losses</div><div class="sc-v r" id="stL">0</div></div>
+    <div class="sc"><div class="sc-l">Winrate</div><div class="sc-v o" id="stWR">0%</div></div>
+    <div class="sc"><div class="sc-l">Fusion</div><div class="sc-v" style="color:var(--pu)" id="stFus">0</div></div>
+    <div class="sc"><div class="sc-l">P&L Sesión</div><div class="sc-v c" id="stPnL">$0.00</div></div>
+  </div>
+
+  <!-- CONFIRM PANEL -->
+  <div class="cpanel">
+    <div class="cpanel-hdr">
+      <div class="cpanel-title">⚡ PANEL FUSION — 8 CONFIRMADORES · Entrada óptima cuando Z-Peak Y EMA coinciden</div>
+      <div class="cpanel-score bad" id="cpScore">--</div>
+    </div>
+    <div class="cgrid">
+      <div class="cbox" id="cb0"><div class="cbox-l">Z Extremo</div><div class="cbox-v na" id="cv0">✗</div></div>
+      <div class="cbox" id="cb1"><div class="cbox-l">Desacel.</div><div class="cbox-v na" id="cv1">✗</div></div>
+      <div class="cbox" id="cb2"><div class="cbox-l">µRetro</div><div class="cbox-v na" id="cv2">✗</div></div>
+      <div class="cbox" id="cb3"><div class="cbox-l">WeakPush</div><div class="cbox-v na" id="cv3">✗</div></div>
+      <div class="cbox" id="cb4"><div class="cbox-l">Vol OK</div><div class="cbox-v na" id="cv4">✗</div></div>
+      <div class="cbox" id="cb5"><div class="cbox-l">EMA 3/9</div><div class="cbox-v na" id="cv5">✗</div></div>
+      <div class="cbox" id="cb6"><div class="cbox-l">Cruce 9/21</div><div class="cbox-v na" id="cv6">✗</div></div>
+      <div class="cbox" id="cb7"><div class="cbox-l">Fuerza EMA</div><div class="cbox-v na" id="cv7">✗</div></div>
     </div>
   </div>
 
   <!-- ASSETS -->
-  <div class="assets-grid" id="assetsGrid"></div>
+  <div class="agrid" id="agrid"></div>
 
-  <!-- CHART -->
-  <canvas id="chart" height="80"></canvas>
-
-  <!-- LOG -->
-  <div class="log" id="logDiv"></div>
-
-  <!-- SAFETY -->
-  <div class="safety">
-    <div class="safety-title">🛡 Protección de Cuenta</div>
-    <div class="safety-grid">
-      <div class="sbox"><div class="sbox-lbl">Drawdown</div><div class="sbox-val" id="drawdown">$0.00</div></div>
-      <div class="sbox"><div class="sbox-lbl">Stop (5%)</div><div class="sbox-val" id="stopLimit">--</div></div>
-      <div class="sbox"><div class="sbox-lbl">Racha Loss</div><div class="sbox-val" id="lossStreakEl">0</div></div>
-      <div class="sbox"><div class="sbox-lbl">Cooldown</div><div class="sbox-val" id="pauseStatus">ACTIVO</div></div>
+  <!-- SIGNAL -->
+  <div class="sigbox">
+    <div>
+      <div class="sig-l">ÚLTIMA SEÑAL</div>
+      <div class="sig-v" id="sigV" style="color:var(--mt)">---</div>
+    </div>
+    <div style="text-align:right">
+      <div class="sig-l">MODO / DURACIÓN</div>
+      <div class="sig-d" id="sigD">---</div>
     </div>
   </div>
 
-</div><!-- /container -->
+  <!-- THRESHOLDS -->
+  <div class="thr-sec">
+    <div class="thr-title">⚙ Parámetros por activo</div>
+    <div class="thr-grid" id="thrGrid"></div>
+  </div>
+
+  <!-- SAFETY -->
+  <div class="safety">
+    <div class="safety-t">🛡 Protección de cuenta</div>
+    <div class="safety-g">
+      <div class="sfb"><div class="sfb-l">Drawdown</div><div class="sfb-v" id="sfDD">$0.00</div></div>
+      <div class="sfb"><div class="sfb-l">Stop 5%</div><div class="sfb-v" id="sfStop">--</div></div>
+      <div class="sfb"><div class="sfb-l">Racha Loss</div><div class="sfb-v" id="sfStreak">0</div></div>
+      <div class="sfb"><div class="sfb-l">Cooldown</div><div class="sfb-v" id="sfCool">OK</div></div>
+    </div>
+  </div>
+
+  <!-- LOG -->
+  <div class="log-t">📋 Log de actividad</div>
+  <div class="log" id="logDiv"></div>
+
+</div>
 
 <script>
-// ══════════════════════════════════════════════════════════════════════════════
-// Z-PEAK BOT v9.0 PRO — CANDLE ENGINE
+// ══════════════════════════════════════════════════════════════════════════
+// FUSION BOT — Z-PEAK + EMA TREND
 //
-// ARQUITECTURA CORRECTA:
-//   ─ Usa ticks_history con style:"candles" granularity:60 para obtener
-//     historial de 40 velas de 1 minuto al arrancar
-//   ─ Se suscribe a candles en tiempo real (cada vela CERRADA dispara análisis)
-//   ─ RSI 14 calculado sobre CIERRES de vela reales (no ticks)
-//   ─ EMA 3/9 calculados sobre CIERRES de vela reales
-//   ─ Z-score sobre 40 cierres → ventana de 40 minutos
-//   ─ Ticks usados SOLO para mostrar precio en tiempo real (UI)
-//   ─ detectExhaustion() opera sobre cierres de vela
-//   ─ Triple confirmación: exhausted + emaFilter + rsi(80/20)
-//   ─ Duración: score≥8 → 3min | score≥6 → 5min
-// ══════════════════════════════════════════════════════════════════════════════
+// LÓGICA DE FUSIÓN:
+//
+//  MODO A — FUSION PURA (entrada prioritaria, duración dinámica 1–5min)
+//    Condición: Z-Peak exhausted AND cruce EMA 9/21 en misma dirección
+//    → Ambos motores coinciden → máxima confianza
+//    → Duración por fuerza EMA: 1/2/3/4/5 min
+//
+//  MODO B — Z-PEAK SOLO (reversión, duración fija 3min)
+//    Condición: exhausted AND emaFilter(3/9) AND !cruce21 activo
+//    → Solo reversión confirmada con EMA rápida
+//
+//  MODO C — EMA TREND SOLO (tendencial, duración por fuerza)
+//    Condición: cruce 9/21 válido AND fuerza>=MEDIA AND !z extremo contrario
+//    → Tendencia limpia sin contexto de agotamiento opuesto
+//
+// PRIORIDAD: FUSION > Z-PEAK > EMA TREND
+// ══════════════════════════════════════════════════════════════════════════
 
-const ASSETS     = ['R_10','R_25'];
-const ASSET_LABELS = {'R_10':'V10','R_25':'V25'};
-const CANDLE_GRAN  = 60;        // 1 minuto en segundos
-const CANDLE_COUNT = 20;        // 20 velas históricas
-const TREND_LOCK_MS   = 60000;
-const LOSS_BLOCK_MS   = 120000;
+const ASSETS  = ['R_10','R_25'];
+const LABELS  = {'R_10':'V10','R_25':'V25'};
+const GRAN    = 60;
+const HIST    = 30;
+const READY   = 22;   // velas mínimas para EMA21 estable
+
+// Umbrales Z por activo
+let zThr = {'R_10':1.9, 'R_25':1.8};
+// Separación mínima EMA9/21 (relativa al precio)
+let minSep = {'R_10':0.0008, 'R_25':0.0006};
+
 const LOSS_BLOCK_AFTER = 2;
-const KILLER_WINDOW    = 10;
-const KILLER_THRESHOLD = 9;
+const LOSS_BLOCK_MS    = 90000;
+const GLOBAL_PAUSE_MS  = 40000;
+const COOLDOWN_MS      = 20000;
+const KILLER_WIN       = 10;
+const KILLER_THR       = 9;
 
-let zThresholds = {'R_10':1.9, 'R_25':1.8};
-
-// ── ESTADO GLOBAL ──────────────────────────────────────────────────────────
 let ws, running = false;
 let balance = 100, sessionStart = 100;
 let wins = 0, losses = 0, lossStreak = 0, pauseUntil = 0;
-let tradeHistory = [], filteredCount = 0;
+let fusionCount = 0;
 
-// ── BUFFERS POR ACTIVO (ahora basados en VELAS CERRADAS) ──────────────────
-// closes[]    → cierres de vela (máx 40) — base de todos los cálculos
-// highs[]     → máximos de vela
-// lows[]      → mínimos de vela
-// opens[]     → aperturas de vela
-// ema3        → EMA3 sobre cierres
-// ema9        → EMA9 sobre cierres
-// rsi         → RSI14 sobre cierres
-// currentTick → último precio de tick (solo para display)
-// candleReady → true cuando tiene ≥10 velas cerradas
-let buffers = {};
-function initBuffer(a){
-  buffers[a] = {
-    closes:[], highs:[], lows:[], opens:[],
-    ema3:null, ema9:null, rsi:null,
-    currentTick:null, candleReady:false,
-    lastCandleEpoch:0, liveCandle:null
+// ── BUFFER ────────────────────────────────────────────────────────────────
+let buf = {};
+function initBuf(a){
+  buf[a] = {
+    closes:[], opens:[], highs:[], lows:[],
+    // Z-Peak EMAs (rápidas, reversión)
+    ema3:null, ema9zp:null,
+    // Trend EMAs (cruce tendencial)
+    ema9:null, ema21:null,
+    prevEma9:null, prevEma21:null,
+    // RSI
+    rsi:null,
+    // Misc
+    currentTick:null,
+    candleReady:false,
+    lastOpenTime:0,
+    liveCandle:null
   };
 }
-ASSETS.forEach(initBuffer);
+ASSETS.forEach(initBuf);
 
 // ── ESTADO POR ACTIVO ──────────────────────────────────────────────────────
-let assetState = {};
+let ast = {};
 ASSETS.forEach(a=>{
-  assetState[a]={mode:'SCAN',lockStartTime:0,lossStreak:0,blockedUntil:0};
+  ast[a]={lossStreak:0,blockedUntil:0,lastTrade:0,hasContract:false,
+          zpeakSig:null, trendSig:null, trendStrength:0};
 });
+let c2a = {};   // contractId → asset
 
-let openContracts = {'R_10':null,'R_25':null};
-let lastTradeTime = {'R_10':0,'R_25':0};
-let contractToAsset = {};
-let lastExhaustionAsset = null;
-
-// ── CHART ─────────────────────────────────────────────────────────────────
-const chart = new Chart(document.getElementById('chart'),{
-  type:'line',
-  data:{
-    labels:[],
-    datasets:[{
-      label:'Balance USD', data:[100],
-      borderColor:'#00d2a0', borderWidth:2,
-      fill:false, tension:0.35,
-      pointRadius:3, pointBackgroundColor:'#00d2a0'
-    }]
-  },
-  options:{
-    responsive:true, maintainAspectRatio:true,
-    plugins:{legend:{labels:{color:'#2e3d52',font:{size:10,family:'JetBrains Mono'}}}},
-    scales:{
-      x:{ticks:{color:'#2e3d52',font:{size:9}},grid:{color:'rgba(255,255,255,.02)'}},
-      y:{ticks:{color:'#2e3d52',font:{size:9}},grid:{color:'rgba(255,255,255,.03)'}}
-    }
-  }
-});
-
-// ── LOG ───────────────────────────────────────────────────────────────────
-function addLog(msg,cls=''){
-  const t=new Date().toLocaleTimeString();
-  const d=document.createElement('div');
-  d.className=cls;
-  d.textContent='['+t+'] '+msg;
-  const el=document.getElementById('logDiv');
-  el.appendChild(d);
-  el.scrollTop=el.scrollHeight;
+// ══════════════════════════════════════════════════════════════════════════
+// CÁLCULO — todas las funciones sobre cierres de vela
+// ══════════════════════════════════════════════════════════════════════════
+function calcEMA(period, price, prev){
+  const k = 2/(period+1);
+  return prev===null ? price : price*k + prev*(1-k);
 }
 
-// ══════════════════════════════════════════════════════════════════════════
-// FUNCIONES DE CÁLCULO — todas sobre arrays de CIERRES de vela
-// ══════════════════════════════════════════════════════════════════════════
-
-// Z-score sobre cierres de vela
 function calcZ(closes){
   const n=closes.length;
   if(n<2) return 0;
-  let sum=0;
-  for(let i=0;i<n;i++) sum+=closes[i];
+  let sum=0; for(let i=0;i<n;i++) sum+=closes[i];
   const mean=sum/n;
-  let sq=0;
-  for(let i=0;i<n;i++) sq+=(closes[i]-mean)*(closes[i]-mean);
+  let sq=0; for(let i=0;i<n;i++) sq+=(closes[i]-mean)**2;
   const std=Math.sqrt(sq/n);
   return std===0?0:(closes[n-1]-mean)/std;
 }
 
-// Promedio de array
+function calcRSI(closes){
+  if(closes.length<11) return null;
+  let gain=0,loss=0;
+  for(let i=1;i<closes.length;i++){
+    const d=closes[i]-closes[i-1];
+    if(d>0) gain+=d; else loss-=d;
+  }
+  const rs=gain/(loss===0?1:loss);
+  return 100-(100/(1+rs));
+}
+
 function avg(arr){
   if(!arr.length) return 0;
   let s=0; for(let i=0;i<arr.length;i++) s+=arr[i];
   return s/arr.length;
 }
 
-// EMA incremental
-function calcEMA(period,price,prev){
-  const k=2/(period+1);
-  if(prev===null) return price;
-  return price*k+prev*(1-k);
+// ── FUERZA EMA 9/21 ──────────────────────────────────────────────────────
+function getTrendStrength(a){
+  const b=buf[a];
+  if(b.ema9===null||b.ema21===null||!b.closes.length) return {strength:0,label:'SIN DATOS',duration:0,pct:'0'};
+  const sep=Math.abs(b.ema9-b.ema21);
+  const pct=sep/b.closes[b.closes.length-1];
+  const min=minSep[a];
+  let strength,label,duration;
+  if     (pct>=min*2.5){strength=5;label='MUY FUERTE';duration=5;}
+  else if(pct>=min*2.0){strength=4;label='FUERTE';    duration=4;}
+  else if(pct>=min*1.5){strength=3;label='MEDIA-ALTA';duration=3;}
+  else if(pct>=min*1.0){strength=2;label='MEDIA';     duration=2;}
+  else if(pct>=min*0.6){strength=1;label='MÍNIMA';    duration=1;}
+  else                  {strength=0;label='DÉBIL';     duration=0;}
+  return {strength,label,duration,pct:(pct*100).toFixed(4)};
 }
 
-// RSI 14 sobre cierres de vela — CORRECTO (no sobre ticks)
-function calcRSI(closes){
-  if(closes.length<11) return null;
-  let gain=0,loss=0;
-  for(let i=1;i<closes.length;i++){
-    const diff=closes[i]-closes[i-1];
-    if(diff>0) gain+=diff;
-    else loss-=diff;
+// ── CRUCE EMA 9/21 ────────────────────────────────────────────────────────
+function detectCross(a){
+  const b=buf[a];
+  if(b.ema9===null||b.ema21===null||b.prevEma9===null||b.prevEma21===null) return null;
+  const wasAbove=b.prevEma9>b.prevEma21;
+  const isAbove =b.ema9>b.ema21;
+  if(!wasAbove&&isAbove) return 'CALL';
+  if(wasAbove&&!isAbove) return 'PUT';
+  return null;
+}
+
+// ── Z-PEAK: detectExhaustion ──────────────────────────────────────────────
+function detectExhaustion(a){
+  const b=buf[a];
+  const closes=b.closes;
+  if(closes.length<5) return {exhausted:false,score:0,entryDir:null,z:0,details:{}};
+
+  const returns=[];
+  for(let i=1;i<closes.length;i++) returns.push(closes[i]-closes[i-1]);
+  const absRet=returns.map(r=>Math.abs(r));
+
+  const z=calcZ(closes);
+  if(Math.abs(z)<1.3) return {exhausted:false,score:0,entryDir:null,z,details:{}};
+
+  const n=returns.length;
+  const v1=Math.abs(returns[n-1]);
+  const v2=Math.abs(returns[n-2]);
+  const v3=n>=3?Math.abs(returns[n-3]):0;
+
+  const absZ=Math.abs(z);
+  const zExtremo=absZ>=zThr[a];
+  let score=0;
+  if(zExtremo) score+=2;
+
+  const desacelProg=v3>v2&&v2>v1;
+  const desacelBrusca=v2>0&&v1<v2*0.7;
+  const desaceleracion=desacelProg||desacelBrusca;
+  if(desacelProg) score+=3; else if(desacelBrusca) score+=2;
+
+  let impDir=0;
+  for(let i=Math.max(0,n-4);i<n-1;i++) impDir+=returns[i];
+  const dd=impDir>=0?'up':'down';
+  const microRetroceso=(dd==='up'?returns[n-2]<0:returns[n-2]>0)||
+                       (n>=3?(dd==='up'?returns[n-3]<0:returns[n-3]>0):false);
+  if(microRetroceso) score+=2;
+
+  const avgLast3=avg(absRet.slice(-3));
+  const weakPush=v1<avgLast3*0.85&&v1<v2;
+  if(weakPush) score+=2;
+
+  const vol5=absRet.length>=5?avg(absRet.slice(-5)):avg(absRet);
+  const vol20=avg(absRet);
+  const volOk=vol5<=vol20*1.3;
+  if(volOk&&vol5<=vol20) score+=1;
+
+  let hiperTend=false;
+  if(closes.length>=KILLER_WIN+1){
+    let ups=0;
+    for(let i=Math.max(0,returns.length-KILLER_WIN);i<returns.length;i++) if(returns[i]>0) ups++;
+    hiperTend=Math.max(ups,KILLER_WIN-ups)>=KILLER_THR;
   }
-  const rs=gain/(loss===0?1:loss);
-  return 100-(100/(1+rs));
+
+  const entryDir=z>0?'PUT':'CALL';
+  const exhausted=zExtremo&&!hiperTend;
+
+  return {exhausted,score,entryDir,z,
+    details:{zExtremo,desaceleracion,microRetroceso,weakPush,volOk,hiperTend,desacelProg,desacelBrusca,vol5,vol20}};
+}
+
+// ── Z-PEAK: emaFilter (rápido 3/9, reversión) ─────────────────────────────
+function emaFilterZP(a, dir){
+  const b=buf[a];
+  if(b.ema3===null||b.ema9zp===null||b.closes.length<3) return false;
+  const slope=b.closes[b.closes.length-1]-b.closes[b.closes.length-3];
+  const lc=b.closes[b.closes.length-1];
+  if(dir==='PUT')  return b.ema3>b.ema9zp && lc>b.ema9zp && slope<0;
+  if(dir==='CALL') return b.ema3<b.ema9zp && lc<b.ema9zp && slope>0;
+  return false;
+}
+
+// ── DURACIÓN DINÁMICA ─────────────────────────────────────────────────────
+function getDuration(score, strength){
+  // FUSION: score alto + fuerza EMA → duración por fuerza
+  if(strength>=1) return strength; // 1–5 min por fuerza
+  // Solo Z-Peak: duración por score
+  if(score>=8) return 3;
+  if(score>=5) return 2;
+  return 1;
 }
 
 // ══════════════════════════════════════════════════════════════════════════
 // PROCESAR VELA CERRADA
-// Llamado cuando Deriv envía una vela completa (epoch actualizado)
 // ══════════════════════════════════════════════════════════════════════════
-function processClosedCandle(asset, candle){
-  const buf=buffers[asset];
+function processClosedCandle(a, candle){
+  const b=buf[a];
 
-  // Agregar OHLC al buffer
-  buf.closes.push(parseFloat(candle.close));
-  buf.opens.push(parseFloat(candle.open));
-  buf.highs.push(parseFloat(candle.high));
-  buf.lows.push(parseFloat(candle.low));
+  // Guardar EMA anteriores antes de actualizar
+  b.prevEma9  = b.ema9;
+  b.prevEma21 = b.ema21;
 
-  // Mantener máximo CANDLE_COUNT velas
-  if(buf.closes.length>CANDLE_COUNT){ buf.closes.shift(); buf.opens.shift(); buf.highs.shift(); buf.lows.shift(); }
+  // Actualizar buffer
+  const close=parseFloat(candle.close);
+  b.closes.push(close);
+  b.opens.push(parseFloat(candle.open));
+  b.highs.push(parseFloat(candle.high));
+  b.lows.push(parseFloat(candle.low));
+  if(b.closes.length>HIST){b.closes.shift();b.opens.shift();b.highs.shift();b.lows.shift();}
 
-  // Actualizar EMA 3/9 sobre cierre
-  buf.ema3=calcEMA(3, buf.closes[buf.closes.length-1], buf.ema3);
-  buf.ema9=calcEMA(9, buf.closes[buf.closes.length-1], buf.ema9);
+  // EMAs Z-Peak (rápidas, reversión)
+  b.ema3   = calcEMA(3,  close, b.ema3);
+  b.ema9zp = calcEMA(9,  close, b.ema9zp);
 
-  // Actualizar RSI 14 sobre cierres — CORRECTO
-  buf.rsi=calcRSI(buf.closes);
+  // EMAs Trend (cruce tendencial)
+  b.ema9  = calcEMA(9,  close, b.ema9);
+  b.ema21 = calcEMA(21, close, b.ema21);
 
-  buf.candleReady = buf.closes.length>=10;
-  buf.lastCandleEpoch = candle.epoch;
+  // RSI
+  b.rsi = calcRSI(b.closes);
 
-  // Actualizar strip de velas
-  updateCandleStrip();
-  updateAssetsGrid();
+  b.candleReady = b.closes.length >= READY;
 
-  // Disparar análisis con la vela cerrada
-  if(running) analyzeCandle(asset);
+  updateUI();
+  addLog(`🕯 ${LABELS[a]} C:${close.toFixed(3)} | EMA9:${b.ema9?b.ema9.toFixed(3):'--'} EMA21:${b.ema21?b.ema21.toFixed(3):'--'} | Z:${calcZ(b.closes).toFixed(2)}`);
+
+  if(running) analyzeCandle(a);
 }
 
 // ══════════════════════════════════════════════════════════════════════════
-// detectExhaustion — opera sobre CIERRES de vela (no ticks)
-// Motor intacto, ahora con datos correctos
+// ANÁLISIS FUSION — núcleo de decisión
 // ══════════════════════════════════════════════════════════════════════════
-function detectExhaustion(asset){
-  const buf=buffers[asset];
-  const closes=buf.closes;
-
-  if(closes.length<5){
-    return {exhausted:false,score:0,entryDir:null,z:0,details:{}};
-  }
-
-  // Calcular retornos sobre cierres
-  const returns=[];
-  for(let i=1;i<closes.length;i++) returns.push(closes[i]-closes[i-1]);
-  const absReturns=returns.map(r=>Math.abs(r));
-
-  // FILTRO DE ACTIVACIÓN: |Z| < 2.0 → skip
-  const z=calcZ(closes);
-  if(Math.abs(z)<1.3){
-    return {exhausted:false,score:0,entryDir:null,z,details:{}};
-  }
-
-  const n=returns.length;
-  const lastRet=returns[n-1];
-  const prevRet=returns[n-2];
-  const prevPrevRet=n>=3?returns[n-3]:0;
-
-  const v1=Math.abs(lastRet);
-  const v2=Math.abs(prevRet);
-  const v3=Math.abs(prevPrevRet);
-
-  // 1. Z EXTREMO
-  const absZ=Math.abs(z);
-  const thr=zThresholds[asset];
-  const zExtremo=absZ>=thr;
-  let score=0;
-  if(zExtremo) score+=2;
-
-  // 2. DESACELERACIÓN REAL (sobre velocidad de cierres)
-  const desacelProgresiva=v3>v2&&v2>v1;
-  const desacelBrusca=v2>0&&v1<v2*0.7;
-  const desaceleracion=desacelProgresiva||desacelBrusca;
-  if(desacelProgresiva) score+=3;
-  else if(desacelBrusca) score+=2;
-
-  // 3. MICRO RETROCESO
-  let impulsoDir=0;
-  for(let i=Math.max(0,n-4);i<n-1;i++) impulsoDir+=returns[i];
-  const dirDominante=impulsoDir>=0?'up':'down';
-  const tick1Contra=dirDominante==='up'?prevRet<0:prevRet>0;
-  const tick2Contra=n>=3?(dirDominante==='up'?prevPrevRet<0:prevPrevRet>0):false;
-  const microRetroceso=tick1Contra||tick2Contra;
-  if(microRetroceso) score+=2;
-
-  // 4. WEAK PUSH
-  const last3Abs=absReturns.slice(-3);
-  const avgLast3=last3Abs.length>0?avg(last3Abs):0;
-  const weakPush=v1<avgLast3*0.85&&v1<v2;
-  if(weakPush) score+=2;
-
-  // 5. VOLATILIDAD CONTROLADA
-  const vol5=absReturns.length>=5?avg(absReturns.slice(-5)):avg(absReturns);
-  const vol20=avg(absReturns);
-  const volatilidadOk=vol5<=vol20*1.3;
-  if(volatilidadOk&&vol5<=vol20) score+=1;
-
-  // 6. NO HIPERTENDENCIA
-  let hiperTendencia=false;
-  if(closes.length>=KILLER_WINDOW+1){
-    let ups=0;
-    const start=returns.length-KILLER_WINDOW;
-    for(let i=Math.max(0,start);i<returns.length;i++) if(returns[i]>0) ups++;
-    const maxSame=Math.max(ups,KILLER_WINDOW-ups);
-    hiperTendencia=maxSame>=KILLER_THRESHOLD;
-  }
-
-  const entryDir=z>0?'PUT':'CALL';
-  // exhausted = Z extremo + sin hipertendencia (más frecuente)
-  const exhausted=zExtremo&&!hiperTendencia;
-
-  return {
-    exhausted, score, entryDir, z,
-    details:{
-      zExtremo,desaceleracion,microRetroceso,weakPush,volatilidadOk,hiperTendencia,
-      v1,v2,v3,vol5,vol20,dirDominante,desacelProgresiva,desacelBrusca
-    }
-  };
-}
-
-// ══════════════════════════════════════════════════════════════════════════
-// FILTRO EMA — coherente con reversión (sobre EMA de cierres)
-// PUT  → ema3>ema9 + cierre>ema9 + slope<0
-// CALL → ema3<ema9 + cierre<ema9 + slope>0
-// ══════════════════════════════════════════════════════════════════════════
-function emaFilter(asset, entryDir){
-  const buf=buffers[asset];
-  if(buf.ema3===null||buf.ema9===null) return false;
-  if(buf.closes.length<3) return false;
-
-  const closes=buf.closes;
-  const slope=closes[closes.length-1]-closes[closes.length-3];
-  const lastClose=closes[closes.length-1];
-
-  if(entryDir==='PUT'){
-    return buf.ema3>buf.ema9 && lastClose>buf.ema9 && slope<0;
-  }
-  if(entryDir==='CALL'){
-    return buf.ema3<buf.ema9 && lastClose<buf.ema9 && slope>0;
-  }
-  return false;
-}
-
-// ── Duración dinámica 3–5 min ──────────────────────────────────────────
-function getDynamicDuration(score){
-  if(score>=8) return 3;
-  if(score>=6) return 5;
-  return 0;
-}
-
-// ══════════════════════════════════════════════════════════════════════════
-// ANÁLISIS POR VELA CERRADA — núcleo de decisión
-// ══════════════════════════════════════════════════════════════════════════
-function analyzeCandle(sym){
+function analyzeCandle(a){
   const now=Date.now();
-  const st=assetState[sym];
-  const buf=buffers[sym];
+  const b=buf[a];
+  const st=ast[a];
 
-  if(!buf.candleReady){ return; }
-  if(now<pauseUntil){ updateAssetsGrid(); return; }
-  if(openContracts[sym]){ updateAssetsGrid(); return; }
-  if(st.blockedUntil>now){ updateAssetsGrid(); return; }
-  if(now-lastTradeTime[sym]<10000){ updateAssetsGrid(); return; }
-
-  const dd=sessionStart-balance;
-  if(dd>=sessionStart*0.05){
+  if(!b.candleReady)              return;
+  if(st.hasContract)              return;
+  if(now<pauseUntil)              return;
+  if(now<st.blockedUntil)         return;
+  if(now-st.lastTrade<COOLDOWN_MS) return;
+  if((sessionStart-balance)>=sessionStart*0.05){
     addLog('🛑 STOP DE SESIÓN — drawdown 5%','ll');
     stopBot(); return;
   }
 
-  const exhaustResult=detectExhaustion(sym);
+  // ── CALCULAR AMBAS SEÑALES ────────────────────────────────────────────
+  const exh     = detectExhaustion(a);
+  const crossDir= detectCross(a);
+  const trend   = getTrendStrength(a);
+  const emaFilt = emaFilterZP(a, exh.entryDir);
 
-  // ── HIPERTENDENCIA → TREND LOCK ──────────────────────────────────────
-  if(exhaustResult.details.hiperTendencia && st.mode==='SCAN'){
-    st.mode='TREND_LOCK';
-    st.lockStartTime=now;
-    addLog(`🔴 TREND LOCK ${ASSET_LABELS[sym]}: hipertendencia detectada en velas`,'ll');
-    updateEnginePanel('TREND_LOCK',ASSET_LABELS[sym],'--/--','--');
-    updateAssetsGrid(); return;
+  // Pendiente EMA9 confirma cruce
+  const slope9 = b.ema9!==null&&b.prevEma9!==null ? b.ema9-b.prevEma9 : 0;
+  const crossValid = crossDir!==null &&
+    ((crossDir==='CALL'&&slope9>0)||(crossDir==='PUT'&&slope9<0)) &&
+    trend.duration>0;
+
+  // Guardar estado de señales por activo (para UI)
+  st.zpeakSig   = exh.exhausted ? exh.entryDir : null;
+  st.trendSig   = crossValid    ? crossDir      : null;
+  st.trendStr   = trend.strength;
+
+  // Actualizar panel de confirmadores
+  updateConfirmPanel(a, exh, emaFilt, crossValid, trend);
+
+  // ══════════════════════════════════════════════════════════════════════
+  // MODO A — FUSION PURA: ambas señales en la misma dirección
+  // ══════════════════════════════════════════════════════════════════════
+  if(exh.exhausted && crossValid && exh.entryDir===crossDir){
+    const duration=getDuration(exh.score, trend.strength);
+    fusionCount++;
+    addLog(
+      `🌟 FUSION ${LABELS[a]} → ${crossDir} | Z:${exh.z.toFixed(2)} Score:${exh.score}/10 | Fuerza:${trend.label} | ${duration}min`,
+      'lfus'
+    );
+    executeTrade(a, crossDir, duration, 'FUSION', exh, trend);
+    return;
   }
 
-  // ── TREND LOCK ────────────────────────────────────────────────────────
-  if(st.mode==='TREND_LOCK'){
-    const emaOk=emaFilter(sym,exhaustResult.entryDir);
-    const rsiOk=exhaustResult.entryDir==='PUT'
-      ?(buf.rsi!==null&&buf.rsi>=70)
-      :(buf.rsi!==null&&buf.rsi<=30);
-
-    if(exhaustResult.exhausted&&emaOk&&rsiOk){
-      st.mode='SCAN'; st.lockStartTime=0;
-      addLog(`🔥 UNLOCK TRIPLE CONFIRM ${ASSET_LABELS[sym]} | Z:${exhaustResult.z.toFixed(2)} | RSI:${buf.rsi.toFixed(1)}`,'lk');
-      lastExhaustionAsset=sym;
-      updateScorePanel(exhaustResult.details,emaOk,rsiOk);
-      const dur=getDynamicDuration(exhaustResult.score);
-      if(dur>0) executeTrade(sym,exhaustResult.entryDir,exhaustResult.z,exhaustResult.score,dur);
-      updateAssetsGrid(); return;
+  // ══════════════════════════════════════════════════════════════════════
+  // MODO B — Z-PEAK SOLO: agotamiento + EMA rápida, sin cruce 9/21
+  // ══════════════════════════════════════════════════════════════════════
+  if(exh.exhausted && emaFilt){
+    // Verificar que el cruce 9/21 no contradiga la dirección
+    if(crossValid && crossDir!==exh.entryDir){
+      addLog(`🔶 Z-Peak ${LABELS[a]} ${exh.entryDir} — EMA21 cruza en contra → descartado`,'lf');
+      return;
     }
-    if(now-st.lockStartTime>TREND_LOCK_MS){
-      st.mode='SCAN'; st.lockStartTime=0;
-      addLog(`⛔ TREND LOCK expirado ${ASSET_LABELS[sym]} → SCAN`,'li');
-    } else {
-      addLog(`🟡 TREND LOCK ${ASSET_LABELS[sym]} Z:${exhaustResult.z.toFixed(2)} RSI:${buf.rsi!==null?buf.rsi.toFixed(1):'--'}`);
-    }
-    updateAssetsGrid(); return;
+    const duration=getDuration(exh.score, 0);
+    addLog(
+      `⚡ Z-PEAK ${LABELS[a]} → ${exh.entryDir} | Z:${exh.z.toFixed(2)} Score:${exh.score}/10 | ${duration}min`,
+      'lk'
+    );
+    executeTrade(a, exh.entryDir, duration, 'Z-PEAK', exh, trend);
+    return;
   }
 
-  // ── MODO SCAN ─────────────────────────────────────────────────────────
-  // Filtro Z < 2.0 ya aplicado dentro de detectExhaustion
-  const emaOk=emaFilter(sym,exhaustResult.entryDir);
-  const rsiOk=exhaustResult.entryDir==='PUT'
-    ?(buf.rsi!==null&&buf.rsi>=70)
-    :(buf.rsi!==null&&buf.rsi<=30);
-
-  updateScorePanel(exhaustResult.details,emaOk,rsiOk);
-  updateEnginePanel(
-    'SCAN',
-    ASSET_LABELS[sym],
-    exhaustResult.z.toFixed(2)+'/'+exhaustResult.score,
-    buf.rsi!==null?buf.rsi.toFixed(1):'--'
-  );
-
-  // DOBLE CONFIRMACIÓN: exhausted + EMA (RSI solo informativo)
-  if(exhaustResult.exhausted && emaOk){
-    const dur=getDynamicDuration(exhaustResult.score);
-    if(dur>0){
-      lastExhaustionAsset=sym;
-      addLog(
-        `🔥 TRIPLE CONFIRM ${ASSET_LABELS[sym]} | Z:${exhaustResult.z.toFixed(2)} | Score:${exhaustResult.score}/10 | RSI:${buf.rsi.toFixed(1)} | EMA3:${buf.ema3.toFixed(4)} EMA9:${buf.ema9.toFixed(4)} | → ${exhaustResult.entryDir} ${dur}min`,
-        'lk'
-      );
-      executeTrade(sym,exhaustResult.entryDir,exhaustResult.z,exhaustResult.score,dur);
-    } else {
-      filteredCount++;
-      addLog(`❌ Triple OK pero score bajo (${exhaustResult.score}/10) ${ASSET_LABELS[sym]}`,'lf');
-      updateStats();
+  // ══════════════════════════════════════════════════════════════════════
+  // MODO C — EMA TREND SOLO: cruce válido + fuerza media+ + Z no contradice
+  // ══════════════════════════════════════════════════════════════════════
+  if(crossValid && trend.strength>=2){
+    // Si Z-Peak está en dirección contraria al cruce → no operar
+    if(exh.exhausted && exh.entryDir!==crossDir){
+      addLog(`🔶 EMA Trend ${LABELS[a]} ${crossDir} — Z-Peak contradice → descartado`,'lf');
+      return;
     }
-  } else if(exhaustResult.exhausted && !emaOk){
-    filteredCount++;
-    addLog(`🔶 Filtrado EMA ${ASSET_LABELS[sym]} Z:${exhaustResult.z.toFixed(2)} EMA3:${buf.ema3?buf.ema3.toFixed(4):'N/A'} EMA9:${buf.ema9?buf.ema9.toFixed(4):'N/A'}`,'lf');
-    updateStats();
-  } else if(exhaustResult.exhausted && !rsiOk){
-    filteredCount++;
-    const rv=buf.rsi!==null?buf.rsi.toFixed(1):'N/A';
-    addLog(`🔶 Filtrado RSI ${ASSET_LABELS[sym]} Z:${exhaustResult.z.toFixed(2)} RSI:${rv} (necesita ${exhaustResult.entryDir==='PUT'?'≥70':'≤30'})`,'lf');
-    updateStats();
+    const duration=trend.duration;
+    addLog(
+      `📈 EMA TREND ${LABELS[a]} → ${crossDir} | Fuerza:${trend.label} (${trend.pct}%) | ${duration}min`,
+      'lk'
+    );
+    executeTrade(a, crossDir, duration, 'TREND', exh, trend);
+    return;
   }
 
-  updateAssetsGrid();
-  updateStats();
+  updateUI();
 }
 
-// ── EJECUCIÓN ─────────────────────────────────────────────────────────
+// ══════════════════════════════════════════════════════════════════════════
+// EJECUTAR TRADE
+// ══════════════════════════════════════════════════════════════════════════
 function getStake(){
   const base=parseFloat(document.getElementById('stake').value)||1;
   const ddPct=(sessionStart-balance)/sessionStart;
@@ -873,244 +770,199 @@ function getStake(){
   return base;
 }
 
-function executeTrade(sym,entryDir,z,score,duration){
+function executeTrade(a, dir, duration, mode, exh, trend){
   const stake=getStake();
-  const calidad=score>=8?'⚡PRECISA':'✅STD';
-  addLog(`🔥 ENTRADA ${ASSET_LABELS[sym]} → ${entryDir} | Z:${z.toFixed(2)} | Score:${score}/10 | ${calidad} | $${stake} | ${duration}min`,'lk');
-  document.getElementById('activeSignal').innerText=
-    `${entryDir} ${ASSET_LABELS[sym]} Z:${z.toFixed(2)} Score:${score} ${calidad} ${duration}min`;
-  lastTradeTime[sym]=Date.now();
-  openContracts[sym]='pending';
-  updateEnginePanel('SCAN',ASSET_LABELS[sym],z.toFixed(2)+'/'+score,'✅ '+entryDir);
+  ast[a].lastTrade=Date.now();
+  ast[a].hasContract=true;
+
+  // Actualizar última señal
+  const modeColors={'FUSION':'var(--go)','Z-PEAK':'var(--pu)','TREND':'var(--up)'};
+  const sigEl=document.getElementById('sigV');
+  sigEl.innerText=`${dir} ${LABELS[a]}`;
+  sigEl.style.color=dir==='CALL'?'var(--up)':'var(--dn)';
+  document.getElementById('sigD').innerText=
+    `${mode} · ${duration}min · Score:${exh.score}/10 · ${trend.label}`;
 
   ws.send(JSON.stringify({
     proposal:1, amount:stake, basis:'stake',
-    contract_type:entryDir, currency:'USD',
-    duration:duration, duration_unit:'m', symbol:sym
+    contract_type:dir, currency:'USD',
+    duration:duration, duration_unit:'m', symbol:a
   }));
+
+  updateUI();
 }
 
 // ══════════════════════════════════════════════════════════════════════════
-// UI UPDATES
+// RESULTADO
 // ══════════════════════════════════════════════════════════════════════════
-function updateScorePanel(details, emaOk, rsiOk){
-  const el=document.getElementById('scoreTotal');
-  const ids=['cb-z','cb-d','cb-p','cb-w','cb-v','cb-e','cb-r'];
-
-  if(!details){
-    el.innerText='--'; el.className='confirm-score bad';
-    ids.forEach(id=>{ document.getElementById(id).className='cbox'; });
-    ['scZ','scDecel','scPullback','scWeak','scVol','scEma','scRsi'].forEach(id=>{
-      const e=document.getElementById(id);
-      e.innerText='✗'; e.className='cbox-val na';
-    });
-    document.getElementById('scRsi').innerText='--';
-    return;
+function onResult(a, pnl){
+  ast[a].hasContract=false;
+  balance+=pnl;
+  const isWin=pnl>0;
+  if(isWin){
+    wins++; lossStreak=0; ast[a].lossStreak=0;
+  } else {
+    losses++; lossStreak++; ast[a].lossStreak++;
+    if(ast[a].lossStreak>=LOSS_BLOCK_AFTER){
+      ast[a].blockedUntil=Date.now()+LOSS_BLOCK_MS;
+      ast[a].lossStreak=0;
+      addLog(`🔴 ${LABELS[a]} bloqueado 90s`,'ll');
+    }
+    if(lossStreak>=3){
+      pauseUntil=Date.now()+GLOBAL_PAUSE_MS;
+      lossStreak=0;
+      addLog('⏸ Pausa global 40s por 3 pérdidas','ll');
+    }
   }
+  addLog(`${isWin?'✅ WIN':'❌ LOSS'} ${LABELS[a]} PnL:$${pnl.toFixed(2)} Bal:$${balance.toFixed(2)}`,isWin?'lw':'ll');
+  updateStats();
+  updateUI();
+}
 
+// ══════════════════════════════════════════════════════════════════════════
+// UI
+// ══════════════════════════════════════════════════════════════════════════
+function updateConfirmPanel(a, exh, emaFilt, crossValid, trend){
+  const d=exh.details;
   const vals=[
-    details.zExtremo, details.desaceleracion, details.microRetroceso,
-    details.weakPush, details.volatilidadOk, emaOk, rsiOk
+    d.zExtremo, d.desaceleracion, d.microRetroceso,
+    d.weakPush, d.volOk, emaFilt,
+    crossValid, trend.strength>=2
   ];
-  const domIds=['scZ','scDecel','scPullback','scWeak','scVol','scEma','scRsi'];
+  const score=Object.values({
+    z:d.zExtremo?2:0,
+    dc:d.desacelProg?3:d.desacelBrusca?2:0,
+    mr:d.microRetroceso?1:0,
+    wp:d.weakPush?1:0,
+    vo:d.volOk?1:0,
+    ef:emaFilt?1:0,
+    cv:crossValid?2:0,
+    ts:trend.strength>=2?1:0
+  }).reduce((a,b)=>a+b,0);
 
-  // Calcular score total
-  let total=0;
-  if(details.zExtremo) total+=2;
-  if(details.desacelProgresiva) total+=3;
-  else if(details.desacelBrusca) total+=2;
-  if(details.microRetroceso) total+=2;
-  if(details.weakPush) total+=2;
-  if(details.volatilidadOk&&details.vol5<=details.vol20) total+=1;
-
-  el.innerText=total+'/10';
-  el.className='confirm-score '+(total>=8?'ok':total>=6?'warn':'bad');
+  const sc=document.getElementById('cpScore');
+  sc.innerText=score+'/12';
+  sc.className='cpanel-score '+(score>=9?'ok':score>=6?'warn':'bad');
 
   vals.forEach((v,i)=>{
-    const cb=document.getElementById(ids[i]);
-    const sv=document.getElementById(domIds[i]);
-    cb.className='cbox '+(v?'active':'fail');
-    sv.innerText=v?'✓':'✗';
-    sv.className='cbox-val '+(v?'ok':'no');
+    const cb=document.getElementById('cb'+i);
+    const cv=document.getElementById('cv'+i);
+    cb.className='cbox '+(v?'ok':'no');
+    cv.innerText=v?'✓':'✗';
+    cv.className='cbox-v '+(v?'ok':'no');
   });
-
-  // RSI mostrar valor
-  // (ya se establece como ✓/✗ arriba; el valor numérico va en el engine panel)
 }
 
-function updateEnginePanel(mode, active, zScore, rsi){
-  const mEl=document.getElementById('zpMode');
-  mEl.innerText=mode;
-  mEl.className='ebox-val '+(mode==='TREND_LOCK'?'no':mode==='SCAN'?'ok':'idle');
-  document.getElementById('zpActive').innerText=active;
-  document.getElementById('zpActive').className='ebox-val '+(active!=='--'?'wait':'idle');
-  document.getElementById('zpScore').innerText=zScore;
-  const rEl=document.getElementById('zpRsi');
-  rEl.innerText=rsi;
-  const rsiNum=parseFloat(rsi);
-  if(!isNaN(rsiNum)){
-    rEl.className='ebox-val '+(rsiNum>=80?'no':rsiNum<=20?'ok':'idle');
-  } else {
-    rEl.className='ebox-val idle';
-  }
-}
-
-function updateCandleStrip(){
-  const dot=document.getElementById('candleDot');
-  const txt=document.getElementById('candleStatus');
-  const cnt=document.getElementById('candleCount');
-
-  const allReady=ASSETS.every(a=>buffers[a].candleReady);
-  dot.className='cs-dot'+(allReady?' live':'');
-  txt.innerText=allReady?'Velas 1min en tiempo real — análisis activo':'Cargando historial de velas...';
-
-  const totals=ASSETS.map(a=>buffers[a].closes.length);
-  cnt.innerText=totals.join(' / ')+' velas';
-}
-
-function updateAssetsGrid(){
+function updateUI(){
   const now=Date.now();
-  document.getElementById('assetsGrid').innerHTML=ASSETS.map(a=>{
-    const buf=buffers[a];
-    const st=assetState[a];
-    const blocked=st.blockedUntil>now;
-    const locked=st.mode==='TREND_LOCK';
-    const z=buf.closes.length>=5?calcZ(buf.closes):0;
-    const zAbs=Math.abs(z);
-    const thr=zThresholds[a];
-    const zCol=zAbs>=thr?'#f03a5f':zAbs>=1.5?'#f5a623':'#27c97a';
-    const rsiVal=buf.rsi!==null?buf.rsi.toFixed(1):'--';
-    const rsiCol=buf.rsi===null?'var(--muted)':buf.rsi>=80?'#f03a5f':buf.rsi<=20?'#27c97a':'var(--text)';
-    const lastClose=buf.closes.length?buf.closes[buf.closes.length-1]:null;
-    const lastHigh=buf.highs.length?buf.highs[buf.highs.length-1]:null;
-    const lastLow=buf.lows.length?buf.lows[buf.lows.length-1]:null;
+  document.getElementById('agrid').innerHTML=ASSETS.map(a=>{
+    const b=buf[a];
+    const st=ast[a];
+    const trend=getTrendStrength(a);
+    const z=b.closes.length>=5?calcZ(b.closes):0;
+    const dir=b.ema9!==null&&b.ema21!==null?(b.ema9>b.ema21?'ALCISTA':'BAJISTA'):'--';
+    const dirCol=dir==='ALCISTA'?'var(--up)':dir==='BAJISTA'?'var(--dn)':'var(--mt)';
+    const zCol=Math.abs(z)>=zThr[a]?'var(--pu)':Math.abs(z)>=1.3?'var(--go)':'var(--mt)';
+    const tick=b.currentTick?b.currentTick.toFixed(3):(b.closes.length?b.closes[b.closes.length-1].toFixed(3):'--');
 
-    let stTxt,stCol,cls='';
-    if(blocked){
-      stTxt='BLOQ '+Math.ceil((st.blockedUntil-now)/1000)+'s';
-      stCol='#f5a623'; cls=' blocked';
-    } else if(locked){
-      stTxt='TREND LOCK '+Math.ceil((st.lockStartTime+TREND_LOCK_MS-now)/1000)+'s';
-      stCol='#f03a5f'; cls=' lock';
-    } else if(openContracts[a]){
-      stTxt='CONTRATO ABIERTO'; stCol='#00a8e8';
-    } else if(lastExhaustionAsset===a){
-      stTxt='AGOTAMIENTO'; stCol='#f5a623'; cls=' ready';
-    } else {
-      stTxt='SCAN'; stCol='#27c97a'; cls=' scan';
-    }
+    // Card class
+    const hasFusion=st.zpeakSig!==null&&st.trendSig!==null&&st.zpeakSig===st.trendSig;
+    const cls=hasFusion?'fusion-sig':st.zpeakSig?'zpeak-sig':st.trendSig?'trend-sig':
+      (now<st.blockedUntil?'blocked':'');
 
-    return `<div class="acard${cls}">
-      <div class="acard-title">${ASSET_LABELS[a]}</div>
-      <div class="arow"><span class="arow-lbl">Z-Score</span><span class="arow-val" style="color:${zCol}">${z.toFixed(3)}</span></div>
-      <div class="arow"><span class="arow-lbl">RSI 14</span><span class="arow-val" style="color:${rsiCol}">${rsiVal}</span></div>
-      <div class="arow"><span class="arow-lbl">EMA 3</span><span class="arow-val">${buf.ema3?buf.ema3.toFixed(4):'--'}</span></div>
-      <div class="arow"><span class="arow-lbl">EMA 9</span><span class="arow-val">${buf.ema9?buf.ema9.toFixed(4):'--'}</span></div>
-      <div class="arow"><span class="arow-lbl">Velas</span><span class="arow-val">${buf.closes.length}/${CANDLE_COUNT}</span></div>
-      <div class="candle-info">
-        <div class="ci"><div class="ci-lbl">Open</div><div class="ci-val">${buf.opens.length?buf.opens[buf.opens.length-1].toFixed(3):'--'}</div></div>
-        <div class="ci"><div class="ci-lbl">High</div><div class="ci-val" style="color:#27c97a">${lastHigh?lastHigh.toFixed(3):'--'}</div></div>
-        <div class="ci"><div class="ci-lbl">Low</div><div class="ci-val" style="color:#f03a5f">${lastLow?lastLow.toFixed(3):'--'}</div></div>
-        <div class="ci"><div class="ci-lbl">Close</div><div class="ci-val">${lastClose?lastClose.toFixed(3):'--'}</div></div>
+    // State label
+    let stateLabel='SCAN', stateColor='var(--mt)';
+    if(st.hasContract){stateLabel='CONTRATO ABIERTO';stateColor='var(--cy)';}
+    else if(now<st.blockedUntil){stateLabel='BLOQ '+Math.ceil((st.blockedUntil-now)/1000)+'s';stateColor='var(--dn)';}
+    else if(now<pauseUntil){stateLabel='PAUSA GLOBAL';stateColor='var(--go)';}
+    else if(hasFusion){stateLabel='🌟 FUSION READY';stateColor='var(--go)';}
+    else if(st.zpeakSig){stateLabel='⚡ Z-PEAK READY';stateColor='var(--pu)';}
+    else if(st.trendSig){stateLabel='📈 TREND READY';stateColor='var(--up)';}
+
+    // Fusion dots
+    const zDot=st.zpeakSig?'zpeak':'';
+    const tDot=st.trendSig?'trend':'';
+    const bothDot=hasFusion?'both':'';
+
+    return `<div class="acard ${cls}">
+      <div class="ahead">
+        <div class="aname" style="color:${dirCol}">${LABELS[a]}</div>
+        <div class="aprice">${tick}</div>
       </div>
-      <span class="acard-state" style="color:${stCol}">${stTxt}</span>
+      <div class="abody">
+        <div class="arow"><span class="arow-l">Z-Score</span><span class="arow-v" style="color:${zCol}">${z.toFixed(3)}</span></div>
+        <div class="arow"><span class="arow-l">Tendencia</span><span class="arow-v" style="color:${dirCol}">${dir}</span></div>
+        <div class="arow"><span class="arow-l">EMA 9</span><span class="arow-v" style="color:var(--up)">${b.ema9?b.ema9.toFixed(3):'--'}</span></div>
+        <div class="arow"><span class="arow-l">EMA 21</span><span class="arow-v" style="color:var(--cy)">${b.ema21?b.ema21.toFixed(3):'--'}</span></div>
+        <div class="arow"><span class="arow-l">RSI</span><span class="arow-v" style="color:${b.rsi>=70?'var(--dn)':b.rsi<=30?'var(--up)':'var(--mt)'}">${b.rsi?b.rsi.toFixed(1):'--'}</span></div>
+        <div class="arow"><span class="arow-l">Fuerza EMA</span><span class="arow-v" style="color:${trend.strength>=3?'var(--up)':trend.strength>=1?'var(--go)':'var(--mt)'}">${trend.label}</span></div>
+        <div class="arow"><span class="arow-l">Velas</span><span class="arow-v">${b.closes.length}/${HIST}</span></div>
+        <div class="fusion-ind">
+          <span class="fi-label">Z-Peak · EMA</span>
+          <div class="fi-dots">
+            <div class="fi-dot ${bothDot||zDot}" title="Z-Peak"></div>
+            <div class="fi-dot ${bothDot||tDot}" title="EMA Trend"></div>
+          </div>
+        </div>
+        <div class="astate" style="color:${stateColor}">${stateLabel}</div>
+      </div>
     </div>`;
   }).join('');
 }
 
 function updateStats(){
-  document.getElementById('statWins').innerText=wins;
-  document.getElementById('statLosses').innerText=losses;
-  document.getElementById('statFiltered').innerText=filteredCount;
+  document.getElementById('stW').innerText=wins;
+  document.getElementById('stL').innerText=losses;
   const tot=wins+losses;
-  document.getElementById('statWR').innerText=tot>0?((wins/tot)*100).toFixed(1)+'%':'0%';
-  document.getElementById('balDisplay').innerText='$'+balance.toFixed(2);
+  document.getElementById('stWR').innerText=tot>0?((wins/tot)*100).toFixed(1)+'%':'0%';
+  document.getElementById('stFus').innerText=fusionCount;
   const pnl=balance-sessionStart;
-  const pEl=document.getElementById('statPnL');
+  const pEl=document.getElementById('stPnL');
   pEl.innerText=(pnl>=0?'+':'')+'$'+pnl.toFixed(2);
-  pEl.className='stat-val '+(pnl>=0?'g':'r');
+  pEl.className='sc-v '+(pnl>=0?'g':'r');
+  document.getElementById('balVal').innerText='$'+balance.toFixed(2);
 
-  const dd=sessionStart-balance;
-  const ddEl=document.getElementById('drawdown');
-  ddEl.innerText=dd>0?'-$'+dd.toFixed(2):'$0.00';
-  ddEl.style.color=dd>0?'#f03a5f':'#27c97a';
-  document.getElementById('stopLimit').innerText='$'+(sessionStart*0.05).toFixed(2);
-  const lsEl=document.getElementById('lossStreakEl');
-  lsEl.innerText=lossStreak;
-  lsEl.style.color=lossStreak>=2?'#f03a5f':'#f5a623';
-  const now=Date.now(),pEl2=document.getElementById('pauseStatus');
-  if(pauseUntil>now){
-    pEl2.innerText='PAUSA '+Math.ceil((pauseUntil-now)/1000)+'s';
-    pEl2.style.color='#f03a5f';
-  } else {
-    pEl2.innerText='ACTIVO';
-    pEl2.style.color='#27c97a';
-  }
+  const dd=Math.max(0,sessionStart-balance);
+  const ddEl=document.getElementById('sfDD');
+  ddEl.innerText='$'+dd.toFixed(2);
+  ddEl.style.color=dd>0?'var(--dn)':'var(--up)';
+  document.getElementById('sfStop').innerText='$'+(sessionStart*0.05).toFixed(2);
+  const skEl=document.getElementById('sfStreak');
+  skEl.innerText=lossStreak;
+  skEl.style.color=lossStreak>=2?'var(--dn)':'var(--go)';
+  const now=Date.now();
+  const cEl=document.getElementById('sfCool');
+  if(pauseUntil>now){cEl.innerText=Math.ceil((pauseUntil-now)/1000)+'s';cEl.style.color='var(--dn)';}
+  else{cEl.innerText='OK';cEl.style.color='var(--up)';}
 }
 
-function buildThreshGrid(){
-  document.getElementById('threshGrid').innerHTML=ASSETS.map(a=>`
-    <div class="thresh-card">
-      <div class="thresh-sym">${ASSET_LABELS[a]}</div>
-      <div class="thresh-lbl">Umbral |Z| velas</div>
-      <input type="number" class="thresh-inp" id="thresh_${a}"
-        value="${zThresholds[a]}" min="1.2" max="5" step="0.1"
-        onchange="zThresholds['${a}']=parseFloat(this.value);addLog('⚙️ ${ASSET_LABELS[a]} umbral Z → '+this.value)">
+function buildThresh(){
+  document.getElementById('thrGrid').innerHTML=ASSETS.map(a=>`
+    <div class="tcard">
+      <div class="tcard-sym">${LABELS[a]}</div>
+      <div class="trow">
+        <span class="trow-l">Umbral Z</span>
+        <input type="number" class="trow-i" id="zt_${a}" value="${zThr[a]}" step="0.1" min="1.2"
+          onchange="zThr['${a}']=parseFloat(this.value);addLog('⚙️ ${LABELS[a]} Z → '+this.value)">
+      </div>
+      <div class="trow">
+        <span class="trow-l">Sep EMA mín</span>
+        <input type="number" class="trow-i" id="ms_${a}" value="${minSep[a]}" step="0.0001" min="0.0001"
+          onchange="minSep['${a}']=parseFloat(this.value);addLog('⚙️ ${LABELS[a]} sep → '+this.value)">
+      </div>
     </div>`).join('');
 }
 
-// ══════════════════════════════════════════════════════════════════════════
-// RESULTADO DE CONTRATO
-// ══════════════════════════════════════════════════════════════════════════
-function onResult(sym, pnl){
-  openContracts[sym]=null;
-  balance+=pnl;
-  const isWin=pnl>0;
-  const st=assetState[sym];
-
-  if(isWin){
-    wins++; lossStreak=0; st.lossStreak=0;
-  } else {
-    losses++; lossStreak++; st.lossStreak++;
-    if(st.lossStreak>=LOSS_BLOCK_AFTER){
-      st.blockedUntil=Date.now()+LOSS_BLOCK_MS;
-      st.lossStreak=0;
-      addLog(`🔴 ${ASSET_LABELS[sym]} bloqueado 2min por ${LOSS_BLOCK_AFTER} pérdidas consecutivas`,'ll');
-    }
-    if(lossStreak>=3){
-      pauseUntil=Date.now()+45000;
-      addLog('⏸ 3 pérdidas globales — pausa 45s','ll');
-      lossStreak=0;
-    }
-  }
-
-  tradeHistory.push(isWin?1:0);
-  if(tradeHistory.length>100) tradeHistory.shift();
-  const wr=tradeHistory.length>3
-    ?(tradeHistory.reduce((a,b)=>a+b,0)/tradeHistory.length*100).toFixed(1)+'%'
-    :'N/A';
-
-  addLog((isWin?'✅ WIN':'❌ LOSS')+' '+ASSET_LABELS[sym]+' PnL:$'+pnl.toFixed(2)+' Bal:$'+balance.toFixed(2)+' WR:'+wr, isWin?'lw':'ll');
-
-  chart.data.labels.push('');
-  chart.data.datasets[0].data.push(balance);
-  if(chart.data.labels.length>40){chart.data.labels.shift();chart.data.datasets[0].data.shift();}
-  chart.update();
-  updateStats();
-  updateAssetsGrid();
-  updateScorePanel(null);
-  updateEnginePanel(assetState[sym].mode,'--','--/--','--');
+function addLog(msg,cls=''){
+  const t=new Date().toLocaleTimeString();
+  const d=document.createElement('div');
+  d.className=cls; d.textContent='['+t+'] '+msg;
+  const el=document.getElementById('logDiv');
+  el.appendChild(d); el.scrollTop=el.scrollHeight;
 }
 
 // ══════════════════════════════════════════════════════════════════════════
-// WEBSOCKET — ARQUITECTURA CANDLE
-//
-// Flujo:
-//   1. authorize → obtener balance
-//   2. Para cada activo: ticks_history con style:'candles' → historial inicial
-//   3. candles subscribe → actualizaciones en tiempo real de velas
-//   4. ticks subscribe → solo para mostrar precio actual en UI
-//   5. Cada mensaje 'candles' con epoch nuevo = vela cerrada → analyzeCandle()
+// WEBSOCKET
 // ══════════════════════════════════════════════════════════════════════════
 function startBot(){
   const token=document.getElementById('apiToken').value.trim();
@@ -1118,183 +970,119 @@ function startBot(){
   if(running) return;
 
   balance=100; sessionStart=100;
-  wins=0; losses=0; lossStreak=0; pauseUntil=0;
-  filteredCount=0; tradeHistory=[];
-  lastExhaustionAsset=null;
-
+  wins=0; losses=0; lossStreak=0; pauseUntil=0; fusionCount=0;
   ASSETS.forEach(a=>{
-    initBuffer(a);
-    openContracts[a]=null;
-    lastTradeTime[a]=0;
-    assetState[a]={mode:'SCAN',lockStartTime:0,lossStreak:0,blockedUntil:0};
+    initBuf(a);
+    ast[a]={lossStreak:0,blockedUntil:0,lastTrade:0,hasContract:false,zpeakSig:null,trendSig:null,trendStr:0};
   });
-  contractToAsset={};
-
-  chart.data.labels=[];
-  chart.data.datasets[0].data=[100];
-  chart.update();
-  updateStats();
-  updateAssetsGrid();
-  updateEnginePanel('SCAN','--','--/--','--');
-  updateScorePanel(null);
-  updateCandleStrip();
-
+  c2a={};
   running=true;
-  document.getElementById('statusDiv').innerText='🟢 CONECTANDO...';
+
   const btn=document.getElementById('toggleBtn');
-  btn.innerText='⏹ DETENER';
-  btn.className='btn stop';
+  btn.innerText='⏹ DETENER'; btn.className='btn btn-st';
+  document.getElementById('statusTxt').innerText='CONECTANDO...';
+  document.getElementById('onlineDot').className='dot';
+  document.getElementById('statusDot').className='dot';
 
   ws=new WebSocket('wss://ws.binaryws.com/websockets/v3?app_id=1089');
 
   ws.onopen=()=>{
-    ws.send(JSON.stringify({authorize:token}));
-    addLog('🔌 Conectando a Deriv WebSocket...','li');
+    ws.send(JSON.stringify({authorize:document.getElementById('apiToken').value.trim()}));
+    addLog('🔌 Conectando a Deriv...','li');
   };
 
   ws.onmessage=(e)=>{
     const d=JSON.parse(e.data);
 
-    // ── AUTORIZACIÓN ──────────────────────────────────────────────────
     if(d.authorize){
-      balance=d.authorize.balance;
-      sessionStart=balance;
+      balance=d.authorize.balance; sessionStart=balance;
       addLog('✅ Autorizado · Balance: $'+balance.toFixed(2),'li');
-      document.getElementById('statusDiv').innerText='🟢 ONLINE — CARGANDO VELAS HISTÓRICAS...';
-
-      // Pedir historial de velas de 1 minuto para cada activo
+      document.getElementById('statusTxt').innerText='ONLINE — CARGANDO VELAS...';
+      document.getElementById('onlineDot').className='dot on';
+      document.getElementById('statusDot').className='dot on';
       ASSETS.forEach(a=>{
-        ws.send(JSON.stringify({
-          ticks_history:a,
-          style:'candles',
-          granularity:CANDLE_GRAN,
-          count:CANDLE_COUNT,
-          end:'latest',
-          subscribe:1      // suscribirse a velas en tiempo real
-        }));
-        addLog('📊 Solicitando '+CANDLE_COUNT+' velas 1min de '+ASSET_LABELS[a],'li');
-      });
-
-      // Ticks solo para precio en tiempo real (display)
-      ASSETS.forEach(a=>{
+        ws.send(JSON.stringify({ticks_history:a,style:'candles',granularity:GRAN,count:HIST,end:'latest',subscribe:1}));
         ws.send(JSON.stringify({ticks:a,subscribe:1}));
       });
-
       ws.send(JSON.stringify({balance:1}));
       updateStats();
     }
 
-    // ── BALANCE ───────────────────────────────────────────────────────
-    if(d.balance){
-      balance=d.balance.balance;
-      updateStats();
-    }
+    if(d.balance){balance=d.balance.balance;updateStats();}
 
-    // ── TICKS (solo para display de precio actual) ─────────────────────
     if(d.tick){
       const sym=d.tick.symbol;
-      if(buffers[sym]!==undefined){
-        buffers[sym].currentTick=parseFloat(d.tick.quote);
-        // No disparar análisis — solo actualizar UI suavemente
-        updateAssetsGrid();
-      }
+      if(buf[sym]!==undefined){buf[sym].currentTick=parseFloat(d.tick.quote);updateUI();}
     }
 
-    // ── CANDLES — CORAZÓN DEL SISTEMA ─────────────────────────────────
-    // ticks_history devuelve candles[] con el historial completo
-    // Después llegan actualizaciones con ohlc{} para cada vela nueva/cerrada
     if(d.candles){
       const sym=d.echo_req&&d.echo_req.ticks_history;
-      if(sym&&buffers[sym]!==undefined){
-        // Cargar historial de velas
-        const candles=d.candles;
-        candles.forEach(c=>{
-          const buf=buffers[sym];
-          buf.closes.push(parseFloat(c.close));
-          buf.opens.push(parseFloat(c.open));
-          buf.highs.push(parseFloat(c.high));
-          buf.lows.push(parseFloat(c.low));
-          if(buf.closes.length>CANDLE_COUNT){buf.closes.shift();buf.opens.shift();buf.highs.shift();buf.lows.shift();}
-          buf.ema3=calcEMA(3,parseFloat(c.close),buf.ema3);
-          buf.ema9=calcEMA(9,parseFloat(c.close),buf.ema9);
-          buf.lastCandleEpoch=c.epoch;
+      if(sym&&buf[sym]!==undefined){
+        d.candles.forEach(c=>{
+          const b=buf[sym];
+          b.prevEma9=b.ema9; b.prevEma21=b.ema21;
+          const close=parseFloat(c.close);
+          b.closes.push(close); b.opens.push(parseFloat(c.open));
+          b.highs.push(parseFloat(c.high)); b.lows.push(parseFloat(c.low));
+          if(b.closes.length>HIST){b.closes.shift();b.opens.shift();b.highs.shift();b.lows.shift();}
+          b.ema3   = calcEMA(3,  close, b.ema3);
+          b.ema9zp = calcEMA(9,  close, b.ema9zp);
+          b.ema9   = calcEMA(9,  close, b.ema9);
+          b.ema21  = calcEMA(21, close, b.ema21);
+          b.lastOpenTime=c.epoch;
         });
-        buffers[sym].rsi=calcRSI(buffers[sym].closes);
-        buffers[sym].candleReady=buffers[sym].closes.length>=10;
-        addLog('📊 '+ASSET_LABELS[sym]+': '+buffers[sym].closes.length+' velas cargadas | RSI:'+
-          (buffers[sym].rsi!==null?buffers[sym].rsi.toFixed(1):'--')+
-          ' | EMA3:'+buffers[sym].ema3.toFixed(4)+' EMA9:'+buffers[sym].ema9.toFixed(4),'li');
-        updateCandleStrip();
-        updateAssetsGrid();
-
-        // Verificar si todos los activos tienen velas cargadas
-        if(ASSETS.every(a=>buffers[a].candleReady)){
-          document.getElementById('statusDiv').innerText='🟢 ONLINE — CANDLE ENGINE ACTIVO · v9.0 PRO';
-          addLog('✅ Todos los activos listos — Motor de velas activo','li');
+        buf[sym].rsi=calcRSI(buf[sym].closes);
+        buf[sym].candleReady=buf[sym].closes.length>=READY;
+        addLog(`📊 ${LABELS[sym]} ${buf[sym].closes.length} velas | EMA9:${buf[sym].ema9.toFixed(3)} EMA21:${buf[sym].ema21.toFixed(3)} Z:${calcZ(buf[sym].closes).toFixed(2)}`,'li');
+        updateUI();
+        if(ASSETS.every(a=>buf[a].candleReady)){
+          document.getElementById('statusTxt').innerText='🟢 ONLINE — FUSION ENGINE ACTIVO · Monitoreando señales...';
         }
       }
     }
 
-    // ── OHLC — VELA NUEVA EN TIEMPO REAL ──────────────────────────────
-    // ohlc.open_time = epoch de APERTURA de la vela actual (cambia cada 60s)
-    // Cuando open_time cambia -> la vela anterior cerró
-    // Guardamos los OHLC de la vela viva para procesarlos cuando cierre
     if(d.ohlc){
-      const ohlc=d.ohlc;
-      const sym=ohlc.symbol;
-      if(buffers[sym]!==undefined&&running){
-        const buf=buffers[sym];
+      const ohlc=d.ohlc; const sym=ohlc.symbol;
+      if(buf[sym]!==undefined&&running){
+        const b=buf[sym];
         const openTime=parseInt(ohlc.open_time);
-
-        if(buf.lastCandleEpoch===0){
-          // Primera vela en tiempo real — inicializar tracker
-          buf.lastCandleEpoch=openTime;
-          buf.liveCandle={open:ohlc.open,high:ohlc.high,low:ohlc.low,close:ohlc.close,epoch:openTime};
-        } else if(openTime>buf.lastCandleEpoch){
-          // open_time cambio -> vela anterior CERRO
-          if(buf.liveCandle){
-            addLog(`🕯 Vela cerrada ${ASSET_LABELS[sym]} C:${parseFloat(buf.liveCandle.close).toFixed(3)} H:${parseFloat(buf.liveCandle.high).toFixed(3)} L:${parseFloat(buf.liveCandle.low).toFixed(3)}`);
-            processClosedCandle(sym, buf.liveCandle);
-          }
-          buf.lastCandleEpoch=openTime;
-          buf.liveCandle={open:ohlc.open,high:ohlc.high,low:ohlc.low,close:ohlc.close,epoch:openTime};
+        if(b.lastOpenTime===0){
+          b.lastOpenTime=openTime;
+          b.liveCandle={open:ohlc.open,high:ohlc.high,low:ohlc.low,close:ohlc.close};
+        } else if(openTime>b.lastOpenTime){
+          if(b.liveCandle) processClosedCandle(sym,b.liveCandle);
+          b.lastOpenTime=openTime;
+          b.liveCandle={open:ohlc.open,high:ohlc.high,low:ohlc.low,close:ohlc.close};
         } else {
-          // Misma vela — actualizar datos live
-          if(!buf.liveCandle) buf.liveCandle={open:ohlc.open,high:ohlc.high,low:ohlc.low,close:ohlc.close,epoch:openTime};
-          buf.liveCandle.close=ohlc.close;
-          buf.liveCandle.high=ohlc.high;
-          buf.liveCandle.low=ohlc.low;
+          if(!b.liveCandle) b.liveCandle={open:ohlc.open,high:ohlc.high,low:ohlc.low,close:ohlc.close};
+          b.liveCandle.close=ohlc.close;
+          b.liveCandle.high=ohlc.high;
+          b.liveCandle.low=ohlc.low;
         }
       }
     }
 
-    // ── PROPOSAL ──────────────────────────────────────────────────────
     if(d.proposal&&d.proposal.id){
-      const pendSym=ASSETS.find(a=>openContracts[a]==='pending');
-      if(pendSym) contractToAsset[d.proposal.id]=pendSym;
-      ws.send(JSON.stringify({
-        buy:d.proposal.id,
-        price:parseFloat(document.getElementById('stake').value)||1
-      }));
+      const pSym=ASSETS.find(a=>ast[a].hasContract&&!Object.values(c2a).includes(a));
+      if(pSym) c2a[d.proposal.id]=pSym;
+      ws.send(JSON.stringify({buy:d.proposal.id,price:parseFloat(document.getElementById('stake').value)||1}));
     }
 
-    // ── BUY ───────────────────────────────────────────────────────────
     if(d.buy){
       const cid=d.buy.contract_id;
-      const sym=ASSETS.find(a=>openContracts[a]==='pending');
+      const sym=Object.entries(c2a).find(([k,v])=>k===String(d.buy.contract_id))?.[1]
+        || ASSETS.find(a=>ast[a].hasContract);
       if(sym){
-        openContracts[sym]=cid;
-        Object.keys(contractToAsset).forEach(k=>{if(contractToAsset[k]===sym) delete contractToAsset[k];});
+        c2a[cid]=sym;
         ws.send(JSON.stringify({proposal_open_contract:1,contract_id:cid,subscribe:1}));
-        addLog('📋 Contrato abierto '+ASSET_LABELS[sym]+' ID:'+cid,'li');
+        addLog('📋 Contrato abierto '+LABELS[sym]+' ID:'+cid,'li');
       }
     }
 
-    // ── RESULTADO ─────────────────────────────────────────────────────
     if(d.proposal_open_contract&&d.proposal_open_contract.is_sold){
       const poc=d.proposal_open_contract;
-      const sym=ASSETS.find(a=>openContracts[a]===poc.contract_id)||ASSETS.find(a=>poc.underlying===a);
-      if(sym){openContracts[sym]=null; onResult(sym,parseFloat(poc.profit));}
+      const sym=c2a[poc.contract_id]||ASSETS.find(a=>poc.underlying===a);
+      if(sym){delete c2a[poc.contract_id];onResult(sym,parseFloat(poc.profit));}
     }
 
     if(d.error) addLog('⚠️ '+d.error.message+' ('+d.error.code+')','ll');
@@ -1308,35 +1096,30 @@ function stopBot(){
   if(!running) return;
   running=false;
   if(ws){try{ws.close();}catch(e){}}
-  document.getElementById('statusDiv').innerText='⚫ OFFLINE';
+  document.getElementById('statusTxt').innerText='OFFLINE';
+  document.getElementById('onlineDot').className='dot';
+  document.getElementById('statusDot').className='dot';
   updateBtn();
-  addLog('🛑 Bot detenido | Ops:'+(wins+losses)+' WR:'+(wins+losses>0?((wins/(wins+losses))*100).toFixed(1):0)+'% | Filtradas:'+filteredCount);
-  updateStats();
+  const tot=wins+losses;
+  addLog(`🛑 Detenido | Ops:${tot} Wins:${wins} WR:${tot>0?((wins/tot)*100).toFixed(1):0}% | Fusion:${fusionCount}`);
 }
 
 function updateBtn(){
   const btn=document.getElementById('toggleBtn');
-  btn.innerText=running?'⏹ DETENER':'▶ INICIAR BOT';
-  btn.className=running?'btn stop':'btn';
+  btn.innerText=running?'⏹ DETENER':'▶ INICIAR FUSION BOT';
+  btn.className=running?'btn btn-st':'btn btn-go';
 }
 
-// ── INIT ──────────────────────────────────────────────────────────────
+// ── INIT ──────────────────────────────────────────────────────────────────
 document.getElementById('toggleBtn').onclick=()=>running?stopBot():startBot();
-buildThreshGrid();
-updateStats();
-updateAssetsGrid();
-updateEnginePanel('SCAN','--','--/--','--');
-updateScorePanel(null);
-updateCandleStrip();
+buildThresh(); updateStats(); updateUI();
 
-addLog('⚡ Z-PEAK BOT v9.0 PRO — CANDLE ENGINE cargado','li');
-addLog('📊 Fuente de datos: candles 1min de Deriv API (ticks_history + ohlc subscribe)','li');
-addLog('📈 RSI 14 sobre CIERRES de vela reales — no sobre ticks','li');
-addLog('📉 EMA 3/9 sobre CIERRES de vela reales — contexto temporal correcto','li');
-addLog('⚡ Z-score sobre 40 cierres = ventana de 40 minutos','li');
-addLog('🎯 Triple confirm: exhausted + EMA estructural + RSI 70/30','li');
-addLog('⏱ Expiración: score≥8 → 3min | score≥6 → 5min','li');
-addLog('🛡 Filtro activación: |Z| < 2.0 → skip automático','li');
+addLog('🌟 FUSION BOT cargado — Z-Peak + EMA Trend combinados','li');
+addLog('🌟 MODO A FUSION: Z extremo + cruce EMA9/21 misma dirección → máxima confianza','lfus');
+addLog('⚡ MODO B Z-PEAK: agotamiento + EMA3/9 → reversión confirmada','li');
+addLog('📈 MODO C TREND: cruce EMA9/21 fuerza≥MEDIA + Z no contradice → tendencia','li');
+addLog('⏱ Duración: Fusion→fuerza EMA(1-5min) | Z-Peak→score(1-3min) | Trend→fuerza(1-5min)','li');
+addLog('🛡 Necesita 22 velas para EMA21 estable antes de operar','li');
 </script>
 </body>
 </html>
