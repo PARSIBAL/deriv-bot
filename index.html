@@ -456,6 +456,7 @@ const KILLER_WIN       = 10;
 const KILLER_THR       = 9;
 
 let ws, running = false;
+let pendingAsset = null;  // activo esperando proposal response
 let balance = 100, sessionStart = 100;
 let wins = 0, losses = 0, lossStreak = 0, pauseUntil = 0;
 let fusionCount = 0;
@@ -677,6 +678,11 @@ function analyzeCandle(a){
   const st=ast[a];
 
   if(!b.candleReady)              return;
+  // Resetear lastTrendDir si la tendencia cambió de dirección
+  if(b.ema9!==null&&b.ema21!==null){
+    const curDir=b.ema9>b.ema21?'CALL':'PUT';
+    if(st.lastTrendDir!==null&&st.lastTrendDir!==curDir) st.lastTrendDir=null;
+  }
   if(st.hasContract)              return;
   if(now<pauseUntil)              return;
   if(now<st.blockedUntil)         return;
@@ -787,6 +793,7 @@ function executeTrade(a, dir, duration, mode, exh, trend){
   document.getElementById('sigD').innerText=
     `${mode} · ${duration}min · Score:${exh.score}/10 · ${trend.label}`;
 
+  pendingAsset = a;  // marcar activo antes de enviar proposal
   ws.send(JSON.stringify({
     proposal:1, amount:stake, basis:'stake',
     contract_type:dir, currency:'USD',
@@ -977,9 +984,10 @@ function startBot(){
   wins=0; losses=0; lossStreak=0; pauseUntil=0; fusionCount=0;
   ASSETS.forEach(a=>{
     initBuf(a);
-    ast[a]={lossStreak:0,blockedUntil:0,lastTrade:0,hasContract:false,zpeakSig:null,trendSig:null,trendStr:0};
+    ast[a]={lossStreak:0,blockedUntil:0,lastTrade:0,hasContract:false,zpeakSig:null,trendSig:null,trendStr:0,lastTrendDir:null};
   });
   c2a={};
+  pendingAsset=null;
   running=true;
 
   const btn=document.getElementById('toggleBtn');
@@ -1067,19 +1075,26 @@ function startBot(){
     }
 
     if(d.proposal&&d.proposal.id){
-      const pSym=ASSETS.find(a=>ast[a].hasContract&&!Object.values(c2a).includes(a));
-      if(pSym) c2a[d.proposal.id]=pSym;
+      // pendingAsset se fija en executeTrade antes de enviar el proposal
+      if(pendingAsset){
+        c2a[d.proposal.id]=pendingAsset;
+        pendingAsset=null;
+      }
       ws.send(JSON.stringify({buy:d.proposal.id,price:parseFloat(document.getElementById('stake').value)||1}));
     }
 
     if(d.buy){
       const cid=d.buy.contract_id;
-      const sym=Object.entries(c2a).find(([k,v])=>k===String(d.buy.contract_id))?.[1]
-        || ASSETS.find(a=>ast[a].hasContract);
+      // Buscar el activo por proposal_id (ya mapeado arriba)
+      const sym=Object.entries(c2a).find(([k,v])=>v!==undefined&&typeof v==='string'&&k!==String(cid))?.[1]
+        || c2a[cid]
+        || ASSETS.find(a=>ast[a].hasContract&&!Object.values(c2a).includes(a));
       if(sym){
+        // Reasignar al contract_id definitivo
+        Object.keys(c2a).forEach(k=>{ if(c2a[k]===sym && k!==String(cid)) delete c2a[k]; });
         c2a[cid]=sym;
         ws.send(JSON.stringify({proposal_open_contract:1,contract_id:cid,subscribe:1}));
-        addLog('📋 Contrato abierto '+LABELS[sym]+' ID:'+cid,'li');
+        addLog('📋 Contrato '+LABELS[sym]+' ID:'+cid,'li');
       }
     }
 
