@@ -441,7 +441,7 @@ const ASSETS  = ['R_10','R_25'];
 const LABELS  = {'R_10':'V10','R_25':'V25'};
 const GRAN    = 60;
 const HIST    = 30;
-const READY   = 22;   // velas mínimas para EMA21 estable
+const READY   = 10;   // velas mínimas antes de operar
 
 // Umbrales Z por activo
 let zThr = {'R_10':1.9, 'R_25':1.8};
@@ -451,7 +451,7 @@ let minSep = {'R_10':0.0008, 'R_25':0.0006};
 const LOSS_BLOCK_AFTER = 2;
 const LOSS_BLOCK_MS    = 90000;
 const GLOBAL_PAUSE_MS  = 40000;
-const COOLDOWN_MS      = 20000;
+const COOLDOWN_MS      = 5000;
 const KILLER_WIN       = 10;
 const KILLER_THR       = 9;
 
@@ -694,13 +694,17 @@ function analyzeCandle(a){
 
   // Pendiente EMA9 confirma cruce
   const slope9 = b.ema9!==null&&b.prevEma9!==null ? b.ema9-b.prevEma9 : 0;
-  const crossValid = crossDir!==null &&
-    ((crossDir==='CALL'&&slope9>0)||(crossDir==='PUT'&&slope9<0)) &&
-    trend.duration>0;
+  // crossValid: cruce exacto esta vela O tendencia activa con slope confirmado
+  const trendActive = b.ema9!==null && b.ema21!==null &&
+    ((b.ema9>b.ema21 && slope9>0)||(b.ema9<b.ema21 && slope9<0));
+  const trendDir = b.ema9!==null && b.ema21!==null
+    ? (b.ema9>b.ema21?'CALL':'PUT') : null;
+  const crossValid = trendDir!==null && trendActive && trend.duration>0;
+  const crossDir2 = crossValid ? trendDir : null;
 
   // Guardar estado de señales por activo (para UI)
   st.zpeakSig   = exh.exhausted ? exh.entryDir : null;
-  st.trendSig   = crossValid    ? crossDir      : null;
+  st.trendSig   = crossValid    ? crossDir2     : null;
   st.trendStr   = trend.strength;
 
   // Actualizar panel de confirmadores
@@ -709,14 +713,14 @@ function analyzeCandle(a){
   // ══════════════════════════════════════════════════════════════════════
   // MODO A — FUSION PURA: ambas señales en la misma dirección
   // ══════════════════════════════════════════════════════════════════════
-  if(exh.exhausted && crossValid && exh.entryDir===crossDir){
+  if(exh.exhausted && crossValid && exh.entryDir===crossDir2){
     const duration=getDuration(exh.score, trend.strength);
     fusionCount++;
     addLog(
-      `🌟 FUSION ${LABELS[a]} → ${crossDir} | Z:${exh.z.toFixed(2)} Score:${exh.score}/10 | Fuerza:${trend.label} | ${duration}min`,
+      `🌟 FUSION ${LABELS[a]} → ${crossDir2} | Z:${exh.z.toFixed(2)} Score:${exh.score}/10 | Fuerza:${trend.label} | ${duration}min`,
       'lfus'
     );
-    executeTrade(a, crossDir, duration, 'FUSION', exh, trend);
+    executeTrade(a, crossDir2, duration, 'FUSION', exh, trend);
     return;
   }
 
@@ -725,7 +729,7 @@ function analyzeCandle(a){
   // ══════════════════════════════════════════════════════════════════════
   if(exh.exhausted && emaFilt){
     // Verificar que el cruce 9/21 no contradiga la dirección
-    if(crossValid && crossDir!==exh.entryDir){
+    if(crossValid && crossDir2!==exh.entryDir){
       addLog(`🔶 Z-Peak ${LABELS[a]} ${exh.entryDir} — EMA21 cruza en contra → descartado`,'lf');
       return;
     }
@@ -741,18 +745,18 @@ function analyzeCandle(a){
   // ══════════════════════════════════════════════════════════════════════
   // MODO C — EMA TREND SOLO: cruce válido + fuerza media+ + Z no contradice
   // ══════════════════════════════════════════════════════════════════════
-  if(crossValid && trend.strength>=2){
+  if(crossValid && trend.strength>=1){
     // Si Z-Peak está en dirección contraria al cruce → no operar
-    if(exh.exhausted && exh.entryDir!==crossDir){
+    if(exh.exhausted && exh.entryDir!==crossDir2){
       addLog(`🔶 EMA Trend ${LABELS[a]} ${crossDir} — Z-Peak contradice → descartado`,'lf');
       return;
     }
     const duration=trend.duration;
     addLog(
-      `📈 EMA TREND ${LABELS[a]} → ${crossDir} | Fuerza:${trend.label} (${trend.pct}%) | ${duration}min`,
+      `📈 EMA TREND ${LABELS[a]} → ${crossDir2} | Fuerza:${trend.label} (${trend.pct}%) | ${duration}min`,
       'lk'
     );
-    executeTrade(a, crossDir, duration, 'TREND', exh, trend);
+    executeTrade(a, crossDir2, duration, 'TREND', exh, trend);
     return;
   }
 
