@@ -3,292 +3,259 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>FUSION BOT | Z-PEAK + EMA TREND | V10 · V25</title>
+<title>Z·BOT — Pure Z-Score Engine</title>
 <style>
-@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@300;400;600;700&family=Archivo+Black&family=Archivo:wght@300;400;500&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Rajdhani:wght@300;400;500;600;700&family=Share+Tech+Mono&display=swap');
 
-*,*::before,*::after{margin:0;padding:0;box-sizing:border-box;}
+*, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
 
-:root{
-  --bg:#08070e;
-  --s1:#0d0c18;
-  --s2:#121120;
-  --br:#1c1a2e;
-  --br2:rgba(255,255,255,0.04);
-  --pu:#a855f7;
-  --pu-dim:rgba(168,85,247,0.1);
-  --pu-glow:rgba(168,85,247,0.25);
-  --up:#22d3a0;
-  --up-dim:rgba(34,211,160,0.08);
-  --dn:#f43f6e;
-  --dn-dim:rgba(244,63,110,0.08);
-  --go:#f59e0b;
-  --go-dim:rgba(245,158,11,0.1);
-  --cy:#38bdf8;
-  --wh:#ddd8f0;
-  --mt:#4a4870;
+:root {
+  --bg:     #050608;
+  --p1:     #090b0f;
+  --p2:     #0e1118;
+  --p3:     #131820;
+  --br:     rgba(255,255,255,0.06);
+  --up:     #00ff88;
+  --dn:     #ff2d55;
+  --go:     #ffcc00;
+  --cy:     #00d4ff;
+  --pu:     #bf5fff;
+  --wh:     #e0e8f0;
+  --mt:     #3a4455;
+  --mt2:    #252d3a;
 }
 
-body{
-  background:var(--bg);
+html { font-size: 14px; }
+
+body {
+  background: var(--bg);
+  font-family: 'Rajdhani', sans-serif;
+  color: var(--wh);
+  min-height: 100vh;
+  display: flex;
+  justify-content: center;
+  padding: 20px 14px 40px;
   background-image:
-    radial-gradient(ellipse 70% 45% at 20% 0%, rgba(168,85,247,0.06) 0%, transparent 55%),
-    radial-gradient(ellipse 50% 40% at 80% 100%, rgba(34,211,160,0.04) 0%, transparent 55%);
-  min-height:100vh;
-  font-family:'Archivo',sans-serif;
-  color:var(--wh);
-  display:flex;
-  justify-content:center;
-  padding:24px 16px;
+    radial-gradient(ellipse 60% 30% at 50% 0%, rgba(0,255,136,0.04) 0%, transparent 60%),
+    linear-gradient(180deg, rgba(0,212,255,0.02) 0%, transparent 30%);
 }
-.wrap{max-width:1000px;width:100%;}
+
+.wrap { width: 100%; max-width: 980px; }
 
 /* ── HEADER ── */
-.hdr{
-  display:grid;
-  grid-template-columns:1fr auto;
-  align-items:end;
-  gap:16px;
-  margin-bottom:24px;
-  padding-bottom:20px;
-  border-bottom:1px solid var(--br);
+.hdr {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  padding-bottom: 18px;
+  margin-bottom: 18px;
+  border-bottom: 1px solid var(--br);
+  position: relative;
 }
-.hdr-eye{
-  font-family:'IBM Plex Mono',monospace;
-  font-size:8px;
-  letter-spacing:5px;
-  color:var(--pu);
-  opacity:.7;
-  margin-bottom:5px;
+.hdr::after {
+  content: '';
+  position: absolute;
+  bottom: -1px; left: 0;
+  width: 120px; height: 1px;
+  background: var(--up);
+  box-shadow: 0 0 12px var(--up);
 }
-.hdr-title{
-  font-family:'Archivo Black',sans-serif;
-  font-size:2.6rem;
-  line-height:1;
-  letter-spacing:-1px;
+.logo {
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 2.6rem;
+  letter-spacing: 8px;
+  color: var(--up);
+  line-height: 1;
+  text-shadow: 0 0 30px rgba(0,255,136,0.4);
 }
-.hdr-title .accent{color:var(--pu);}
-.hdr-title .accent2{color:var(--up);}
-.hdr-sub{
-  font-family:'IBM Plex Mono',monospace;
-  font-size:9px;
-  color:var(--mt);
-  letter-spacing:2.5px;
-  margin-top:5px;
-}
-.hdr-bal{text-align:right;}
-.hdr-bal-lbl{font-family:'IBM Plex Mono',monospace;font-size:8px;color:var(--mt);letter-spacing:2px;margin-bottom:3px;}
-.hdr-bal-val{
-  font-family:'Archivo Black',sans-serif;
-  font-size:2rem;
-  color:var(--up);
-  line-height:1;
-}
-.dot{
-  display:inline-block;width:7px;height:7px;border-radius:50%;
-  background:var(--mt);margin-right:5px;vertical-align:middle;
-}
-.dot.on{background:var(--up);box-shadow:0 0 8px var(--up);animation:pulse 1.5s ease infinite;}
-@keyframes pulse{0%,100%{opacity:1;}50%{opacity:.25;}}
-
-/* ── MODE BADGE ── */
-.mode-badge{
-  display:grid;
-  grid-template-columns:1fr 1fr;
-  gap:8px;
-  margin-bottom:14px;
-}
-.mbadge{
-  border-radius:10px;
-  padding:10px 14px;
-  border:1px solid var(--br);
-  display:flex;
-  align-items:center;
-  gap:10px;
-}
-.mbadge.zpeak{background:var(--pu-dim);border-color:rgba(168,85,247,0.25);}
-.mbadge.trend{background:var(--up-dim);border-color:rgba(34,211,160,0.25);}
-.mbadge-icon{font-size:1.4rem;}
-.mbadge-text{}
-.mbadge-name{font-family:'Archivo Black',sans-serif;font-size:11px;letter-spacing:1px;}
-.mbadge-desc{font-family:'IBM Plex Mono',monospace;font-size:8px;color:var(--mt);margin-top:1px;}
+.logo span { color: var(--mt); font-size: 1rem; letter-spacing: 3px; display: block; margin-top: 2px; }
+.hdr-right { text-align: right; }
+.bal-lbl { font-family: 'Share Tech Mono', monospace; font-size: 9px; color: var(--mt); letter-spacing: 3px; margin-bottom: 2px; }
+.bal-val { font-family: 'Share Tech Mono', monospace; font-size: 1.9rem; color: var(--up); }
+.dot { display: inline-block; width: 6px; height: 6px; border-radius: 50%; background: var(--mt); margin-right: 5px; vertical-align: middle; }
+.dot.on { background: var(--up); box-shadow: 0 0 8px var(--up); animation: blink 1.4s ease infinite; }
+@keyframes blink { 0%,100%{opacity:1} 50%{opacity:.2} }
 
 /* ── INPUTS ── */
-.inp-row{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px;}
-.inp-g label{
-  display:block;
-  font-family:'IBM Plex Mono',monospace;
-  font-size:8px;
-  letter-spacing:2px;
-  color:var(--mt);
-  text-transform:uppercase;
-  margin-bottom:5px;
+.cfg-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 12px; }
+.fg { position: relative; }
+.fg label {
+  display: block;
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 9px; letter-spacing: 2px; color: var(--mt);
+  text-transform: uppercase; margin-bottom: 5px;
 }
-.inp-g input{
-  width:100%;
-  background:var(--s1);
-  border:1px solid var(--br);
-  border-radius:7px;
-  padding:9px 12px;
-  font-family:'IBM Plex Mono',monospace;
-  font-size:12px;
-  color:var(--pu);
-  outline:none;
-  transition:border-color .2s;
+.fg input {
+  width: 100%;
+  background: var(--p1);
+  border: 1px solid var(--br);
+  border-radius: 6px;
+  padding: 9px 12px;
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 13px; color: var(--up);
+  outline: none; transition: border-color .2s;
 }
-.inp-g input:focus{border-color:var(--pu-glow);}
+.fg input:focus { border-color: rgba(0,255,136,0.3); }
 
 /* ── BTN ── */
-.btn-row{display:flex;gap:8px;margin-bottom:14px;}
-.btn{
-  flex:1;padding:12px;border:none;border-radius:8px;
-  font-family:'Archivo Black',sans-serif;
-  font-size:.95rem;letter-spacing:3px;cursor:pointer;
-  transition:all .2s;
+.btn-row { display: flex; gap: 8px; margin-bottom: 14px; }
+.btn {
+  flex: 1; padding: 11px; border: none; border-radius: 6px;
+  font-family: 'Rajdhani', sans-serif; font-weight: 700;
+  font-size: 1rem; letter-spacing: 4px; cursor: pointer;
+  transition: all .2s; text-transform: uppercase;
 }
-.btn-go{background:linear-gradient(90deg,var(--pu),var(--cy));color:#050310;}
-.btn-go:hover{box-shadow:0 0 22px var(--pu-glow);transform:translateY(-1px);}
-.btn-st{background:linear-gradient(90deg,#5a0015,var(--dn));color:#fff;}
+.btn-go { background: var(--up); color: #020805; }
+.btn-go:hover { box-shadow: 0 0 20px rgba(0,255,136,0.4); }
+.btn-st { background: var(--dn); color: #fff; }
 
 /* ── STATUS ── */
-.status{
-  background:var(--s1);border:1px solid var(--br);border-radius:8px;
-  padding:8px 14px;font-family:'IBM Plex Mono',monospace;font-size:10px;
-  letter-spacing:1px;margin-bottom:14px;display:flex;align-items:center;gap:8px;
+.status {
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 10px; letter-spacing: 1.5px;
+  background: var(--p1); border: 1px solid var(--br);
+  border-radius: 6px; padding: 7px 12px;
+  margin-bottom: 14px; display: flex; align-items: center; gap: 8px;
 }
 
 /* ── STATS ── */
-.stats{display:grid;grid-template-columns:repeat(5,1fr);gap:7px;margin-bottom:16px;}
-.sc{background:var(--s1);border:1px solid var(--br);border-radius:9px;padding:9px 6px;text-align:center;}
-.sc-l{font-family:'IBM Plex Mono',monospace;font-size:7px;color:var(--mt);letter-spacing:1.5px;text-transform:uppercase;margin-bottom:3px;}
-.sc-v{font-family:'Archivo Black',sans-serif;font-size:1.5rem;letter-spacing:1px;}
-.g{color:var(--up);} .r{color:var(--dn);} .o{color:var(--go);} .c{color:var(--cy);} .w{color:var(--wh);}
+.stats { display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; margin-bottom: 16px; }
+.stat {
+  background: var(--p1); border: 1px solid var(--br);
+  border-radius: 8px; padding: 9px 6px; text-align: center;
+}
+.stat-l { font-family: 'Share Tech Mono', monospace; font-size: 7px; color: var(--mt); letter-spacing: 2px; text-transform: uppercase; margin-bottom: 3px; }
+.stat-v { font-family: 'Share Tech Mono', monospace; font-size: 1.4rem; }
+.g { color: var(--up); } .r { color: var(--dn); } .o { color: var(--go); } .c { color: var(--cy); } .w { color: var(--wh); }
 
-/* ── CONFIRM PANEL ── */
-.cpanel{
-  background:var(--s1);border:1px solid var(--br);border-radius:14px;
-  padding:14px;margin-bottom:14px;
+/* ── ASSET CONFIG PANEL ── */
+.acp-title {
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 9px; color: var(--cy); letter-spacing: 3px;
+  text-transform: uppercase; margin-bottom: 10px;
+  padding-bottom: 6px; border-bottom: 1px solid var(--br);
 }
-.cpanel-hdr{
-  display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;
+.acp-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 16px; }
+.acp-card {
+  background: var(--p1); border: 1px solid var(--br);
+  border-radius: 10px; padding: 14px;
+  transition: border-color .3s;
 }
-.cpanel-title{font-family:'IBM Plex Mono',monospace;font-size:8px;color:var(--pu);letter-spacing:2px;text-transform:uppercase;}
-.cpanel-score{font-family:'Archivo Black',sans-serif;font-size:1.6rem;}
-.cpanel-score.ok{color:var(--up);}
-.cpanel-score.warn{color:var(--go);}
-.cpanel-score.bad{color:var(--mt);}
-.cgrid{display:grid;grid-template-columns:repeat(8,1fr);gap:5px;}
-.cbox{
-  background:var(--s2);border-radius:7px;padding:7px 3px;text-align:center;
-  border:1px solid transparent;transition:border-color .3s,background .3s;
+.acp-card.active-up { border-color: rgba(0,255,136,0.4); }
+.acp-card.active-dn { border-color: rgba(255,45,85,0.4); }
+.acp-sym {
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 1.2rem; letter-spacing: 3px; margin-bottom: 12px;
+  display: flex; align-items: center; justify-content: space-between;
 }
-.cbox.ok{border-color:rgba(34,211,160,0.4);background:rgba(34,211,160,0.05);}
-.cbox.no{border-color:rgba(244,63,110,0.2);}
-.cbox-l{font-size:6px;color:var(--mt);letter-spacing:.8px;text-transform:uppercase;line-height:1.3;}
-.cbox-v{font-size:11px;font-weight:700;font-family:'IBM Plex Mono',monospace;margin-top:2px;}
-.cbox-v.ok{color:var(--up);}
-.cbox-v.no{color:var(--dn);}
-.cbox-v.na{color:var(--mt);}
+.acp-sym-name { color: var(--cy); }
+.acp-sym-price { font-size: .8rem; color: var(--mt); }
+.acp-row { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
+.acp-lbl { font-family: 'Share Tech Mono', monospace; font-size: 8px; color: var(--mt); letter-spacing: 1px; }
+.acp-inp {
+  background: var(--p2); border: 1px solid var(--br);
+  border-radius: 5px; padding: 4px 8px;
+  font-family: 'Share Tech Mono', monospace; font-size: 12px;
+  color: var(--go); outline: none; width: 72px; text-align: center;
+  transition: border-color .2s;
+}
+.acp-inp:focus { border-color: rgba(255,204,0,0.4); }
+.acp-inp.wide { width: 88px; }
 
-/* ── ASSETS ── */
-.agrid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px;}
-.acard{
-  background:var(--s1);border:1px solid var(--br);border-radius:14px;overflow:hidden;
-  transition:border-color .3s;
+/* Z meter */
+.z-meter-wrap { margin: 10px 0 6px; }
+.z-meter-lbl { font-family: 'Share Tech Mono', monospace; font-size: 7px; color: var(--mt); letter-spacing: 1px; margin-bottom: 4px; display: flex; justify-content: space-between; }
+.z-meter-track {
+  height: 4px; background: var(--p3); border-radius: 2px;
+  position: relative; overflow: visible;
 }
-.acard.zpeak-sig{border-color:rgba(168,85,247,0.5);}
-.acard.trend-sig{border-color:rgba(34,211,160,0.5);}
-.acard.fusion-sig{
-  border-color:var(--go);
-  box-shadow:0 0 18px rgba(245,158,11,0.15);
+.z-bar {
+  position: absolute; top: 0; height: 100%; border-radius: 2px;
+  transition: width .4s ease, left .4s ease, background .4s;
 }
-.acard.blocked{border-color:rgba(244,63,110,0.3);}
-.ahead{
-  padding:11px 14px;
-  display:flex;justify-content:space-between;align-items:center;
-  border-bottom:1px solid var(--br);
+.z-center-line {
+  position: absolute; top: -4px; left: 50%;
+  width: 1px; height: 12px; background: var(--mt);
+  transform: translateX(-50%);
 }
-.aname{font-family:'Archivo Black',sans-serif;font-size:1.3rem;letter-spacing:2px;}
-.aprice{font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--mt);}
-.abody{padding:11px 14px;}
-.arow{
-  display:flex;justify-content:space-between;align-items:center;
-  padding:4px 0;border-bottom:1px solid var(--br2);font-size:10px;
-}
-.arow-l{font-family:'IBM Plex Mono',monospace;font-size:8px;color:var(--mt);letter-spacing:.8px;}
-.arow-v{font-family:'IBM Plex Mono',monospace;font-size:10px;font-weight:600;}
-
-/* FUSION INDICATOR */
-.fusion-ind{
-  margin-top:9px;
-  background:var(--s2);border-radius:8px;padding:8px 10px;
-  display:flex;align-items:center;justify-content:space-between;
-}
-.fi-label{font-family:'IBM Plex Mono',monospace;font-size:7px;color:var(--mt);letter-spacing:1.5px;text-transform:uppercase;}
-.fi-dots{display:flex;gap:4px;}
-.fi-dot{
-  width:10px;height:10px;border-radius:50%;
-  background:var(--br);transition:background .3s,box-shadow .3s;
-}
-.fi-dot.zpeak{background:var(--pu);box-shadow:0 0 6px var(--pu);}
-.fi-dot.trend{background:var(--up);box-shadow:0 0 6px var(--up);}
-.fi-dot.both{background:var(--go);box-shadow:0 0 8px var(--go);}
-.astate{
-  text-align:center;font-family:'Archivo Black',sans-serif;
-  font-size:.85rem;letter-spacing:2px;margin-top:7px;
+.z-thr-line {
+  position: absolute; top: -6px; width: 2px; height: 16px;
+  border-radius: 1px; transform: translateX(-50%);
 }
 
-/* ── SIGNAL BOX ── */
-.sigbox{
-  background:var(--s1);border:1px solid var(--br);border-radius:12px;
-  padding:12px 16px;margin-bottom:14px;
-  display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;
+.acp-signal {
+  font-family: 'Share Tech Mono', monospace;
+  font-size: .85rem; letter-spacing: 3px; font-weight: 700;
+  text-align: center; margin-top: 8px; padding: 6px;
+  border-radius: 5px; background: var(--p3);
+  transition: all .3s;
 }
-.sig-l{font-family:'IBM Plex Mono',monospace;font-size:7px;color:var(--mt);letter-spacing:2px;text-transform:uppercase;margin-bottom:3px;}
-.sig-v{font-family:'Archivo Black',sans-serif;font-size:1.3rem;letter-spacing:2px;}
-.sig-d{font-family:'IBM Plex Mono',monospace;font-size:9px;color:var(--mt);}
-
-/* ── THRESH ── */
-.thr-sec{margin-bottom:14px;}
-.thr-title{font-family:'IBM Plex Mono',monospace;font-size:7px;color:var(--mt);letter-spacing:3px;text-transform:uppercase;margin-bottom:8px;}
-.thr-grid{display:grid;grid-template-columns:1fr 1fr;gap:9px;}
-.tcard{background:var(--s1);border:1px solid var(--br);border-radius:9px;padding:11px 13px;}
-.tcard-sym{font-family:'Archivo Black',sans-serif;font-size:1rem;letter-spacing:2px;color:var(--pu);margin-bottom:7px;}
-.trow{display:flex;align-items:center;justify-content:space-between;margin-bottom:5px;}
-.trow-l{font-family:'IBM Plex Mono',monospace;font-size:7px;color:var(--mt);letter-spacing:1px;}
-.trow-i{
-  background:var(--s2);border:1px solid var(--br);border-radius:5px;
-  padding:3px 7px;width:72px;text-align:center;
-  font-family:'IBM Plex Mono',monospace;font-size:11px;font-weight:700;
-  color:var(--go);outline:none;
+.acp-zval {
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 1.6rem; text-align: center;
+  font-weight: 700; margin-top: 4px;
+  transition: color .3s;
+}
+.acp-meta {
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 8px; color: var(--mt); text-align: center;
+  letter-spacing: 1px; margin-top: 2px;
 }
 
 /* ── SAFETY ── */
-.safety{
-  background:var(--go-dim);border:1px solid rgba(245,158,11,0.15);
-  border-radius:12px;padding:12px 14px;margin-bottom:14px;
+.safety {
+  background: rgba(255,204,0,0.04); border: 1px solid rgba(255,204,0,0.12);
+  border-radius: 10px; padding: 12px 14px; margin-bottom: 14px;
 }
-.safety-t{font-family:'IBM Plex Mono',monospace;font-size:7px;color:var(--go);letter-spacing:3px;text-transform:uppercase;margin-bottom:9px;}
-.safety-g{display:grid;grid-template-columns:repeat(4,1fr);gap:7px;}
-.sfb{background:var(--s1);border-radius:8px;padding:7px;text-align:center;}
-.sfb-l{font-family:'IBM Plex Mono',monospace;font-size:7px;color:var(--mt);letter-spacing:1px;}
-.sfb-v{font-family:'Archivo Black',sans-serif;font-size:1.1rem;color:var(--go);margin-top:2px;}
+.safety-t { font-family: 'Share Tech Mono', monospace; font-size: 8px; color: var(--go); letter-spacing: 3px; text-transform: uppercase; margin-bottom: 9px; }
+.safety-g { display: grid; grid-template-columns: repeat(4, 1fr); gap: 7px; }
+.sfb { background: var(--p1); border-radius: 7px; padding: 7px; text-align: center; }
+.sfb-l { font-family: 'Share Tech Mono', monospace; font-size: 7px; color: var(--mt); letter-spacing: 1px; }
+.sfb-v { font-family: 'Share Tech Mono', monospace; font-size: 1.1rem; color: var(--go); margin-top: 2px; }
+
+/* ── SIGNAL BOX ── */
+.sigbox {
+  background: var(--p1); border: 1px solid var(--br);
+  border-radius: 8px; padding: 10px 14px; margin-bottom: 14px;
+  display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px;
+}
+.sig-l { font-family: 'Share Tech Mono', monospace; font-size: 8px; color: var(--mt); letter-spacing: 2px; margin-bottom: 2px; }
+.sig-v { font-family: 'Share Tech Mono', monospace; font-size: 1.2rem; font-weight: 700; }
+.sig-d { font-family: 'Share Tech Mono', monospace; font-size: 9px; color: var(--mt); }
 
 /* ── LOG ── */
-.log-t{font-family:'IBM Plex Mono',monospace;font-size:7px;color:var(--mt);letter-spacing:3px;text-transform:uppercase;margin-bottom:7px;}
-.log{
-  background:var(--s1);border:1px solid var(--br);border-radius:9px;
-  height:190px;overflow-y:auto;padding:9px 11px;
-  font-family:'IBM Plex Mono',monospace;font-size:9px;color:var(--mt);
-  scrollbar-width:thin;scrollbar-color:var(--br) transparent;
+.log-l { font-family: 'Share Tech Mono', monospace; font-size: 8px; color: var(--mt); letter-spacing: 3px; text-transform: uppercase; margin-bottom: 7px; }
+.log {
+  background: var(--p1); border: 1px solid var(--br); border-radius: 8px;
+  height: 180px; overflow-y: auto; padding: 8px 10px;
+  font-family: 'Share Tech Mono', monospace; font-size: 9px; color: var(--mt);
+  scrollbar-width: thin; scrollbar-color: var(--mt2) transparent;
 }
-.log div{padding:2px 0;border-bottom:1px solid var(--br2);line-height:1.5;}
-.lw{color:var(--up);font-weight:700;}
-.ll{color:var(--dn);font-weight:700;}
-.li{color:var(--cy);}
-.lk{color:var(--go);font-weight:700;font-size:10px;}
-.lf{color:#3a3218;}
-.lfus{color:var(--pu);font-weight:700;font-size:10px;}
+.log div { padding: 2px 0; border-bottom: 1px solid rgba(255,255,255,0.02); line-height: 1.5; }
+.lw { color: var(--up); font-weight: 700; }
+.ll { color: var(--dn); font-weight: 700; }
+.li { color: var(--cy); }
+.lk { color: var(--go); font-weight: 700; font-size: 10px; }
+.lf { color: #2a3020; }
+
+/* scan line animation on active cards */
+@keyframes scanline {
+  0%   { transform: translateY(-100%); opacity: 0; }
+  10%  { opacity: .15; }
+  90%  { opacity: .15; }
+  100% { transform: translateY(400%); opacity: 0; }
+}
+.acp-card.active-up::before, .acp-card.active-dn::before {
+  content: '';
+  position: absolute;
+  left: 0; width: 100%; height: 2px;
+  animation: scanline 2s linear infinite;
+  pointer-events: none;
+  border-radius: 10px;
+}
+.acp-card { position: relative; overflow: hidden; }
+.acp-card.active-up::before { background: linear-gradient(90deg, transparent, var(--up), transparent); }
+.acp-card.active-dn::before { background: linear-gradient(90deg, transparent, var(--dn), transparent); }
 </style>
 </head>
 <body>
@@ -297,105 +264,60 @@ body{
   <!-- HEADER -->
   <div class="hdr">
     <div>
-      <div class="hdr-eye">SISTEMA FUSION · V10 · V25 · VELAS 1MIN</div>
-      <div class="hdr-title">
-        <span class="accent">Z·PEAK</span> <span style="color:var(--mt)">+</span> <span class="accent2">EMA</span> FUSION
-      </div>
-      <div class="hdr-sub">REVERSIÓN EXTREMA × CRUCE TENDENCIAL · DOBLE MOTOR</div>
+      <div class="logo">Z·BOT<span>PURE Z-SCORE ENGINE · V10 · V25 · V50</span></div>
     </div>
-    <div class="hdr-bal">
-      <div class="hdr-bal-lbl"><span class="dot" id="onlineDot"></span>BALANCE</div>
-      <div class="hdr-bal-val" id="balVal">$--</div>
+    <div class="hdr-right">
+      <div class="bal-lbl"><span class="dot" id="onlineDot"></span>BALANCE</div>
+      <div class="bal-val" id="balVal">$--</div>
     </div>
   </div>
 
-  <!-- MODE BADGES -->
-  <div class="mode-badge">
-    <div class="mbadge zpeak">
-      <div class="mbadge-icon">⚡</div>
-      <div class="mbadge-text">
-        <div class="mbadge-name" style="color:var(--pu)">Z-PEAK ENGINE</div>
-        <div class="mbadge-desc">Z-score extremo + desaceleración → reversión</div>
-      </div>
-    </div>
-    <div class="mbadge trend">
-      <div class="mbadge-icon">📈</div>
-      <div class="mbadge-text">
-        <div class="mbadge-name" style="color:var(--up)">EMA 9/21 TREND</div>
-        <div class="mbadge-desc">Cruce EMA + fuerza → tendencia confirmada</div>
-      </div>
-    </div>
-  </div>
-
-  <!-- INPUTS -->
-  <div class="inp-row">
-    <div class="inp-g">
+  <!-- GLOBAL CONFIG -->
+  <div class="cfg-row">
+    <div class="fg">
       <label>🔑 API Token Deriv</label>
       <input type="password" id="apiToken" placeholder="Tu token API">
     </div>
-    <div class="inp-g">
-      <label>💰 Stake ($)</label>
+    <div class="fg">
+      <label>💰 Stake por operación ($)</label>
       <input type="number" id="stake" value="1.00" min="0.35" step="0.25">
     </div>
   </div>
 
-  <!-- BTNS -->
+  <!-- BTN -->
   <div class="btn-row">
-    <button class="btn btn-go" id="toggleBtn">▶ INICIAR FUSION BOT</button>
+    <button class="btn btn-go" id="toggleBtn">▶ INICIAR BOT</button>
   </div>
 
   <!-- STATUS -->
   <div class="status">
     <span class="dot" id="statusDot"></span>
-    <span id="statusTxt">OFFLINE — Ingresa token e inicia</span>
+    <span id="statusTxt">OFFLINE</span>
   </div>
 
   <!-- STATS -->
   <div class="stats">
-    <div class="sc"><div class="sc-l">Wins</div><div class="sc-v g" id="stW">0</div></div>
-    <div class="sc"><div class="sc-l">Losses</div><div class="sc-v r" id="stL">0</div></div>
-    <div class="sc"><div class="sc-l">Winrate</div><div class="sc-v o" id="stWR">0%</div></div>
-    <div class="sc"><div class="sc-l">Fusion</div><div class="sc-v" style="color:var(--pu)" id="stFus">0</div></div>
-    <div class="sc"><div class="sc-l">P&L Sesión</div><div class="sc-v c" id="stPnL">$0.00</div></div>
+    <div class="stat"><div class="stat-l">Wins</div><div class="stat-v g" id="stW">0</div></div>
+    <div class="stat"><div class="stat-l">Losses</div><div class="stat-v r" id="stL">0</div></div>
+    <div class="stat"><div class="stat-l">Winrate</div><div class="stat-v o" id="stWR">0%</div></div>
+    <div class="stat"><div class="stat-l">Ops</div><div class="stat-v w" id="stOps">0</div></div>
+    <div class="stat"><div class="stat-l">P&L Sesión</div><div class="stat-v c" id="stPnL">$0.00</div></div>
   </div>
 
-  <!-- CONFIRM PANEL -->
-  <div class="cpanel">
-    <div class="cpanel-hdr">
-      <div class="cpanel-title">⚡ PANEL FUSION — 8 CONFIRMADORES · Entrada óptima cuando Z-Peak Y EMA coinciden</div>
-      <div class="cpanel-score bad" id="cpScore">--</div>
-    </div>
-    <div class="cgrid">
-      <div class="cbox" id="cb0"><div class="cbox-l">Z Extremo</div><div class="cbox-v na" id="cv0">✗</div></div>
-      <div class="cbox" id="cb1"><div class="cbox-l">Desacel.</div><div class="cbox-v na" id="cv1">✗</div></div>
-      <div class="cbox" id="cb2"><div class="cbox-l">µRetro</div><div class="cbox-v na" id="cv2">✗</div></div>
-      <div class="cbox" id="cb3"><div class="cbox-l">WeakPush</div><div class="cbox-v na" id="cv3">✗</div></div>
-      <div class="cbox" id="cb4"><div class="cbox-l">Vol OK</div><div class="cbox-v na" id="cv4">✗</div></div>
-      <div class="cbox" id="cb5"><div class="cbox-l">EMA 3/9</div><div class="cbox-v na" id="cv5">✗</div></div>
-      <div class="cbox" id="cb6"><div class="cbox-l">Cruce 9/21</div><div class="cbox-v na" id="cv6">✗</div></div>
-      <div class="cbox" id="cb7"><div class="cbox-l">Fuerza EMA</div><div class="cbox-v na" id="cv7">✗</div></div>
-    </div>
-  </div>
+  <!-- PER-ASSET CONFIG + LIVE Z -->
+  <div class="acp-title">⚡ CONFIGURACIÓN POR ACTIVO — Z-SCORE EN TIEMPO REAL</div>
+  <div class="acp-grid" id="acpGrid"></div>
 
-  <!-- ASSETS -->
-  <div class="agrid" id="agrid"></div>
-
-  <!-- SIGNAL -->
+  <!-- LAST SIGNAL -->
   <div class="sigbox">
     <div>
       <div class="sig-l">ÚLTIMA SEÑAL</div>
       <div class="sig-v" id="sigV" style="color:var(--mt)">---</div>
     </div>
     <div style="text-align:right">
-      <div class="sig-l">MODO / DURACIÓN</div>
+      <div class="sig-l">Z / TICKS / DURACIÓN</div>
       <div class="sig-d" id="sigD">---</div>
     </div>
-  </div>
-
-  <!-- THRESHOLDS -->
-  <div class="thr-sec">
-    <div class="thr-title">⚙ Parámetros por activo</div>
-    <div class="thr-grid" id="thrGrid"></div>
   </div>
 
   <!-- SAFETY -->
@@ -404,724 +326,551 @@ body{
     <div class="safety-g">
       <div class="sfb"><div class="sfb-l">Drawdown</div><div class="sfb-v" id="sfDD">$0.00</div></div>
       <div class="sfb"><div class="sfb-l">Stop 5%</div><div class="sfb-v" id="sfStop">--</div></div>
-      <div class="sfb"><div class="sfb-l">Racha Loss</div><div class="sfb-v" id="sfStreak">0</div></div>
-      <div class="sfb"><div class="sfb-l">Cooldown</div><div class="sfb-v" id="sfCool">OK</div></div>
+      <div class="sfb"><div class="sfb-l">Racha</div><div class="sfb-v" id="sfStr">0</div></div>
+      <div class="sfb"><div class="sfb-l">Pausa</div><div class="sfb-v" id="sfCool">OK</div></div>
     </div>
   </div>
 
   <!-- LOG -->
-  <div class="log-t">📋 Log de actividad</div>
+  <div class="log-l">📋 Log</div>
   <div class="log" id="logDiv"></div>
 
 </div>
 
 <script>
 // ══════════════════════════════════════════════════════════════════════════
-// FUSION BOT — Z-PEAK + EMA TREND
+// Z·BOT — PURE Z-SCORE ENGINE
 //
-// LÓGICA DE FUSIÓN:
+// LÓGICA ÚNICA Y COMPLETA:
 //
-//  MODO A — FUSION PURA (entrada prioritaria, duración dinámica 1–5min)
-//    Condición: Z-Peak exhausted AND cruce EMA 9/21 en misma dirección
-//    → Ambos motores coinciden → máxima confianza
-//    → Duración por fuerza EMA: 1/2/3/4/5 min
+//  1. Acumula los últimos N ticks (configurable por activo)
+//  2. Calcula Z-score del último tick vs la ventana
+//  3. Si Z >= +umbral → PUT (precio en extremo alto → reversión bajista)
+//  4. Si Z <= -umbral → CALL (precio en extremo bajo → reversión alcista)
+//  5. Duración configurable por activo en minutos
+//  6. Sin filtros adicionales — solo Z-score puro
 //
-//  MODO B — Z-PEAK SOLO (reversión, duración fija 3min)
-//    Condición: exhausted AND emaFilter(3/9) AND !cruce21 activo
-//    → Solo reversión confirmada con EMA rápida
-//
-//  MODO C — EMA TREND SOLO (tendencial, duración por fuerza)
-//    Condición: cruce 9/21 válido AND fuerza>=MEDIA AND !z extremo contrario
-//    → Tendencia limpia sin contexto de agotamiento opuesto
-//
-// PRIORIDAD: FUSION > Z-PEAK > EMA TREND
+// PARÁMETROS CONFIGURABLES POR ACTIVO:
+//  - Umbral Z (ej: 2.0 = muy estricto, 1.5 = más señales)
+//  - Número de ticks en la ventana (ej: 20 = corto, 50 = largo)
+//  - Duración de la operación en minutos (1-5)
+//  - Activar/desactivar cada activo individualmente
 // ══════════════════════════════════════════════════════════════════════════
 
-const ASSETS  = ['R_10','R_25'];
-const LABELS  = {'R_10':'V10','R_25':'V25'};
-// Timeframe óptimo por activo:
-// V10 → velas de 5min (menos ruido, movimientos más limpios)
-// V25 → velas de 1min (volatilidad suficiente para 1min)
-const GRAN    = {'R_10': 300, 'R_25': 60};
-const HIST    = 30;
-const READY   = 10;   // velas mínimas antes de operar
+const ASSETS = ['R_10', 'R_25', 'R_50'];
+const LABELS = { R_10: 'V10', R_25: 'V25', R_50: 'V50' };
 
-// Umbrales Z por activo
-let zThr = {'R_10':1.9, 'R_25':1.8};
-// Separación mínima EMA9/21 (relativa al precio)
-// V10 en 5min → separación mayor porque velas más grandes
-// V25 en 1min → separación menor
-let minSep = {'R_10':0.0018, 'R_25':0.0008};
+// Configuración por activo (editable desde la UI)
+const cfg = {
+  R_10: { zThr: 2.0, ticks: 30, duration: 3, active: true },
+  R_25: { zThr: 1.8, ticks: 25, duration: 3, active: true },
+  R_50: { zThr: 1.6, ticks: 20, duration: 2, active: true }
+};
 
 const LOSS_BLOCK_AFTER = 2;
 const LOSS_BLOCK_MS    = 90000;
 const GLOBAL_PAUSE_MS  = 40000;
-const COOLDOWN_MS      = 5000;
-const KILLER_WIN       = 10;
-const KILLER_THR       = 9;
+const COOLDOWN_MS      = 8000;
 
 let ws, running = false;
-let pendingAsset = null;  // activo esperando proposal response
+let pendingAsset = null;
 let balance = 100, sessionStart = 100;
 let wins = 0, losses = 0, lossStreak = 0, pauseUntil = 0;
-let fusionCount = 0;
 
-// ── BUFFER ────────────────────────────────────────────────────────────────
+// ── BUFFERS ───────────────────────────────────────────────────────────────
 let buf = {};
-function initBuf(a){
-  buf[a] = {
-    closes:[], opens:[], highs:[], lows:[],
-    // Z-Peak EMAs (rápidas, reversión)
-    ema3:null, ema9zp:null,
-    // Trend EMAs (cruce tendencial)
-    ema9:null, ema21:null,
-    prevEma9:null, prevEma21:null,
-    // RSI
-    rsi:null,
-    // Misc
-    currentTick:null,
-    candleReady:false,
-    lastOpenTime:0,
-    liveCandle:null
-  };
+function initBuf(a) {
+  buf[a] = { prices: [], currentZ: 0, lastPrice: null };
 }
 ASSETS.forEach(initBuf);
 
-// ── ESTADO POR ACTIVO ──────────────────────────────────────────────────────
+// ── ESTADO ────────────────────────────────────────────────────────────────
 let ast = {};
-ASSETS.forEach(a=>{
-  ast[a]={lossStreak:0,blockedUntil:0,lastTrade:0,hasContract:false,
-          zpeakSig:null, trendSig:null, trendStrength:0};
-});
-let c2a = {};   // contractId → asset
+function initAst(a) {
+  ast[a] = { lossStreak: 0, blockedUntil: 0, lastTrade: 0, hasContract: false };
+}
+ASSETS.forEach(initAst);
+
+let c2a = {};  // contractId → asset
 
 // ══════════════════════════════════════════════════════════════════════════
-// CÁLCULO — todas las funciones sobre cierres de vela
+// Z-SCORE — única función de análisis
 // ══════════════════════════════════════════════════════════════════════════
-function calcEMA(period, price, prev){
-  const k = 2/(period+1);
-  return prev===null ? price : price*k + prev*(1-k);
-}
-
-function calcZ(closes){
-  const n=closes.length;
-  if(n<2) return 0;
-  let sum=0; for(let i=0;i<n;i++) sum+=closes[i];
-  const mean=sum/n;
-  let sq=0; for(let i=0;i<n;i++) sq+=(closes[i]-mean)**2;
-  const std=Math.sqrt(sq/n);
-  return std===0?0:(closes[n-1]-mean)/std;
-}
-
-function calcRSI(closes){
-  if(closes.length<11) return null;
-  let gain=0,loss=0;
-  for(let i=1;i<closes.length;i++){
-    const d=closes[i]-closes[i-1];
-    if(d>0) gain+=d; else loss-=d;
-  }
-  const rs=gain/(loss===0?1:loss);
-  return 100-(100/(1+rs));
-}
-
-function avg(arr){
-  if(!arr.length) return 0;
-  let s=0; for(let i=0;i<arr.length;i++) s+=arr[i];
-  return s/arr.length;
-}
-
-// ── FUERZA EMA 9/21 ──────────────────────────────────────────────────────
-function getTrendStrength(a){
-  const b=buf[a];
-  if(b.ema9===null||b.ema21===null||!b.closes.length) return {strength:0,label:'SIN DATOS',duration:0,pct:'0'};
-  const sep=Math.abs(b.ema9-b.ema21);
-  const pct=sep/b.closes[b.closes.length-1];
-  const min=minSep[a];
-  let strength,label,duration;
-  if     (pct>=min*2.5){strength=5;label='MUY FUERTE';duration=5;}
-  else if(pct>=min*2.0){strength=4;label='FUERTE';    duration=4;}
-  else if(pct>=min*1.5){strength=3;label='MEDIA-ALTA';duration=3;}
-  else if(pct>=min*1.0){strength=2;label='MEDIA';     duration=2;}
-  else if(pct>=min*0.6){strength=1;label='MÍNIMA';    duration=1;}
-  else                  {strength=0;label='DÉBIL';     duration=0;}
-  return {strength,label,duration,pct:(pct*100).toFixed(4)};
-}
-
-// ── CRUCE EMA 9/21 ────────────────────────────────────────────────────────
-function detectCross(a){
-  const b=buf[a];
-  if(b.ema9===null||b.ema21===null||b.prevEma9===null||b.prevEma21===null) return null;
-  const wasAbove=b.prevEma9>b.prevEma21;
-  const isAbove =b.ema9>b.ema21;
-  if(!wasAbove&&isAbove) return 'CALL';
-  if(wasAbove&&!isAbove) return 'PUT';
-  return null;
-}
-
-// ── Z-PEAK: detectExhaustion ──────────────────────────────────────────────
-function detectExhaustion(a){
-  const b=buf[a];
-  const closes=b.closes;
-  if(closes.length<5) return {exhausted:false,score:0,entryDir:null,z:0,details:{}};
-
-  const returns=[];
-  for(let i=1;i<closes.length;i++) returns.push(closes[i]-closes[i-1]);
-  const absRet=returns.map(r=>Math.abs(r));
-
-  const z=calcZ(closes);
-  if(Math.abs(z)<1.3) return {exhausted:false,score:0,entryDir:null,z,details:{}};
-
-  const n=returns.length;
-  const v1=Math.abs(returns[n-1]);
-  const v2=Math.abs(returns[n-2]);
-  const v3=n>=3?Math.abs(returns[n-3]):0;
-
-  const absZ=Math.abs(z);
-  const zExtremo=absZ>=zThr[a];
-  let score=0;
-  if(zExtremo) score+=2;
-
-  const desacelProg=v3>v2&&v2>v1;
-  const desacelBrusca=v2>0&&v1<v2*0.7;
-  const desaceleracion=desacelProg||desacelBrusca;
-  if(desacelProg) score+=3; else if(desacelBrusca) score+=2;
-
-  let impDir=0;
-  for(let i=Math.max(0,n-4);i<n-1;i++) impDir+=returns[i];
-  const dd=impDir>=0?'up':'down';
-  const microRetroceso=(dd==='up'?returns[n-2]<0:returns[n-2]>0)||
-                       (n>=3?(dd==='up'?returns[n-3]<0:returns[n-3]>0):false);
-  if(microRetroceso) score+=2;
-
-  const avgLast3=avg(absRet.slice(-3));
-  const weakPush=v1<avgLast3*0.85&&v1<v2;
-  if(weakPush) score+=2;
-
-  const vol5=absRet.length>=5?avg(absRet.slice(-5)):avg(absRet);
-  const vol20=avg(absRet);
-  const volOk=vol5<=vol20*1.3;
-  if(volOk&&vol5<=vol20) score+=1;
-
-  let hiperTend=false;
-  if(closes.length>=KILLER_WIN+1){
-    let ups=0;
-    for(let i=Math.max(0,returns.length-KILLER_WIN);i<returns.length;i++) if(returns[i]>0) ups++;
-    hiperTend=Math.max(ups,KILLER_WIN-ups)>=KILLER_THR;
-  }
-
-  const entryDir=z>0?'PUT':'CALL';
-  const exhausted=zExtremo&&!hiperTend;
-
-  return {exhausted,score,entryDir,z,
-    details:{zExtremo,desaceleracion,microRetroceso,weakPush,volOk,hiperTend,desacelProg,desacelBrusca,vol5,vol20}};
-}
-
-// ── Z-PEAK: emaFilter (rápido 3/9, reversión) ─────────────────────────────
-function emaFilterZP(a, dir){
-  const b=buf[a];
-  if(b.ema3===null||b.ema9zp===null||b.closes.length<3) return false;
-  const slope=b.closes[b.closes.length-1]-b.closes[b.closes.length-3];
-  const lc=b.closes[b.closes.length-1];
-  if(dir==='PUT')  return b.ema3>b.ema9zp && lc>b.ema9zp && slope<0;
-  if(dir==='CALL') return b.ema3<b.ema9zp && lc<b.ema9zp && slope>0;
-  return false;
-}
-
-// ── DURACIÓN DINÁMICA ─────────────────────────────────────────────────────
-// Entrada a favor de tendencia: score alto → 4min, estándar → 3min
-function getDuration(score){
-  if(score>=7) return 4;
-  return 3;
+function calcZ(prices) {
+  const n = prices.length;
+  if (n < 2) return 0;
+  let sum = 0;
+  for (let i = 0; i < n; i++) sum += prices[i];
+  const mean = sum / n;
+  let sq = 0;
+  for (let i = 0; i < n; i++) sq += (prices[i] - mean) ** 2;
+  const std = Math.sqrt(sq / n);
+  return std === 0 ? 0 : (prices[n - 1] - mean) / std;
 }
 
 // ══════════════════════════════════════════════════════════════════════════
-// PROCESAR VELA CERRADA
+// PROCESAR TICK — núcleo del sistema
 // ══════════════════════════════════════════════════════════════════════════
-function processClosedCandle(a, candle){
-  const b=buf[a];
+function onTick(asset, price) {
+  const b   = buf[asset];
+  const c   = cfg[asset];
 
-  // Guardar EMA anteriores antes de actualizar
-  b.prevEma9  = b.ema9;
-  b.prevEma21 = b.ema21;
+  b.lastPrice = price;
+  b.prices.push(price);
 
-  // Actualizar buffer
-  const close=parseFloat(candle.close);
-  b.closes.push(close);
-  b.opens.push(parseFloat(candle.open));
-  b.highs.push(parseFloat(candle.high));
-  b.lows.push(parseFloat(candle.low));
-  if(b.closes.length>HIST){b.closes.shift();b.opens.shift();b.highs.shift();b.lows.shift();}
+  // Mantener ventana de N ticks configurable
+  while (b.prices.length > c.ticks) b.prices.shift();
 
-  // EMAs Z-Peak (rápidas, reversión)
-  b.ema3   = calcEMA(3,  close, b.ema3);
-  b.ema9zp = calcEMA(9,  close, b.ema9zp);
+  // Calcular Z-score
+  b.currentZ = calcZ(b.prices);
 
-  // EMAs Trend (cruce tendencial)
-  b.ema9  = calcEMA(9,  close, b.ema9);
-  b.ema21 = calcEMA(21, close, b.ema21);
+  // Actualizar UI del activo
+  updateAssetCard(asset);
 
-  // RSI
-  b.rsi = calcRSI(b.closes);
-
-  b.candleReady = b.closes.length >= READY;
-
-  updateUI();
-  addLog(`🕯 ${LABELS[a]} C:${close.toFixed(3)} | EMA9:${b.ema9?b.ema9.toFixed(3):'--'} EMA21:${b.ema21?b.ema21.toFixed(3):'--'} | Z:${calcZ(b.closes).toFixed(2)}`);
-
-  if(running) analyzeCandle(a);
+  // Analizar si hay señal
+  if (running && c.active) analyzeZ(asset);
 }
 
 // ══════════════════════════════════════════════════════════════════════════
-// ANÁLISIS FUSION — núcleo de decisión
+// ANÁLISIS Z-SCORE PURO
 // ══════════════════════════════════════════════════════════════════════════
-function analyzeCandle(a){
-  const now=Date.now();
-  const b=buf[a];
-  const st=ast[a];
+function analyzeZ(asset) {
+  const now = Date.now();
+  const b   = buf[asset];
+  const c   = cfg[asset];
+  const st  = ast[asset];
 
-  if(!b.candleReady)              return;
-  // Resetear lastTrendDir si la tendencia cambió de dirección
-  if(b.ema9!==null&&b.ema21!==null){
-    const curDir=b.ema9>b.ema21?'CALL':'PUT';
-    if(st.lastTrendDir!==null&&st.lastTrendDir!==curDir) st.lastTrendDir=null;
-  }
-  if(st.hasContract)              return;
-  if(now<pauseUntil)              return;
-  if(now<st.blockedUntil)         return;
-  if(now-st.lastTrade<COOLDOWN_MS) return;
-  if((sessionStart-balance)>=sessionStart*0.05){
-    addLog('🛑 STOP DE SESIÓN — drawdown 5%','ll');
+  // Guards
+  if (b.prices.length < c.ticks)        return; // ventana incompleta
+  if (st.hasContract)                    return;
+  if (now < pauseUntil)                  return;
+  if (now < st.blockedUntil)             return;
+  if (now - st.lastTrade < COOLDOWN_MS)  return;
+
+  // Stop de sesión 5%
+  if ((sessionStart - balance) >= sessionStart * 0.05) {
+    addLog('🛑 STOP DE SESIÓN — drawdown 5%', 'll');
     stopBot(); return;
   }
 
-  // ── CALCULAR AMBAS SEÑALES ────────────────────────────────────────────
-  const exh     = detectExhaustion(a);
-  const crossDir= detectCross(a);
-  const trend   = getTrendStrength(a);
-  const emaFilt = emaFilterZP(a, exh.entryDir);
+  const z   = b.currentZ;
+  const thr = c.zThr;
 
-  // Pendiente EMA9 confirma cruce
-  const slope9 = b.ema9!==null&&b.prevEma9!==null ? b.ema9-b.prevEma9 : 0;
-  // crossValid: cruce exacto esta vela O tendencia activa con slope confirmado
-  const trendActive = b.ema9!==null && b.ema21!==null &&
-    ((b.ema9>b.ema21 && slope9>0)||(b.ema9<b.ema21 && slope9<0));
-  const trendDir = b.ema9!==null && b.ema21!==null
-    ? (b.ema9>b.ema21?'CALL':'PUT') : null;
-  const crossValid = trendDir!==null && trendActive && trend.duration>0;
-  const crossDir2 = crossValid ? trendDir : null;
-
-  // Guardar estado de señales por activo (para UI)
-  st.zpeakSig   = exh.exhausted ? exh.entryDir : null;
-  st.trendSig   = crossValid    ? crossDir2     : null;
-  st.trendStr   = trend.strength;
-
-  // Actualizar panel de confirmadores
-  updateConfirmPanel(a, exh, emaFilt, crossValid, trend);
-
-  // ══════════════════════════════════════════════════════════════════════
-  // LÓGICA UNIFICADA — Entrada A FAVOR de la tendencia EMA9/21
-  //
-  // Regla: tendencia activa (EMA9 vs EMA21 + slope confirmado)
-  //        → entrar en esa dirección a 3 o 4 minutos
-  //
-  // Duración: Score Z ≥ 7 (Z-Peak coincide) → 4 min
-  //           Resto                          → 3 min
-  //
-  // No entra si la dirección no cambió desde la última operación
-  // ══════════════════════════════════════════════════════════════════════
-  if(!crossValid){
-    updateUI(); return;
+  // SEÑAL PUT: Z extremo positivo → precio demasiado alto → reversión bajista
+  if (z >= thr) {
+    addLog(`🔴 PUT ${LABELS[asset]} Z:${z.toFixed(3)} ≥ ${thr} | ${c.ticks}ticks | ${c.duration}min`, 'lk');
+    executeTrade(asset, 'PUT', z);
+    return;
   }
 
-  if(st.lastTrendDir===crossDir2){
-    updateUI(); return;
+  // SEÑAL CALL: Z extremo negativo → precio demasiado bajo → reversión alcista
+  if (z <= -thr) {
+    addLog(`🟢 CALL ${LABELS[asset]} Z:${z.toFixed(3)} ≤ -${thr} | ${c.ticks}ticks | ${c.duration}min`, 'lk');
+    executeTrade(asset, 'CALL', z);
+    return;
   }
-
-  const duration = getDuration(exh.score);
-  const isFusion = exh.exhausted && exh.entryDir===crossDir2;
-  const modeLabel = isFusion ? '🌟 FUSION' : '📈 TREND';
-  const logClass  = isFusion ? 'lfus' : 'lk';
-  if(isFusion) fusionCount++;
-
-  addLog(
-    `${modeLabel} ${LABELS[a]} → ${crossDir2} | Fuerza:${trend.label} (${trend.pct}%) | Z:${exh.z.toFixed(2)} Score:${exh.score}/10 | ${duration}min`,
-    logClass
-  );
-
-  st.lastTrendDir = crossDir2;
-  executeTrade(a, crossDir2, duration, modeLabel, exh, trend);
 }
 
 // ══════════════════════════════════════════════════════════════════════════
 // EJECUTAR TRADE
 // ══════════════════════════════════════════════════════════════════════════
-function getStake(){
-  const base=parseFloat(document.getElementById('stake').value)||1;
-  const ddPct=(sessionStart-balance)/sessionStart;
-  if(ddPct>0.03) return Math.max(0.35,base*0.5);
-  if(ddPct>0.015) return Math.max(0.35,base*0.75);
+function getStake() {
+  const base   = parseFloat(document.getElementById('stake').value) || 1;
+  const ddPct  = (sessionStart - balance) / sessionStart;
+  if (ddPct > 0.03)  return Math.max(0.35, base * 0.5);
+  if (ddPct > 0.015) return Math.max(0.35, base * 0.75);
   return base;
 }
 
-function executeTrade(a, dir, duration, mode, exh, trend){
-  const stake=getStake();
-  ast[a].lastTrade=Date.now();
-  ast[a].hasContract=true;
+function executeTrade(asset, dir, z) {
+  const stake    = getStake();
+  const duration = cfg[asset].duration;
 
-  // Actualizar última señal
-  const modeColors={'FUSION':'var(--go)','Z-PEAK':'var(--pu)','TREND':'var(--up)'};
-  const sigEl=document.getElementById('sigV');
-  sigEl.innerText=`${dir} ${LABELS[a]}`;
-  sigEl.style.color=dir==='CALL'?'var(--up)':'var(--dn)';
-  document.getElementById('sigD').innerText=
-    `${mode} · ${duration}min · Score:${exh.score}/10 · ${trend.label}`;
+  ast[asset].lastTrade  = Date.now();
+  ast[asset].hasContract = true;
+  pendingAsset = asset;
 
-  pendingAsset = a;  // marcar activo antes de enviar proposal
+  // Actualizar señal en UI
+  const sigV = document.getElementById('sigV');
+  sigV.innerText = `${dir} ${LABELS[asset]}`;
+  sigV.style.color = dir === 'CALL' ? 'var(--up)' : 'var(--dn)';
+  document.getElementById('sigD').innerText =
+    `Z:${z.toFixed(3)} · ${cfg[asset].ticks} ticks · ${duration}min · $${stake}`;
+
   ws.send(JSON.stringify({
-    proposal:1, amount:stake, basis:'stake',
-    contract_type:dir, currency:'USD',
-    duration:duration, duration_unit:'m', symbol:a
+    proposal: 1,
+    amount: stake,
+    basis: 'stake',
+    contract_type: dir,
+    currency: 'USD',
+    duration: duration,
+    duration_unit: 'm',
+    symbol: asset
   }));
 
-  updateUI();
+  updateAssetCard(asset);
 }
 
 // ══════════════════════════════════════════════════════════════════════════
 // RESULTADO
 // ══════════════════════════════════════════════════════════════════════════
-function onResult(a, pnl){
-  ast[a].hasContract=false;
-  balance+=pnl;
-  const isWin=pnl>0;
-  if(isWin){
-    wins++; lossStreak=0; ast[a].lossStreak=0;
+function onResult(asset, pnl) {
+  ast[asset].hasContract = false;
+  balance += pnl;
+  const isWin = pnl > 0;
+
+  if (isWin) {
+    wins++;
+    lossStreak = 0;
+    ast[asset].lossStreak = 0;
   } else {
-    losses++; lossStreak++; ast[a].lossStreak++;
-    if(ast[a].lossStreak>=LOSS_BLOCK_AFTER){
-      ast[a].blockedUntil=Date.now()+LOSS_BLOCK_MS;
-      ast[a].lossStreak=0;
-      addLog(`🔴 ${LABELS[a]} bloqueado 90s`,'ll');
+    losses++;
+    lossStreak++;
+    ast[asset].lossStreak++;
+    if (ast[asset].lossStreak >= LOSS_BLOCK_AFTER) {
+      ast[asset].blockedUntil = Date.now() + LOSS_BLOCK_MS;
+      ast[asset].lossStreak   = 0;
+      addLog(`🔴 ${LABELS[asset]} bloqueado 90s por ${LOSS_BLOCK_AFTER} pérdidas`, 'll');
     }
-    if(lossStreak>=3){
-      pauseUntil=Date.now()+GLOBAL_PAUSE_MS;
-      lossStreak=0;
-      addLog('⏸ Pausa global 40s por 3 pérdidas','ll');
+    if (lossStreak >= 3) {
+      pauseUntil = Date.now() + GLOBAL_PAUSE_MS;
+      lossStreak = 0;
+      addLog('⏸ Pausa global 40s — 3 pérdidas consecutivas', 'll');
     }
   }
-  addLog(`${isWin?'✅ WIN':'❌ LOSS'} ${LABELS[a]} PnL:$${pnl.toFixed(2)} Bal:$${balance.toFixed(2)}`,isWin?'lw':'ll');
+
+  addLog(
+    `${isWin ? '✅ WIN' : '❌ LOSS'} ${LABELS[asset]} PnL:$${pnl.toFixed(2)} Bal:$${balance.toFixed(2)}`,
+    isWin ? 'lw' : 'll'
+  );
   updateStats();
-  updateUI();
+  updateAssetCard(asset);
 }
 
 // ══════════════════════════════════════════════════════════════════════════
-// UI
+// UI — construir cards por activo con parámetros editables
 // ══════════════════════════════════════════════════════════════════════════
-function updateConfirmPanel(a, exh, emaFilt, crossValid, trend){
-  const d=exh.details;
-  const vals=[
-    d.zExtremo, d.desaceleracion, d.microRetroceso,
-    d.weakPush, d.volOk, emaFilt,
-    crossValid, trend.strength>=2
-  ];
-  const score=Object.values({
-    z:d.zExtremo?2:0,
-    dc:d.desacelProg?3:d.desacelBrusca?2:0,
-    mr:d.microRetroceso?1:0,
-    wp:d.weakPush?1:0,
-    vo:d.volOk?1:0,
-    ef:emaFilt?1:0,
-    cv:crossValid?2:0,
-    ts:trend.strength>=2?1:0
-  }).reduce((a,b)=>a+b,0);
-
-  const sc=document.getElementById('cpScore');
-  sc.innerText=score+'/12';
-  sc.className='cpanel-score '+(score>=9?'ok':score>=6?'warn':'bad');
-
-  vals.forEach((v,i)=>{
-    const cb=document.getElementById('cb'+i);
-    const cv=document.getElementById('cv'+i);
-    cb.className='cbox '+(v?'ok':'no');
-    cv.innerText=v?'✓':'✗';
-    cv.className='cbox-v '+(v?'ok':'no');
-  });
-}
-
-function updateUI(){
-  const now=Date.now();
-  document.getElementById('agrid').innerHTML=ASSETS.map(a=>{
-    const b=buf[a];
-    const st=ast[a];
-    const trend=getTrendStrength(a);
-    const z=b.closes.length>=5?calcZ(b.closes):0;
-    const dir=b.ema9!==null&&b.ema21!==null?(b.ema9>b.ema21?'ALCISTA':'BAJISTA'):'--';
-    const dirCol=dir==='ALCISTA'?'var(--up)':dir==='BAJISTA'?'var(--dn)':'var(--mt)';
-    const zCol=Math.abs(z)>=zThr[a]?'var(--pu)':Math.abs(z)>=1.3?'var(--go)':'var(--mt)';
-    const tick=b.currentTick?b.currentTick.toFixed(3):(b.closes.length?b.closes[b.closes.length-1].toFixed(3):'--');
-
-    // Card class
-    const hasFusion=st.zpeakSig!==null&&st.trendSig!==null&&st.zpeakSig===st.trendSig;
-    const cls=hasFusion?'fusion-sig':st.zpeakSig?'zpeak-sig':st.trendSig?'trend-sig':
-      (now<st.blockedUntil?'blocked':'');
-
-    // State label
-    let stateLabel='SCAN', stateColor='var(--mt)';
-    if(st.hasContract){stateLabel='CONTRATO ABIERTO';stateColor='var(--cy)';}
-    else if(now<st.blockedUntil){stateLabel='BLOQ '+Math.ceil((st.blockedUntil-now)/1000)+'s';stateColor='var(--dn)';}
-    else if(now<pauseUntil){stateLabel='PAUSA GLOBAL';stateColor='var(--go)';}
-    else if(hasFusion){stateLabel='🌟 FUSION READY';stateColor='var(--go)';}
-    else if(st.zpeakSig){stateLabel='⚡ Z-PEAK READY';stateColor='var(--pu)';}
-    else if(st.trendSig){stateLabel='📈 TREND READY';stateColor='var(--up)';}
-
-    // Fusion dots
-    const zDot=st.zpeakSig?'zpeak':'';
-    const tDot=st.trendSig?'trend':'';
-    const bothDot=hasFusion?'both':'';
-
-    return `<div class="acard ${cls}">
-      <div class="ahead">
-        <div class="aname" style="color:${dirCol}">${LABELS[a]}</div>
-        <div class="aprice">${tick}</div>
+function buildAssetCards() {
+  document.getElementById('acpGrid').innerHTML = ASSETS.map(a => {
+    const c = cfg[a];
+    return `
+    <div class="acp-card" id="card_${a}">
+      <div class="acp-sym">
+        <span class="acp-sym-name">${LABELS[a]}</span>
+        <span class="acp-sym-price" id="price_${a}">---</span>
       </div>
-      <div class="abody">
-        <div class="arow"><span class="arow-l">Z-Score</span><span class="arow-v" style="color:${zCol}">${z.toFixed(3)}</span></div>
-        <div class="arow"><span class="arow-l">Tendencia</span><span class="arow-v" style="color:${dirCol}">${dir}</span></div>
-        <div class="arow"><span class="arow-l">EMA 9</span><span class="arow-v" style="color:var(--up)">${b.ema9?b.ema9.toFixed(3):'--'}</span></div>
-        <div class="arow"><span class="arow-l">EMA 21</span><span class="arow-v" style="color:var(--cy)">${b.ema21?b.ema21.toFixed(3):'--'}</span></div>
-        <div class="arow"><span class="arow-l">RSI</span><span class="arow-v" style="color:${b.rsi>=70?'var(--dn)':b.rsi<=30?'var(--up)':'var(--mt)'}">${b.rsi?b.rsi.toFixed(1):'--'}</span></div>
-        <div class="arow"><span class="arow-l">Fuerza EMA</span><span class="arow-v" style="color:${trend.strength>=3?'var(--up)':trend.strength>=1?'var(--go)':'var(--mt)'}">${trend.label}</span></div>
-        <div class="arow"><span class="arow-l">Velas (${a==='R_10'?'5min':'1min'})</span><span class="arow-v">${b.closes.length}/${HIST}</span></div>
-        <div class="fusion-ind">
-          <span class="fi-label">Z-Peak · EMA</span>
-          <div class="fi-dots">
-            <div class="fi-dot ${bothDot||zDot}" title="Z-Peak"></div>
-            <div class="fi-dot ${bothDot||tDot}" title="EMA Trend"></div>
-          </div>
+
+      <div class="acp-row">
+        <span class="acp-lbl">UMBRAL Z ±</span>
+        <input type="number" class="acp-inp" id="zt_${a}"
+          value="${c.zThr}" min="0.5" max="5" step="0.1"
+          onchange="cfg['${a}'].zThr=parseFloat(this.value);addLog('⚙️ ${LABELS[a]} umbral Z → '+this.value)">
+      </div>
+
+      <div class="acp-row">
+        <span class="acp-lbl">TICKS VENTANA</span>
+        <input type="number" class="acp-inp" id="tk_${a}"
+          value="${c.ticks}" min="5" max="200" step="5"
+          onchange="cfg['${a}'].ticks=parseInt(this.value);buf['${a}'].prices=[];addLog('⚙️ ${LABELS[a]} ticks → '+this.value)">
+      </div>
+
+      <div class="acp-row">
+        <span class="acp-lbl">DURACIÓN (min)</span>
+        <input type="number" class="acp-inp" id="dur_${a}"
+          value="${c.duration}" min="1" max="5" step="1"
+          onchange="cfg['${a}'].duration=parseInt(this.value);addLog('⚙️ ${LABELS[a]} duración → '+this.value+'min')">
+      </div>
+
+      <div class="acp-row">
+        <span class="acp-lbl">ACTIVO</span>
+        <input type="checkbox" id="act_${a}" ${c.active ? 'checked' : ''}
+          style="width:18px;height:18px;accent-color:var(--up);cursor:pointer"
+          onchange="cfg['${a}'].active=this.checked;addLog('⚙️ ${LABELS[a]} → '+(this.checked?'ON':'OFF'))">
+      </div>
+
+      <!-- Z METER -->
+      <div class="z-meter-wrap">
+        <div class="z-meter-lbl">
+          <span>-${c.zThr}</span>
+          <span style="color:var(--mt)">Z-SCORE</span>
+          <span>+${c.zThr}</span>
         </div>
-        <div class="astate" style="color:${stateColor}">${stateLabel}</div>
+        <div class="z-meter-track" id="ztrack_${a}">
+          <div class="z-center-line"></div>
+          <div class="z-bar" id="zbar_${a}"></div>
+          <div class="z-thr-line" id="zthrL_${a}" style="right:auto"></div>
+          <div class="z-thr-line" id="zthrR_${a}" style="right:auto"></div>
+        </div>
       </div>
+
+      <div class="acp-zval" id="zval_${a}" style="color:var(--mt)">0.000</div>
+      <div class="acp-meta" id="zmeta_${a}">0 / ${c.ticks} ticks</div>
+      <div class="acp-signal" id="zsig_${a}" style="color:var(--mt)">SCAN</div>
     </div>`;
   }).join('');
 }
 
-function updateStats(){
-  document.getElementById('stW').innerText=wins;
-  document.getElementById('stL').innerText=losses;
-  const tot=wins+losses;
-  document.getElementById('stWR').innerText=tot>0?((wins/tot)*100).toFixed(1)+'%':'0%';
-  document.getElementById('stFus').innerText=fusionCount;
-  const pnl=balance-sessionStart;
-  const pEl=document.getElementById('stPnL');
-  pEl.innerText=(pnl>=0?'+':'')+'$'+pnl.toFixed(2);
-  pEl.className='sc-v '+(pnl>=0?'g':'r');
-  document.getElementById('balVal').innerText='$'+balance.toFixed(2);
+function updateAssetCard(a) {
+  const b   = buf[a];
+  const c   = cfg[a];
+  const st  = ast[a];
+  const now = Date.now();
+  const z   = b.currentZ;
+  const thr = c.zThr;
+  const abs = Math.abs(z);
 
-  const dd=Math.max(0,sessionStart-balance);
-  const ddEl=document.getElementById('sfDD');
-  ddEl.innerText='$'+dd.toFixed(2);
-  ddEl.style.color=dd>0?'var(--dn)':'var(--up)';
-  document.getElementById('sfStop').innerText='$'+(sessionStart*0.05).toFixed(2);
-  const skEl=document.getElementById('sfStreak');
-  skEl.innerText=lossStreak;
-  skEl.style.color=lossStreak>=2?'var(--dn)':'var(--go)';
-  const now=Date.now();
-  const cEl=document.getElementById('sfCool');
-  if(pauseUntil>now){cEl.innerText=Math.ceil((pauseUntil-now)/1000)+'s';cEl.style.color='var(--dn)';}
-  else{cEl.innerText='OK';cEl.style.color='var(--up)';}
+  // Price
+  const prEl = document.getElementById('price_' + a);
+  if (prEl && b.lastPrice) prEl.innerText = b.lastPrice.toFixed(3);
+
+  // Z value color
+  const zColor = abs >= thr ? (z > 0 ? 'var(--dn)' : 'var(--up)') :
+    abs >= thr * 0.7 ? 'var(--go)' : 'var(--mt)';
+
+  const zvEl = document.getElementById('zval_' + a);
+  if (zvEl) { zvEl.innerText = z.toFixed(3); zvEl.style.color = zColor; }
+
+  // Meta
+  const zmEl = document.getElementById('zmeta_' + a);
+  if (zmEl) zmEl.innerText = `${b.prices.length} / ${c.ticks} ticks`;
+
+  // Z bar — mapear z a posición en la barra (centro = 50%)
+  const zbar = document.getElementById('zbar_' + a);
+  if (zbar) {
+    const maxZ   = Math.max(thr * 1.5, 3);
+    const pct    = Math.min(1, abs / maxZ);
+    const width  = pct * 50;
+    if (z > 0) {
+      zbar.style.left      = '50%';
+      zbar.style.width     = width + '%';
+      zbar.style.background = abs >= thr ? 'var(--dn)' : 'var(--go)';
+    } else {
+      zbar.style.left  = (50 - width) + '%';
+      zbar.style.width = width + '%';
+      zbar.style.background = abs >= thr ? 'var(--up)' : 'var(--go)';
+    }
+  }
+
+  // Umbral lines
+  const maxZ = Math.max(thr * 1.5, 3);
+  const thrPct = Math.min(50, (thr / maxZ) * 50);
+  const thrL = document.getElementById('zthrL_' + a);
+  const thrR = document.getElementById('zthrR_' + a);
+  if (thrL) { thrL.style.left = (50 - thrPct) + '%'; thrL.style.background = 'var(--up)'; }
+  if (thrR) { thrR.style.left = (50 + thrPct) + '%'; thrR.style.background = 'var(--dn)'; }
+
+  // Signal label
+  const sigEl = document.getElementById('zsig_' + a);
+  const card  = document.getElementById('card_' + a);
+  if (!sigEl || !card) return;
+
+  if (!c.active) {
+    sigEl.innerText = 'INACTIVO'; sigEl.style.color = 'var(--mt)';
+    card.className = 'acp-card'; return;
+  }
+  if (st.hasContract) {
+    sigEl.innerText = 'CONTRATO ABIERTO'; sigEl.style.color = 'var(--cy)';
+    card.className = 'acp-card'; return;
+  }
+  if (now < st.blockedUntil) {
+    sigEl.innerText = 'BLOQ ' + Math.ceil((st.blockedUntil - now) / 1000) + 's';
+    sigEl.style.color = 'var(--dn)'; card.className = 'acp-card blocked'; return;
+  }
+  if (now < pauseUntil) {
+    sigEl.innerText = 'PAUSA ' + Math.ceil((pauseUntil - now) / 1000) + 's';
+    sigEl.style.color = 'var(--go)'; card.className = 'acp-card'; return;
+  }
+  if (b.prices.length < c.ticks) {
+    sigEl.innerText = 'CARGANDO...'; sigEl.style.color = 'var(--mt)';
+    card.className = 'acp-card'; return;
+  }
+
+  if (z >= thr) {
+    sigEl.innerText = '▼ PUT READY'; sigEl.style.color = 'var(--dn)';
+    card.className = 'acp-card active-dn';
+  } else if (z <= -thr) {
+    sigEl.innerText = '▲ CALL READY'; sigEl.style.color = 'var(--up)';
+    card.className = 'acp-card active-up';
+  } else {
+    sigEl.innerText = 'SCAN'; sigEl.style.color = 'var(--mt)';
+    card.className = 'acp-card';
+  }
 }
 
-function buildThresh(){
-  document.getElementById('thrGrid').innerHTML=ASSETS.map(a=>`
-    <div class="tcard">
-      <div class="tcard-sym">${LABELS[a]}</div>
-      <div class="trow">
-        <span class="trow-l">Umbral Z</span>
-        <input type="number" class="trow-i" id="zt_${a}" value="${zThr[a]}" step="0.1" min="1.2"
-          onchange="zThr['${a}']=parseFloat(this.value);addLog('⚙️ ${LABELS[a]} Z → '+this.value)">
-      </div>
-      <div class="trow">
-        <span class="trow-l">Sep EMA mín</span>
-        <input type="number" class="trow-i" id="ms_${a}" value="${minSep[a]}" step="0.0001" min="0.0001"
-          onchange="minSep['${a}']=parseFloat(this.value);addLog('⚙️ ${LABELS[a]} sep → '+this.value)">
-      </div>
-    </div>`).join('');
+function updateStats() {
+  document.getElementById('stW').innerText   = wins;
+  document.getElementById('stL').innerText   = losses;
+  const tot = wins + losses;
+  document.getElementById('stWR').innerText  = tot > 0 ? ((wins/tot)*100).toFixed(1)+'%' : '0%';
+  document.getElementById('stOps').innerText = tot;
+  const pnl = balance - sessionStart;
+  const pEl = document.getElementById('stPnL');
+  pEl.innerText   = (pnl >= 0 ? '+' : '') + '$' + pnl.toFixed(2);
+  pEl.className   = 'stat-v ' + (pnl >= 0 ? 'g' : 'r');
+  document.getElementById('balVal').innerText = '$' + balance.toFixed(2);
+
+  const dd   = Math.max(0, sessionStart - balance);
+  const ddEl = document.getElementById('sfDD');
+  ddEl.innerText     = '$' + dd.toFixed(2);
+  ddEl.style.color   = dd > 0 ? 'var(--dn)' : 'var(--up)';
+  document.getElementById('sfStop').innerText  = '$' + (sessionStart * 0.05).toFixed(2);
+  const skEl = document.getElementById('sfStr');
+  skEl.innerText     = lossStreak;
+  skEl.style.color   = lossStreak >= 2 ? 'var(--dn)' : 'var(--go)';
+  const now  = Date.now();
+  const cEl  = document.getElementById('sfCool');
+  if (pauseUntil > now) {
+    cEl.innerText    = Math.ceil((pauseUntil - now)/1000) + 's';
+    cEl.style.color  = 'var(--dn)';
+  } else {
+    cEl.innerText    = 'OK';
+    cEl.style.color  = 'var(--up)';
+  }
 }
 
-function addLog(msg,cls=''){
-  const t=new Date().toLocaleTimeString();
-  const d=document.createElement('div');
-  d.className=cls; d.textContent='['+t+'] '+msg;
-  const el=document.getElementById('logDiv');
-  el.appendChild(d); el.scrollTop=el.scrollHeight;
+function addLog(msg, cls = '') {
+  const t  = new Date().toLocaleTimeString();
+  const d  = document.createElement('div');
+  d.className   = cls;
+  d.textContent = '[' + t + '] ' + msg;
+  const el = document.getElementById('logDiv');
+  el.appendChild(d);
+  el.scrollTop = el.scrollHeight;
 }
 
 // ══════════════════════════════════════════════════════════════════════════
 // WEBSOCKET
 // ══════════════════════════════════════════════════════════════════════════
-function startBot(){
-  const token=document.getElementById('apiToken').value.trim();
-  if(!token){addLog('❌ Ingresa tu token API','ll');return;}
-  if(running) return;
+function startBot() {
+  const token = document.getElementById('apiToken').value.trim();
+  if (!token) { addLog('❌ Ingresa tu token API', 'll'); return; }
+  if (running) return;
 
-  balance=100; sessionStart=100;
-  wins=0; losses=0; lossStreak=0; pauseUntil=0; fusionCount=0;
-  ASSETS.forEach(a=>{
-    initBuf(a);
-    ast[a]={lossStreak:0,blockedUntil:0,lastTrade:0,hasContract:false,zpeakSig:null,trendSig:null,trendStr:0,lastTrendDir:null};
-  });
-  c2a={};
-  pendingAsset=null;
-  running=true;
+  balance = 100; sessionStart = 100;
+  wins = 0; losses = 0; lossStreak = 0; pauseUntil = 0;
+  ASSETS.forEach(a => { initBuf(a); initAst(a); });
+  c2a = {};
+  pendingAsset = null;
+  running = true;
 
-  const btn=document.getElementById('toggleBtn');
-  btn.innerText='⏹ DETENER'; btn.className='btn btn-st';
-  document.getElementById('statusTxt').innerText='CONECTANDO...';
-  document.getElementById('onlineDot').className='dot';
-  document.getElementById('statusDot').className='dot';
+  const btn = document.getElementById('toggleBtn');
+  btn.innerText = '⏹ DETENER'; btn.className = 'btn btn-st';
+  document.getElementById('statusTxt').innerText = 'CONECTANDO...';
+  document.getElementById('onlineDot').className = 'dot';
+  document.getElementById('statusDot').className = 'dot';
 
-  ws=new WebSocket('wss://ws.binaryws.com/websockets/v3?app_id=1089');
+  ws = new WebSocket('wss://ws.binaryws.com/websockets/v3?app_id=1089');
 
-  ws.onopen=()=>{
-    ws.send(JSON.stringify({authorize:document.getElementById('apiToken').value.trim()}));
-    addLog('🔌 Conectando a Deriv...','li');
+  ws.onopen = () => {
+    ws.send(JSON.stringify({ authorize: token }));
+    addLog('🔌 Conectando a Deriv WebSocket...', 'li');
   };
 
-  ws.onmessage=(e)=>{
-    const d=JSON.parse(e.data);
+  ws.onmessage = (e) => {
+    const d = JSON.parse(e.data);
 
-    if(d.authorize){
-      balance=d.authorize.balance; sessionStart=balance;
-      addLog('✅ Autorizado · Balance: $'+balance.toFixed(2),'li');
-      document.getElementById('statusTxt').innerText='ONLINE — CARGANDO VELAS...';
-      document.getElementById('onlineDot').className='dot on';
-      document.getElementById('statusDot').className='dot on';
-      ASSETS.forEach(a=>{
-        ws.send(JSON.stringify({ticks_history:a,style:'candles',granularity:GRAN[a],count:HIST,end:'latest',subscribe:1}));
-        ws.send(JSON.stringify({ticks:a,subscribe:1}));
+    // ── AUTORIZACIÓN ────────────────────────────────────────────────
+    if (d.authorize) {
+      balance     = d.authorize.balance;
+      sessionStart = balance;
+      addLog('✅ Autorizado · Balance: $' + balance.toFixed(2), 'li');
+      document.getElementById('statusTxt').innerText = 'ONLINE — SUSCRIBIENDO TICKS...';
+      document.getElementById('onlineDot').className = 'dot on';
+      document.getElementById('statusDot').className = 'dot on';
+
+      // Suscribir ticks de los activos activos
+      ASSETS.forEach(a => {
+        ws.send(JSON.stringify({ ticks: a, subscribe: 1 }));
       });
-      ws.send(JSON.stringify({balance:1}));
+      ws.send(JSON.stringify({ balance: 1 }));
       updateStats();
+      document.getElementById('statusTxt').innerText = 'ONLINE — Z-SCORE ENGINE ACTIVO';
     }
 
-    if(d.balance){balance=d.balance.balance;updateStats();}
+    // ── BALANCE ─────────────────────────────────────────────────────
+    if (d.balance) { balance = d.balance.balance; updateStats(); }
 
-    if(d.tick){
-      const sym=d.tick.symbol;
-      if(buf[sym]!==undefined){buf[sym].currentTick=parseFloat(d.tick.quote);updateUI();}
+    // ── TICK — corazón del sistema ────────────────────────────────
+    if (d.tick) {
+      const sym   = d.tick.symbol;
+      const price = parseFloat(d.tick.quote);
+      if (buf[sym] !== undefined) onTick(sym, price);
     }
 
-    if(d.candles){
-      const sym=d.echo_req&&d.echo_req.ticks_history;
-      if(sym&&buf[sym]!==undefined){
-        d.candles.forEach(c=>{
-          const b=buf[sym];
-          b.prevEma9=b.ema9; b.prevEma21=b.ema21;
-          const close=parseFloat(c.close);
-          b.closes.push(close); b.opens.push(parseFloat(c.open));
-          b.highs.push(parseFloat(c.high)); b.lows.push(parseFloat(c.low));
-          if(b.closes.length>HIST){b.closes.shift();b.opens.shift();b.highs.shift();b.lows.shift();}
-          b.ema3   = calcEMA(3,  close, b.ema3);
-          b.ema9zp = calcEMA(9,  close, b.ema9zp);
-          b.ema9   = calcEMA(9,  close, b.ema9);
-          b.ema21  = calcEMA(21, close, b.ema21);
-          b.lastOpenTime=c.epoch;
-        });
-        buf[sym].rsi=calcRSI(buf[sym].closes);
-        buf[sym].candleReady=buf[sym].closes.length>=READY;
-        addLog(`📊 ${LABELS[sym]} ${buf[sym].closes.length} velas | EMA9:${buf[sym].ema9.toFixed(3)} EMA21:${buf[sym].ema21.toFixed(3)} Z:${calcZ(buf[sym].closes).toFixed(2)}`,'li');
-        updateUI();
-        if(ASSETS.every(a=>buf[a].candleReady)){
-          document.getElementById('statusTxt').innerText='🟢 ONLINE — FUSION ENGINE ACTIVO · Monitoreando señales...';
-        }
+    // ── PROPOSAL ────────────────────────────────────────────────────
+    if (d.proposal && d.proposal.id) {
+      if (pendingAsset) {
+        c2a[d.proposal.id] = pendingAsset;
+        pendingAsset = null;
+      }
+      ws.send(JSON.stringify({
+        buy: d.proposal.id,
+        price: parseFloat(document.getElementById('stake').value) || 1
+      }));
+    }
+
+    // ── BUY ─────────────────────────────────────────────────────────
+    if (d.buy) {
+      const cid = d.buy.contract_id;
+      // Mover el mapeo del proposal_id al contract_id real
+      const propId = Object.keys(c2a).find(k => typeof c2a[k] === 'string' && k !== String(cid));
+      if (propId) {
+        const sym = c2a[propId];
+        delete c2a[propId];
+        c2a[cid] = sym;
+        ws.send(JSON.stringify({ proposal_open_contract: 1, contract_id: cid, subscribe: 1 }));
+        addLog('📋 Contrato ' + LABELS[sym] + ' ID:' + cid, 'li');
+      } else if (c2a[cid]) {
+        ws.send(JSON.stringify({ proposal_open_contract: 1, contract_id: cid, subscribe: 1 }));
+        addLog('📋 Contrato ' + (LABELS[c2a[cid]] || cid), 'li');
       }
     }
 
-    if(d.ohlc){
-      const ohlc=d.ohlc; const sym=ohlc.symbol;
-      if(buf[sym]!==undefined&&running){
-        const b=buf[sym];
-        const openTime=parseInt(ohlc.open_time);
-        if(b.lastOpenTime===0){
-          b.lastOpenTime=openTime;
-          b.liveCandle={open:ohlc.open,high:ohlc.high,low:ohlc.low,close:ohlc.close};
-        } else if(openTime>b.lastOpenTime){
-          if(b.liveCandle) processClosedCandle(sym,b.liveCandle);
-          b.lastOpenTime=openTime;
-          b.liveCandle={open:ohlc.open,high:ohlc.high,low:ohlc.low,close:ohlc.close};
-        } else {
-          if(!b.liveCandle) b.liveCandle={open:ohlc.open,high:ohlc.high,low:ohlc.low,close:ohlc.close};
-          b.liveCandle.close=ohlc.close;
-          b.liveCandle.high=ohlc.high;
-          b.liveCandle.low=ohlc.low;
-        }
+    // ── RESULTADO ────────────────────────────────────────────────────
+    if (d.proposal_open_contract && d.proposal_open_contract.is_sold) {
+      const poc = d.proposal_open_contract;
+      const sym = c2a[poc.contract_id] || ASSETS.find(a => poc.underlying === a);
+      if (sym) {
+        delete c2a[poc.contract_id];
+        onResult(sym, parseFloat(poc.profit));
       }
     }
 
-    if(d.proposal&&d.proposal.id){
-      // pendingAsset se fija en executeTrade antes de enviar el proposal
-      if(pendingAsset){
-        c2a[d.proposal.id]=pendingAsset;
-        pendingAsset=null;
-      }
-      ws.send(JSON.stringify({buy:d.proposal.id,price:parseFloat(document.getElementById('stake').value)||1}));
-    }
-
-    if(d.buy){
-      const cid=d.buy.contract_id;
-      // Buscar el activo por proposal_id (ya mapeado arriba)
-      const sym=Object.entries(c2a).find(([k,v])=>v!==undefined&&typeof v==='string'&&k!==String(cid))?.[1]
-        || c2a[cid]
-        || ASSETS.find(a=>ast[a].hasContract&&!Object.values(c2a).includes(a));
-      if(sym){
-        // Reasignar al contract_id definitivo
-        Object.keys(c2a).forEach(k=>{ if(c2a[k]===sym && k!==String(cid)) delete c2a[k]; });
-        c2a[cid]=sym;
-        ws.send(JSON.stringify({proposal_open_contract:1,contract_id:cid,subscribe:1}));
-        addLog('📋 Contrato '+LABELS[sym]+' ID:'+cid,'li');
-      }
-    }
-
-    if(d.proposal_open_contract&&d.proposal_open_contract.is_sold){
-      const poc=d.proposal_open_contract;
-      const sym=c2a[poc.contract_id]||ASSETS.find(a=>poc.underlying===a);
-      if(sym){delete c2a[poc.contract_id];onResult(sym,parseFloat(poc.profit));}
-    }
-
-    if(d.error) addLog('⚠️ '+d.error.message+' ('+d.error.code+')','ll');
+    if (d.error) addLog('⚠️ ' + d.error.message + ' (' + d.error.code + ')', 'll');
   };
 
-  ws.onerror=()=>{addLog('❌ Error WebSocket','ll');stopBot();};
-  ws.onclose=()=>{if(running){addLog('🔌 Conexión cerrada','ll');running=false;updateBtn();}};
+  ws.onerror  = () => { addLog('❌ Error WebSocket', 'll'); stopBot(); };
+  ws.onclose  = () => { if (running) { addLog('🔌 Conexión cerrada', 'll'); running = false; updateBtn(); } };
 }
 
-function stopBot(){
-  if(!running) return;
-  running=false;
-  if(ws){try{ws.close();}catch(e){}}
-  document.getElementById('statusTxt').innerText='OFFLINE';
-  document.getElementById('onlineDot').className='dot';
-  document.getElementById('statusDot').className='dot';
+function stopBot() {
+  if (!running) return;
+  running = false;
+  if (ws) { try { ws.close(); } catch(e) {} }
+  document.getElementById('statusTxt').innerText = 'OFFLINE';
+  document.getElementById('onlineDot').className = 'dot';
+  document.getElementById('statusDot').className = 'dot';
   updateBtn();
-  const tot=wins+losses;
-  addLog(`🛑 Detenido | Ops:${tot} Wins:${wins} WR:${tot>0?((wins/tot)*100).toFixed(1):0}% | Fusion:${fusionCount}`);
+  const tot = wins + losses;
+  addLog(`🛑 Detenido | Ops:${tot} Wins:${wins} WR:${tot>0?((wins/tot)*100).toFixed(1):0}%`);
 }
 
-function updateBtn(){
-  const btn=document.getElementById('toggleBtn');
-  btn.innerText=running?'⏹ DETENER':'▶ INICIAR FUSION BOT';
-  btn.className=running?'btn btn-st':'btn btn-go';
+function updateBtn() {
+  const btn = document.getElementById('toggleBtn');
+  btn.innerText = running ? '⏹ DETENER' : '▶ INICIAR BOT';
+  btn.className = running ? 'btn btn-st' : 'btn btn-go';
 }
 
 // ── INIT ──────────────────────────────────────────────────────────────────
-document.getElementById('toggleBtn').onclick=()=>running?stopBot():startBot();
-buildThresh(); updateStats(); updateUI();
+document.getElementById('toggleBtn').onclick = () => running ? stopBot() : startBot();
+buildAssetCards();
+updateStats();
+ASSETS.forEach(updateAssetCard);
 
-addLog('🌟 FUSION BOT cargado — Z-Peak + EMA Trend combinados','li');
-addLog('🌟 FUSION: Z-Peak + EMA misma dirección → entrada 4min','lfus');
-addLog('📈 TREND: EMA9/21 tendencia activa + slope → entrada 3min','li');
-addLog('⚙️ V10 usa velas 5min (menos ruido) | V25 usa velas 1min','li');
-addLog('⏱ Tendencia activa → CALL/PUT a favor | Score≥7→4min | resto→3min','li');
-addLog('🛡 Necesita 22 velas para EMA21 estable antes de operar','li');
+addLog('⚡ Z·BOT cargado — lógica única: Z-score puro sobre ticks en tiempo real', 'li');
+addLog('📐 Z ≥ +umbral → PUT | Z ≤ -umbral → CALL', 'li');
+addLog('⚙️ Configura umbral Z, ticks y duración por activo antes de iniciar', 'li');
+addLog('🛡 Protección: stop 5% · bloqueo 2 pérdidas por activo · pausa global 3 pérdidas', 'li');
 </script>
 </body>
 </html>
