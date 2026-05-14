@@ -439,14 +439,19 @@ body{
 
 const ASSETS  = ['R_10','R_25'];
 const LABELS  = {'R_10':'V10','R_25':'V25'};
-const GRAN    = 60;
+// Timeframe óptimo por activo:
+// V10 → velas de 5min (menos ruido, movimientos más limpios)
+// V25 → velas de 1min (volatilidad suficiente para 1min)
+const GRAN    = {'R_10': 300, 'R_25': 60};
 const HIST    = 30;
 const READY   = 10;   // velas mínimas antes de operar
 
 // Umbrales Z por activo
 let zThr = {'R_10':1.9, 'R_25':1.8};
 // Separación mínima EMA9/21 (relativa al precio)
-let minSep = {'R_10':0.0008, 'R_25':0.0006};
+// V10 en 5min → separación mayor porque velas más grandes
+// V25 en 1min → separación menor
+let minSep = {'R_10':0.0018, 'R_25':0.0008};
 
 const LOSS_BLOCK_AFTER = 2;
 const LOSS_BLOCK_MS    = 90000;
@@ -623,13 +628,10 @@ function emaFilterZP(a, dir){
 }
 
 // ── DURACIÓN DINÁMICA ─────────────────────────────────────────────────────
-function getDuration(score, strength){
-  // FUSION: score alto + fuerza EMA → duración por fuerza
-  if(strength>=1) return strength; // 1–5 min por fuerza
-  // Solo Z-Peak: duración por score
-  if(score>=8) return 3;
-  if(score>=5) return 2;
-  return 1;
+// Entrada a favor de tendencia: score alto → 4min, estándar → 3min
+function getDuration(score){
+  if(score>=7) return 4;
+  return 3;
 }
 
 // ══════════════════════════════════════════════════════════════════════════
@@ -717,56 +719,37 @@ function analyzeCandle(a){
   updateConfirmPanel(a, exh, emaFilt, crossValid, trend);
 
   // ══════════════════════════════════════════════════════════════════════
-  // MODO A — FUSION PURA: ambas señales en la misma dirección
+  // LÓGICA UNIFICADA — Entrada A FAVOR de la tendencia EMA9/21
+  //
+  // Regla: tendencia activa (EMA9 vs EMA21 + slope confirmado)
+  //        → entrar en esa dirección a 3 o 4 minutos
+  //
+  // Duración: Score Z ≥ 7 (Z-Peak coincide) → 4 min
+  //           Resto                          → 3 min
+  //
+  // No entra si la dirección no cambió desde la última operación
   // ══════════════════════════════════════════════════════════════════════
-  if(exh.exhausted && crossValid && exh.entryDir===crossDir2){
-    const duration=getDuration(exh.score, trend.strength);
-    fusionCount++;
-    addLog(
-      `🌟 FUSION ${LABELS[a]} → ${crossDir2} | Z:${exh.z.toFixed(2)} Score:${exh.score}/10 | Fuerza:${trend.label} | ${duration}min`,
-      'lfus'
-    );
-    executeTrade(a, crossDir2, duration, 'FUSION', exh, trend);
-    return;
+  if(!crossValid){
+    updateUI(); return;
   }
 
-  // ══════════════════════════════════════════════════════════════════════
-  // MODO B — Z-PEAK SOLO: agotamiento + EMA rápida, sin cruce 9/21
-  // ══════════════════════════════════════════════════════════════════════
-  if(exh.exhausted && emaFilt){
-    // Verificar que el cruce 9/21 no contradiga la dirección
-    if(crossValid && crossDir2!==exh.entryDir){
-      addLog(`🔶 Z-Peak ${LABELS[a]} ${exh.entryDir} — EMA21 cruza en contra → descartado`,'lf');
-      return;
-    }
-    const duration=getDuration(exh.score, 0);
-    addLog(
-      `⚡ Z-PEAK ${LABELS[a]} → ${exh.entryDir} | Z:${exh.z.toFixed(2)} Score:${exh.score}/10 | ${duration}min`,
-      'lk'
-    );
-    executeTrade(a, exh.entryDir, duration, 'Z-PEAK', exh, trend);
-    return;
+  if(st.lastTrendDir===crossDir2){
+    updateUI(); return;
   }
 
-  // ══════════════════════════════════════════════════════════════════════
-  // MODO C — EMA TREND SOLO: cruce válido + fuerza media+ + Z no contradice
-  // ══════════════════════════════════════════════════════════════════════
-  if(crossValid && trend.strength>=1){
-    // Si Z-Peak está en dirección contraria al cruce → no operar
-    if(exh.exhausted && exh.entryDir!==crossDir2){
-      addLog(`🔶 EMA Trend ${LABELS[a]} ${crossDir} — Z-Peak contradice → descartado`,'lf');
-      return;
-    }
-    const duration=trend.duration;
-    addLog(
-      `📈 EMA TREND ${LABELS[a]} → ${crossDir2} | Fuerza:${trend.label} (${trend.pct}%) | ${duration}min`,
-      'lk'
-    );
-    executeTrade(a, crossDir2, duration, 'TREND', exh, trend);
-    return;
-  }
+  const duration = getDuration(exh.score);
+  const isFusion = exh.exhausted && exh.entryDir===crossDir2;
+  const modeLabel = isFusion ? '🌟 FUSION' : '📈 TREND';
+  const logClass  = isFusion ? 'lfus' : 'lk';
+  if(isFusion) fusionCount++;
 
-  updateUI();
+  addLog(
+    `${modeLabel} ${LABELS[a]} → ${crossDir2} | Fuerza:${trend.label} (${trend.pct}%) | Z:${exh.z.toFixed(2)} Score:${exh.score}/10 | ${duration}min`,
+    logClass
+  );
+
+  st.lastTrendDir = crossDir2;
+  executeTrade(a, crossDir2, duration, modeLabel, exh, trend);
 }
 
 // ══════════════════════════════════════════════════════════════════════════
@@ -907,7 +890,7 @@ function updateUI(){
         <div class="arow"><span class="arow-l">EMA 21</span><span class="arow-v" style="color:var(--cy)">${b.ema21?b.ema21.toFixed(3):'--'}</span></div>
         <div class="arow"><span class="arow-l">RSI</span><span class="arow-v" style="color:${b.rsi>=70?'var(--dn)':b.rsi<=30?'var(--up)':'var(--mt)'}">${b.rsi?b.rsi.toFixed(1):'--'}</span></div>
         <div class="arow"><span class="arow-l">Fuerza EMA</span><span class="arow-v" style="color:${trend.strength>=3?'var(--up)':trend.strength>=1?'var(--go)':'var(--mt)'}">${trend.label}</span></div>
-        <div class="arow"><span class="arow-l">Velas</span><span class="arow-v">${b.closes.length}/${HIST}</span></div>
+        <div class="arow"><span class="arow-l">Velas (${a==='R_10'?'5min':'1min'})</span><span class="arow-v">${b.closes.length}/${HIST}</span></div>
         <div class="fusion-ind">
           <span class="fi-label">Z-Peak · EMA</span>
           <div class="fi-dots">
@@ -1013,7 +996,7 @@ function startBot(){
       document.getElementById('onlineDot').className='dot on';
       document.getElementById('statusDot').className='dot on';
       ASSETS.forEach(a=>{
-        ws.send(JSON.stringify({ticks_history:a,style:'candles',granularity:GRAN,count:HIST,end:'latest',subscribe:1}));
+        ws.send(JSON.stringify({ticks_history:a,style:'candles',granularity:GRAN[a],count:HIST,end:'latest',subscribe:1}));
         ws.send(JSON.stringify({ticks:a,subscribe:1}));
       });
       ws.send(JSON.stringify({balance:1}));
@@ -1134,10 +1117,10 @@ document.getElementById('toggleBtn').onclick=()=>running?stopBot():startBot();
 buildThresh(); updateStats(); updateUI();
 
 addLog('🌟 FUSION BOT cargado — Z-Peak + EMA Trend combinados','li');
-addLog('🌟 MODO A FUSION: Z extremo + cruce EMA9/21 misma dirección → máxima confianza','lfus');
-addLog('⚡ MODO B Z-PEAK: agotamiento + EMA3/9 → reversión confirmada','li');
-addLog('📈 MODO C TREND: cruce EMA9/21 fuerza≥MEDIA + Z no contradice → tendencia','li');
-addLog('⏱ Duración: Fusion→fuerza EMA(1-5min) | Z-Peak→score(1-3min) | Trend→fuerza(1-5min)','li');
+addLog('🌟 FUSION: Z-Peak + EMA misma dirección → entrada 4min','lfus');
+addLog('📈 TREND: EMA9/21 tendencia activa + slope → entrada 3min','li');
+addLog('⚙️ V10 usa velas 5min (menos ruido) | V25 usa velas 1min','li');
+addLog('⏱ Tendencia activa → CALL/PUT a favor | Score≥7→4min | resto→3min','li');
 addLog('🛡 Necesita 22 velas para EMA21 estable antes de operar','li');
 </script>
 </body>
