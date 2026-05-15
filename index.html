@@ -373,7 +373,8 @@ const GLOBAL_PAUSE_MS  = 40000;
 const COOLDOWN_MS      = 8000;
 
 let ws, running = false;
-let pendingAsset = null;
+let pendingAsset    = null;
+let pendingBuyAsset = null;
 let balance = 100, sessionStart = 100;
 let wins = 0, losses = 0, lossStreak = 0, pauseUntil = 0;
 
@@ -497,6 +498,7 @@ function executeTrade(asset, dir, z) {
   document.getElementById('sigD').innerText =
     `Z:${z.toFixed(3)} · ${cfg[asset].ticks} ticks · ${duration}min · $${stake}`;
 
+  pendingBuyAsset = asset; // fijar activo antes del proposal
   ws.send(JSON.stringify({
     proposal: 1,
     amount: stake,
@@ -751,6 +753,7 @@ function startBot() {
   ASSETS.forEach(a => { initBuf(a); initAst(a); });
   c2a = {};
   pendingAsset = null;
+  pendingBuyAsset = null;
   running = true;
 
   const btn = document.getElementById('toggleBtn');
@@ -812,17 +815,12 @@ function startBot() {
     // ── BUY ─────────────────────────────────────────────────────────
     if (d.buy) {
       const cid = d.buy.contract_id;
-      // Mover el mapeo del proposal_id al contract_id real
-      const propId = Object.keys(c2a).find(k => typeof c2a[k] === 'string' && k !== String(cid));
-      if (propId) {
-        const sym = c2a[propId];
-        delete c2a[propId];
-        c2a[cid] = sym;
+      // pendingBuyAsset se fija en executeTrade — mapeo directo y simple
+      if (pendingBuyAsset) {
+        c2a[cid] = pendingBuyAsset;
+        pendingBuyAsset = null;
         ws.send(JSON.stringify({ proposal_open_contract: 1, contract_id: cid, subscribe: 1 }));
-        addLog('📋 Contrato ' + LABELS[sym] + ' ID:' + cid, 'li');
-      } else if (c2a[cid]) {
-        ws.send(JSON.stringify({ proposal_open_contract: 1, contract_id: cid, subscribe: 1 }));
-        addLog('📋 Contrato ' + (LABELS[c2a[cid]] || cid), 'li');
+        addLog('📋 Contrato ' + LABELS[c2a[cid]] + ' ID:' + cid, 'li');
       }
     }
 
