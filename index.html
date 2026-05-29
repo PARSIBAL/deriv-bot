@@ -373,8 +373,9 @@ const GLOBAL_PAUSE_MS  = 40000;
 const COOLDOWN_MS      = 8000;
 
 let ws, running = false;
-let pendingAsset    = null;
-let pendingBuyAsset = null;
+// Cola de proposals pendientes: proposalId → asset
+// Soluciona el problema cuando 2 activos abren contrato al mismo tiempo
+const pendingProposals = {};
 let balance = 100, sessionStart = 100;
 let wins = 0, losses = 0, lossStreak = 0, pauseUntil = 0;
 
@@ -388,7 +389,10 @@ ASSETS.forEach(initBuf);
 // ── ESTADO ────────────────────────────────────────────────────────────────
 let ast = {};
 function initAst(a) {
-  ast[a] = { lossStreak: 0, blockedUntil: 0, lastTrade: 0, hasContract: false };
+  ast[a] = { lossStreak: 0, blockedUntil: 0, lastTrade: 0, hasContract: false,
+             waitingProposal: false, pendingDir: null,
+             // Cobertura: rastrear picos Z consecutivos
+             peakCount: 0, lastPeakDir: null, lastPeakTime: 0 };
 }
 ASSETS.forEach(initAst);
 
@@ -459,17 +463,54 @@ function analyzeZ(asset) {
 
   // SEÑAL PUT: Z extremo positivo → precio demasiado alto → reversión bajista
   if (z >= thr) {
-    addLog(`🔴 PUT ${LABELS[asset]} Z:${z.toFixed(3)} ≥ ${thr} | ${c.ticks}ticks | ${c.duration}min`, 'lk');
-    executeTrade(asset, 'PUT', z);
+    const stakeMulti = calcCoverageStake(asset, 'PUT');
+    addLog(`🔴 PUT ${LABELS[asset]} Z:${z.toFixed(3)} ≥ ${thr} | ${c.ticks}ticks | ${c.duration}min${stakeMulti>1?' 🔁 COBERTURA x'+stakeMulti:''}`, 'lk');
+    executeTrade(asset, 'PUT', z, stakeMulti);
     return;
   }
 
   // SEÑAL CALL: Z extremo negativo → precio demasiado bajo → reversión alcista
   if (z <= -thr) {
-    addLog(`🟢 CALL ${LABELS[asset]} Z:${z.toFixed(3)} ≤ -${thr} | ${c.ticks}ticks | ${c.duration}min`, 'lk');
-    executeTrade(asset, 'CALL', z);
+    const stakeMulti = calcCoverageStake(asset, 'CALL');
+    addLog(`🟢 CALL ${LABELS[asset]} Z:${z.toFixed(3)} ≤ -${thr} | ${c.ticks}ticks | ${c.duration}min${stakeMulti>1?' 🔁 COBERTURA x'+stakeMulti:''}`, 'lk');
+    executeTrade(asset, 'CALL', z, stakeMulti);
     return;
   }
+}
+
+// ══════════════════════════════════════════════════════════════════════════
+// COBERTURA — stake progresivo en picos Z consecutivos
+//
+// Si el Z supera el umbral en la misma dirección varias veces seguidas
+// (dentro de una ventana de 30 segundos) → se considera pico confirmado
+// y se multiplica el stake para cubrir operaciones anteriores:
+//   1er pico  → stake base (x1)
+//   2do pico  → stake x1.5
+//   3er pico  → stake x2.0
+//   4to+ pico → stake x2.5 (máximo)
+// Si la dirección cambia → resetear contador
+// ══════════════════════════════════════════════════════════════════════════
+const PEAK_WINDOW_MS = 30000; // 30s para considerar picos consecutivos
+const COVERAGE_MULT  = [1, 1.5, 2.0, 2.5]; // multiplicadores por pico
+
+function calcCoverageStake(asset, dir) {
+  const st  = ast[asset];
+  const now = Date.now();
+
+  // Si cambió la dirección o pasaron más de 30s → resetear
+  if (st.lastPeakDir !== dir || (now - st.lastPeakTime) > PEAK_WINDOW_MS) {
+    st.peakCount    = 0;
+    st.lastPeakDir  = dir;
+  }
+
+  const idx  = Math.min(st.peakCount, COVERAGE_MULT.length - 1);
+  const mult = COVERAGE_MULT[idx];
+
+  st.peakCount++;
+  st.lastPeakTime = now;
+  st.lastPeakDir  = dir;
+
+  return mult;
 }
 
 // ══════════════════════════════════════════════════════════════════════════
@@ -483,13 +524,13 @@ function getStake() {
   return base;
 }
 
-function executeTrade(asset, dir, z) {
-  const stake    = getStake();
+function executeTrade(asset, dir, z, stakeMulti = 1) {
+  const stake    = Math.round(getStake() * stakeMulti * 100) / 100;
   const duration = cfg[asset].duration;
 
-  ast[asset].lastTrade  = Date.now();
-  ast[asset].hasContract = true;
-  pendingAsset = asset;
+  ast[asset].lastTrade   = Date.now();
+  ast[asset].hasContract  = true;
+  ast[asset].pendingDir   = dir;   // guardar dirección para cobertura
 
   // Actualizar señal en UI
   const sigV = document.getElementById('sigV');
@@ -498,7 +539,8 @@ function executeTrade(asset, dir, z) {
   document.getElementById('sigD').innerText =
     `Z:${z.toFixed(3)} · ${cfg[asset].ticks} ticks · ${duration}min · $${stake}`;
 
-  pendingBuyAsset = asset; // fijar activo antes del proposal
+  // Marcar que este activo tiene un proposal en vuelo
+  ast[asset].waitingProposal = true;
   ws.send(JSON.stringify({
     proposal: 1,
     amount: stake,
@@ -525,6 +567,7 @@ function onResult(asset, pnl) {
     wins++;
     lossStreak = 0;
     ast[asset].lossStreak = 0;
+    ast[asset].peakCount  = 0; // win → resetear cobertura
   } else {
     losses++;
     lossStreak++;
@@ -752,8 +795,7 @@ function startBot() {
   wins = 0; losses = 0; lossStreak = 0; pauseUntil = 0;
   ASSETS.forEach(a => { initBuf(a); initAst(a); });
   c2a = {};
-  pendingAsset = null;
-  pendingBuyAsset = null;
+  Object.keys(pendingProposals).forEach(k => delete pendingProposals[k]);
   running = true;
 
   const btn = document.getElementById('toggleBtn');
@@ -802,9 +844,11 @@ function startBot() {
 
     // ── PROPOSAL ────────────────────────────────────────────────────
     if (d.proposal && d.proposal.id) {
-      if (pendingAsset) {
-        c2a[d.proposal.id] = pendingAsset;
-        pendingAsset = null;
+      // Encontrar el activo que disparó este proposal
+      const pAsset = ASSETS.find(a => ast[a].waitingProposal);
+      if (pAsset) {
+        pendingProposals[d.proposal.id] = pAsset;
+        ast[pAsset].waitingProposal = false;
       }
       ws.send(JSON.stringify({
         buy: d.proposal.id,
@@ -814,13 +858,18 @@ function startBot() {
 
     // ── BUY ─────────────────────────────────────────────────────────
     if (d.buy) {
-      const cid = d.buy.contract_id;
-      // pendingBuyAsset se fija en executeTrade — mapeo directo y simple
-      if (pendingBuyAsset) {
-        c2a[cid] = pendingBuyAsset;
-        pendingBuyAsset = null;
+      const cid     = d.buy.contract_id;
+      const propId  = d.buy.buy; // el proposal_id que se compró
+      // Buscar el activo por proposal_id o por el primero con contrato pendiente
+      const sym = pendingProposals[propId]
+        || pendingProposals[Object.keys(pendingProposals)[0]]
+        || ASSETS.find(a => ast[a].hasContract && !Object.values(c2a).includes(a));
+      if (sym) {
+        // Limpiar entry de proposal y mapear al contract_id definitivo
+        Object.keys(pendingProposals).forEach(k => { if(pendingProposals[k]===sym) delete pendingProposals[k]; });
+        c2a[cid] = sym;
         ws.send(JSON.stringify({ proposal_open_contract: 1, contract_id: cid, subscribe: 1 }));
-        addLog('📋 Contrato ' + LABELS[c2a[cid]] + ' ID:' + cid, 'li');
+        addLog('📋 Contrato ' + LABELS[sym] + ' ID:' + cid, 'li');
       }
     }
 
