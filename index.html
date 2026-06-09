@@ -1069,44 +1069,37 @@ function renderHistory() {
   }
 
   // Tabla de sesiones
-  body.innerHTML = \`
-  <table class="hist-table">
-    <thead>
-      <tr>
-        <th>FECHA</th>
-        <th>OPS</th>
-        <th>W/L</th>
-        <th>WINRATE</th>
-        <th>P&L</th>
-        <th>STAKE</th>
-        <th>V10 Z/T/D</th>
-        <th>V25 Z/T/D</th>
-        <th>V50 Z/T/D</th>
-      </tr>
-    </thead>
-    <tbody>
-      \${hist.map(s => {
-        const pnl    = parseFloat(s.pnl);
-        const wr     = parseFloat(s.wr);
-        const pnlCol = pnl >= 0 ? 'var(--up)' : 'var(--dn)';
-        const wrCol  = wr >= 60 ? 'var(--up)' : wr >= 52 ? 'var(--go)' : 'var(--dn)';
-        const cfgStr = (a) => s.cfg && s.cfg[a]
-          ? \`\${s.cfg[a].zThr}/\${s.cfg[a].ticks}/\${s.cfg[a].duration}m\${s.cfg[a].active?'':' ✗'}\`
-          : '--';
-        return \`<tr>
-          <td style="color:var(--mt)">\${s.date} \${s.time}</td>
-          <td style="color:var(--wh)">\${s.ops}</td>
-          <td><span class="htag win">\${s.wins}W</span> <span class="htag loss">\${s.losses}L</span></td>
-          <td style="color:\${wrCol};font-weight:700">\${s.wr}%</td>
-          <td style="color:\${pnlCol};font-weight:700">\${pnl>=0?'+':''}\$\${s.pnl}</td>
-          <td style="color:var(--go)">\$\${s.stake}</td>
-          <td><span class="htag cfg">\${cfgStr('R_10')}</span></td>
-          <td><span class="htag cfg">\${cfgStr('R_25')}</span></td>
-          <td><span class="htag cfg">\${cfgStr('R_50')}</span></td>
-        </tr>\`;
-      }).join('')}
-    </tbody>
-  </table>\`;
+  var rows = hist.map(function(s) {
+    var pnl    = parseFloat(s.pnl);
+    var wr     = parseFloat(s.wr);
+    var pnlCol = pnl >= 0 ? 'var(--up)' : 'var(--dn)';
+    var wrCol  = wr >= 60 ? 'var(--up)' : wr >= 52 ? 'var(--go)' : 'var(--dn)';
+    var cfgStr = function(a) {
+      return (s.cfg && s.cfg[a])
+        ? s.cfg[a].zThr + '/' + s.cfg[a].ticks + '/' + s.cfg[a].duration + 'm' + (s.cfg[a].active ? '' : ' ✗')
+        : '--';
+    };
+    return '<tr>' +
+      '<td style="color:var(--mt)">' + s.date + ' ' + s.time + '</td>' +
+      '<td style="color:var(--wh)">' + s.ops + '</td>' +
+      '<td><span class="htag win">' + s.wins + 'W</span> <span class="htag loss">' + s.losses + 'L</span></td>' +
+      '<td style="color:' + wrCol + ';font-weight:700">' + s.wr + '%</td>' +
+      '<td style="color:' + pnlCol + ';font-weight:700">' + (pnl>=0?'+':'') + '$' + s.pnl + '</td>' +
+      '<td style="color:var(--go)">$' + s.stake + '</td>' +
+      '<td><span class="htag cfg">' + cfgStr('R_10') + '</span></td>' +
+      '<td><span class="htag cfg">' + cfgStr('R_25') + '</span></td>' +
+      '<td><span class="htag cfg">' + cfgStr('R_50') + '</span></td>' +
+      '</tr>';
+  }).join('');
+
+  body.innerHTML =
+    '<table class="hist-table">' +
+      '<thead><tr>' +
+        '<th>FECHA</th><th>OPS</th><th>W/L</th><th>WINRATE</th>' +
+        '<th>P&L</th><th>STAKE</th><th>V10 Z/T/D</th><th>V25 Z/T/D</th><th>V50 Z/T/D</th>' +
+      '</tr></thead>' +
+      '<tbody>' + rows + '</tbody>' +
+    '</table>';
 }
 
 // Guardar sesión al detener el bot
