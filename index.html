@@ -238,6 +238,61 @@ body {
 .lk { color: var(--go); font-weight: 700; font-size: 10px; }
 .lf { color: #2a3020; }
 
+.hist-section { margin-top: 16px; }
+.hist-title {
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 9px; color: var(--cy); letter-spacing: 3px;
+  text-transform: uppercase; margin-bottom: 8px;
+  display: flex; align-items: center; justify-content: space-between;
+}
+.hist-clear {
+  background: none; border: 1px solid var(--mt); border-radius: 4px;
+  padding: 2px 8px; font-family: 'Share Tech Mono', monospace;
+  font-size: 8px; color: var(--mt); cursor: pointer; letter-spacing: 1px;
+  transition: all .2s;
+}
+.hist-clear:hover { border-color: var(--dn); color: var(--dn); }
+.hist-table {
+  width: 100%; border-collapse: collapse;
+  font-family: 'Share Tech Mono', monospace; font-size: 9px;
+}
+.hist-table th {
+  text-align: left; padding: 5px 8px;
+  color: var(--mt); letter-spacing: 1px; font-weight: 400;
+  border-bottom: 1px solid var(--br);
+}
+.hist-table td {
+  padding: 6px 8px; border-bottom: 1px solid rgba(255,255,255,0.02);
+  vertical-align: middle;
+}
+.hist-table tr:hover td { background: rgba(255,255,255,0.02); }
+.htag {
+  display: inline-block; padding: 1px 5px; border-radius: 3px;
+  font-size: 8px; letter-spacing: 1px;
+}
+.htag.win  { background: rgba(0,255,136,0.1);  color: var(--up); }
+.htag.loss { background: rgba(255,45,85,0.1);   color: var(--dn); }
+.htag.cfg  { background: rgba(0,212,255,0.08); color: var(--cy); }
+.hist-empty {
+  text-align: center; padding: 20px;
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 9px; color: var(--mt); letter-spacing: 2px;
+}
+.hist-wrap {
+  background: var(--p1); border: 1px solid var(--br);
+  border-radius: 8px; overflow: hidden; max-height: 280px; overflow-y: auto;
+  scrollbar-width: thin; scrollbar-color: var(--mt2) transparent;
+}
+.hist-summary {
+  display: grid; grid-template-columns: repeat(4,1fr); gap: 7px; margin-bottom: 10px;
+}
+.hsb {
+  background: var(--p1); border: 1px solid var(--br);
+  border-radius: 7px; padding: 7px; text-align: center;
+}
+.hsb-l { font-family: 'Share Tech Mono', monospace; font-size: 7px; color: var(--mt); letter-spacing: 1px; }
+.hsb-v { font-family: 'Share Tech Mono', monospace; font-size: 1.1rem; margin-top: 2px; }
+
 /* scan line animation on active cards */
 @keyframes scanline {
   0%   { transform: translateY(-100%); opacity: 0; }
@@ -334,6 +389,23 @@ body {
   <!-- LOG -->
   <div class="log-l">📋 Log</div>
   <div class="log" id="logDiv"></div>
+
+  <!-- HISTORIAL DE SESIONES -->
+  <div class="hist-section">
+    <div class="hist-title">
+      <span>📊 HISTORIAL DE SESIONES</span>
+      <button class="hist-clear" onclick="clearHistory()">LIMPIAR</button>
+    </div>
+    <div class="hist-summary">
+      <div class="hsb"><div class="hsb-l">Sesiones</div><div class="hsb-v w" id="hsTot">0</div></div>
+      <div class="hsb"><div class="hsb-l">Ops Total</div><div class="hsb-v w" id="hsOps">0</div></div>
+      <div class="hsb"><div class="hsb-l">WR Global</div><div class="hsb-v o" id="hsWR">0%</div></div>
+      <div class="hsb"><div class="hsb-l">P&L Total</div><div class="hsb-v c" id="hsPnL">$0.00</div></div>
+    </div>
+    <div class="hist-wrap">
+      <div id="histBody"></div>
+    </div>
+  </div>
 
 </div>
 
@@ -918,6 +990,134 @@ addLog('⚡ Z·BOT cargado — lógica única: Z-score puro sobre ticks en tiemp
 addLog('📐 Z ≥ +umbral → PUT | Z ≤ -umbral → CALL', 'li');
 addLog('⚙️ Configura umbral Z, ticks y duración por activo antes de iniciar', 'li');
 addLog('🛡 Protección: stop 5% · bloqueo 2 pérdidas por activo · pausa global 3 pérdidas', 'li');
+
+// ══════════════════════════════════════════════════════════════════════════
+// HISTORIAL DE SESIONES — persistente con localStorage
+// Guarda: fecha/hora, configuración de cada activo, wins, losses, P&L
+// ══════════════════════════════════════════════════════════════════════════
+const HIST_KEY = 'zbot_session_history';
+
+function saveSession() {
+  const tot = wins + losses;
+  if (tot === 0) return; // no guardar sesiones vacías
+
+  const session = {
+    id:       Date.now(),
+    date:     new Date().toLocaleDateString('es', {day:'2-digit',month:'2-digit',year:'2-digit'}),
+    time:     new Date().toLocaleTimeString('es', {hour:'2-digit',minute:'2-digit'}),
+    wins,
+    losses,
+    ops:      tot,
+    wr:       ((wins / tot) * 100).toFixed(1),
+    pnl:      (balance - sessionStart).toFixed(2),
+    stake:    parseFloat(document.getElementById('stake').value) || 1,
+    // Snapshot de configuración al cierre
+    cfg: {
+      R_10: { zThr: cfg.R_10.zThr, ticks: cfg.R_10.ticks, duration: cfg.R_10.duration, active: cfg.R_10.active },
+      R_25: { zThr: cfg.R_25.zThr, ticks: cfg.R_25.ticks, duration: cfg.R_25.duration, active: cfg.R_25.active },
+      R_50: { zThr: cfg.R_50.zThr, ticks: cfg.R_50.ticks, duration: cfg.R_50.duration, active: cfg.R_50.active }
+    }
+  };
+
+  try {
+    const hist = JSON.parse(localStorage.getItem(HIST_KEY) || '[]');
+    hist.unshift(session); // más reciente primero
+    if (hist.length > 50) hist.pop(); // máximo 50 sesiones
+    localStorage.setItem(HIST_KEY, JSON.stringify(hist));
+    addLog('💾 Sesión guardada en historial', 'li');
+    renderHistory();
+  } catch(e) {
+    addLog('⚠️ No se pudo guardar historial: ' + e.message, 'll');
+  }
+}
+
+function loadHistory() {
+  try {
+    return JSON.parse(localStorage.getItem(HIST_KEY) || '[]');
+  } catch(e) { return []; }
+}
+
+function clearHistory() {
+  if (!confirm('¿Borrar todo el historial de sesiones?')) return;
+  localStorage.removeItem(HIST_KEY);
+  renderHistory();
+  addLog('🗑 Historial borrado', 'li');
+}
+
+function renderHistory() {
+  const hist = loadHistory();
+  const body = document.getElementById('histBody');
+  const tot  = hist.length;
+
+  // Actualizar resumen global
+  const totalOps  = hist.reduce((a, s) => a + s.ops, 0);
+  const totalWins = hist.reduce((a, s) => a + s.wins, 0);
+  const totalPnL  = hist.reduce((a, s) => a + parseFloat(s.pnl), 0);
+  const globalWR  = totalOps > 0 ? ((totalWins / totalOps) * 100).toFixed(1) : '0';
+
+  document.getElementById('hsTot').innerText  = tot;
+  document.getElementById('hsOps').innerText  = totalOps;
+  document.getElementById('hsWR').innerText   = globalWR + '%';
+  document.getElementById('hsWR').style.color = parseFloat(globalWR) >= 55 ? 'var(--up)' : parseFloat(globalWR) >= 50 ? 'var(--go)' : 'var(--dn)';
+  const pnlEl = document.getElementById('hsPnL');
+  pnlEl.innerText   = (totalPnL >= 0 ? '+' : '') + '$' + totalPnL.toFixed(2);
+  pnlEl.style.color = totalPnL >= 0 ? 'var(--up)' : 'var(--dn)';
+
+  if (tot === 0) {
+    body.innerHTML = '<div class="hist-empty">SIN SESIONES REGISTRADAS</div>';
+    return;
+  }
+
+  // Tabla de sesiones
+  body.innerHTML = \`
+  <table class="hist-table">
+    <thead>
+      <tr>
+        <th>FECHA</th>
+        <th>OPS</th>
+        <th>W/L</th>
+        <th>WINRATE</th>
+        <th>P&L</th>
+        <th>STAKE</th>
+        <th>V10 Z/T/D</th>
+        <th>V25 Z/T/D</th>
+        <th>V50 Z/T/D</th>
+      </tr>
+    </thead>
+    <tbody>
+      \${hist.map(s => {
+        const pnl    = parseFloat(s.pnl);
+        const wr     = parseFloat(s.wr);
+        const pnlCol = pnl >= 0 ? 'var(--up)' : 'var(--dn)';
+        const wrCol  = wr >= 60 ? 'var(--up)' : wr >= 52 ? 'var(--go)' : 'var(--dn)';
+        const cfgStr = (a) => s.cfg && s.cfg[a]
+          ? \`\${s.cfg[a].zThr}/\${s.cfg[a].ticks}/\${s.cfg[a].duration}m\${s.cfg[a].active?'':' ✗'}\`
+          : '--';
+        return \`<tr>
+          <td style="color:var(--mt)">\${s.date} \${s.time}</td>
+          <td style="color:var(--wh)">\${s.ops}</td>
+          <td><span class="htag win">\${s.wins}W</span> <span class="htag loss">\${s.losses}L</span></td>
+          <td style="color:\${wrCol};font-weight:700">\${s.wr}%</td>
+          <td style="color:\${pnlCol};font-weight:700">\${pnl>=0?'+':''}\$\${s.pnl}</td>
+          <td style="color:var(--go)">\$\${s.stake}</td>
+          <td><span class="htag cfg">\${cfgStr('R_10')}</span></td>
+          <td><span class="htag cfg">\${cfgStr('R_25')}</span></td>
+          <td><span class="htag cfg">\${cfgStr('R_50')}</span></td>
+        </tr>\`;
+      }).join('')}
+    </tbody>
+  </table>\`;
+}
+
+// Guardar sesión al detener el bot
+const _origStopBot = stopBot;
+stopBot = function() {
+  saveSession();
+  _origStopBot();
+};
+
+// Renderizar historial al cargar
+renderHistory();
 </script>
 </body>
 </html>
