@@ -435,11 +435,11 @@ const LABELS = { R_10: 'V10', R_25: 'V25', R_50: 'V50', RDBEAR: 'BEAR', RDBULL: 
 // Configuración por activo (editable desde la UI)
 // durationUnit: 'm' = minutos | 't' = ticks
 const cfg = {
-  R_10:   { zThr: 2.0, ticks: 30, duration: 3, durationUnit: 'm', active: true },
-  R_25:   { zThr: 1.8, ticks: 25, duration: 3, durationUnit: 'm', active: true },
-  R_50:   { zThr: 1.6, ticks: 20, duration: 2, durationUnit: 'm', active: true },
-  RDBEAR: { zThr: 1.8, ticks: 25, duration: 2, durationUnit: 't', active: true },
-  RDBULL: { zThr: 1.8, ticks: 25, duration: 2, durationUnit: 't', active: true }
+  R_10:   { zThr: 2.0, ticks: 30, duration: 3, durationUnit: 'm', active: true, dirMode: 'BOTH' },
+  R_25:   { zThr: 1.8, ticks: 25, duration: 3, durationUnit: 'm', active: true, dirMode: 'BOTH' },
+  R_50:   { zThr: 1.6, ticks: 20, duration: 2, durationUnit: 'm', active: true, dirMode: 'BOTH' },
+  RDBEAR: { zThr: 1.8, ticks: 25, duration: 2, durationUnit: 't', active: true, dirMode: 'BOTH' },
+  RDBULL: { zThr: 1.8, ticks: 25, duration: 2, durationUnit: 't', active: true, dirMode: 'BOTH' }
 };
 
 const LOSS_BLOCK_AFTER = 2;
@@ -538,6 +538,7 @@ function analyzeZ(asset) {
 
   // SEÑAL PUT: Z extremo positivo → precio demasiado alto → reversión bajista
   if (z >= thr) {
+    if (c.dirMode && c.dirMode !== 'BOTH' && c.dirMode !== 'PUT') return; // dirección restringida
     const stakeMulti = calcCoverageStake(asset, 'PUT');
     addLog(`🔴 PUT ${LABELS[asset]} Z:${z.toFixed(3)} ≥ ${thr} | ${c.ticks}ticks | ${c.duration}min${stakeMulti>1?' 🔁 COBERTURA x'+stakeMulti:''}`, 'lk');
     executeTrade(asset, 'PUT', z, stakeMulti);
@@ -546,6 +547,7 @@ function analyzeZ(asset) {
 
   // SEÑAL CALL: Z extremo negativo → precio demasiado bajo → reversión alcista
   if (z <= -thr) {
+    if (c.dirMode && c.dirMode !== 'BOTH' && c.dirMode !== 'CALL') return; // dirección restringida
     const stakeMulti = calcCoverageStake(asset, 'CALL');
     addLog(`🟢 CALL ${LABELS[asset]} Z:${z.toFixed(3)} ≤ -${thr} | ${c.ticks}ticks | ${c.duration}min${stakeMulti>1?' 🔁 COBERTURA x'+stakeMulti:''}`, 'lk');
     executeTrade(asset, 'CALL', z, stakeMulti);
@@ -718,6 +720,17 @@ function buildAssetCards() {
           style="width:18px;height:18px;accent-color:var(--up);cursor:pointer"
           onchange="cfg['${a}'].active=this.checked;addLog('⚙️ ${LABELS[a]} → '+(this.checked?'ON':'OFF'))">
       </div>
+
+      ${c.dirMode !== undefined ? `
+      <div class="acp-row">
+        <span class="acp-lbl">DIRECCIÓN</span>
+        <select class="acp-inp" id="dirmode_${a}" style="width:88px;cursor:pointer"
+          onchange="cfg['${a}'].dirMode=this.value;addLog('⚙️ ${LABELS[a]} dirección → '+this.value)">
+          <option value="BOTH" ${c.dirMode==='BOTH'?'selected':''}>AMBAS</option>
+          <option value="CALL" ${c.dirMode==='CALL'?'selected':''}>SOLO CALL</option>
+          <option value="PUT" ${c.dirMode==='PUT'?'selected':''}>SOLO PUT</option>
+        </select>
+      </div>` : ''}
 
       <!-- Z METER -->
       <div class="z-meter-wrap">
@@ -1028,7 +1041,8 @@ function saveSession() {
     // Snapshot de configuración al cierre (genérico para todos los activos)
     cfg: ASSETS.reduce((acc, a) => {
       acc[a] = { zThr: cfg[a].zThr, ticks: cfg[a].ticks, duration: cfg[a].duration,
-                 durationUnit: cfg[a].durationUnit || 'm', active: cfg[a].active };
+                 durationUnit: cfg[a].durationUnit || 'm', active: cfg[a].active,
+                 dirMode: cfg[a].dirMode };
       return acc;
     }, {})
   };
