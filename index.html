@@ -3,14 +3,14 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>XAUUSD Bot - Smart Liquidity (API Real)</title>
+    <title>XAUUSD Bot - Smart Liquidity</title>
     <style>
         * {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
         }
-        
+
         body {
             background: #0a0e17;
             color: #e6edf3;
@@ -18,12 +18,12 @@
             padding: 20px;
             min-height: 100vh;
         }
-        
+
         .container {
             max-width: 1400px;
             margin: 0 auto;
         }
-        
+
         .header {
             display: flex;
             justify-content: space-between;
@@ -34,20 +34,20 @@
             flex-wrap: wrap;
             gap: 10px;
         }
-        
+
         .header h1 {
             font-size: 28px;
             background: linear-gradient(135deg, #f0b90b, #f7931a);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
         }
-        
+
         .status-indicator {
             display: flex;
             align-items: center;
             gap: 10px;
         }
-        
+
         .status-dot {
             width: 12px;
             height: 12px;
@@ -55,18 +55,18 @@
             background: #ff4444;
             transition: background 0.3s;
         }
-        
+
         .status-dot.online {
             background: #44ff44;
             box-shadow: 0 0 15px #44ff44;
             animation: pulse 1.5s infinite;
         }
-        
+
         .status-dot.connecting {
             background: #ffab00;
             animation: pulse 1s infinite;
         }
-        
+
         @keyframes pulse {
             0%,
             100% {
@@ -76,21 +76,21 @@
                 opacity: 0.4;
             }
         }
-        
+
         .grid {
             display: grid;
             grid-template-columns: 1fr 1fr;
             gap: 20px;
             margin-bottom: 20px;
         }
-        
+
         .card {
             background: #111927;
             border-radius: 12px;
             padding: 20px;
             border: 1px solid #1c2333;
         }
-        
+
         .card h3 {
             color: #8899bb;
             font-size: 14px;
@@ -98,22 +98,22 @@
             letter-spacing: 1px;
             margin-bottom: 15px;
         }
-        
+
         .card-full {
             grid-column: 1 / -1;
         }
-        
+
         .config-group {
             margin-bottom: 15px;
         }
-        
+
         .config-group label {
             display: block;
             color: #8899bb;
             font-size: 13px;
             margin-bottom: 5px;
         }
-        
+
         .config-group input,
         .config-group select {
             width: 100%;
@@ -125,13 +125,13 @@
             font-size: 14px;
             transition: border 0.3s;
         }
-        
+
         .config-group input:focus,
         .config-group select:focus {
             outline: none;
             border-color: #f7931a;
         }
-        
+
         .config-group input[type="range"] {
             padding: 0;
             height: 6px;
@@ -140,7 +140,7 @@
             border-radius: 3px;
             -webkit-appearance: none;
         }
-        
+
         .config-group input[type="range"]::-webkit-slider-thumb {
             -webkit-appearance: none;
             width: 18px;
@@ -149,7 +149,7 @@
             border-radius: 50%;
             cursor: pointer;
         }
-        
+
         .range-labels {
             display: flex;
             justify-content: space-between;
@@ -157,7 +157,7 @@
             color: #8899bb;
             margin-top: 5px;
         }
-        
+
         .btn {
             padding: 10px 24px;
             border: none;
@@ -169,53 +169,53 @@
             margin-right: 10px;
             margin-bottom: 10px;
         }
-        
+
         .btn-primary {
             background: #f7931a;
             color: #0a0e17;
         }
-        
+
         .btn-primary:hover {
             background: #f8a94a;
             transform: translateY(-2px);
             box-shadow: 0 4px 15px rgba(247, 147, 26, 0.3);
         }
-        
+
         .btn-success {
             background: #00c853;
             color: #0a0e17;
         }
-        
+
         .btn-success:hover {
             background: #33d975;
             transform: translateY(-2px);
         }
-        
+
         .btn-danger {
             background: #ff1744;
             color: white;
         }
-        
+
         .btn-danger:hover {
             background: #ff4466;
             transform: translateY(-2px);
         }
-        
+
         .btn-secondary {
             background: #1c2333;
             color: #8899bb;
         }
-        
+
         .btn-secondary:hover {
             background: #2a3344;
         }
-        
+
         .btn:disabled {
             opacity: 0.5;
             cursor: not-allowed;
             transform: none !important;
         }
-        
+
         .signal-box {
             text-align: center;
             padding: 20px;
@@ -225,76 +225,76 @@
             font-weight: 700;
             transition: all 0.5s;
         }
-        
+
         .signal-box.buy {
             background: rgba(0, 200, 83, 0.15);
             color: #00c853;
             border: 2px solid #00c853;
         }
-        
+
         .signal-box.sell {
             background: rgba(255, 23, 68, 0.15);
             color: #ff1744;
             border: 2px solid #ff1744;
         }
-        
+
         .signal-box.neutral {
             background: rgba(136, 153, 187, 0.1);
             color: #8899bb;
             border: 2px solid #1c2333;
         }
-        
+
         .levels-grid {
             display: grid;
             grid-template-columns: 1fr 1fr 1fr;
             gap: 10px;
             margin: 15px 0;
         }
-        
+
         .level-item {
             background: #0a0e17;
             padding: 12px;
             border-radius: 6px;
             text-align: center;
         }
-        
+
         .level-item .label {
             font-size: 11px;
             color: #8899bb;
             text-transform: uppercase;
         }
-        
+
         .level-item .value {
             font-size: 18px;
             font-weight: 600;
             margin-top: 5px;
         }
-        
+
         .level-item .value.buy-color {
             color: #00c853;
         }
-        
+
         .level-item .value.sell-color {
             color: #ff1744;
         }
-        
+
         #chart-container {
             width: 100%;
             height: 400px;
             background: #0a0e17;
             border-radius: 8px;
         }
-        
+
         .table-wrap {
             overflow-x: auto;
         }
-        
+
         table {
             width: 100%;
             border-collapse: collapse;
             font-size: 13px;
         }
-        
+
         th {
             text-align: left;
             padding: 10px 8px;
@@ -302,20 +302,20 @@
             border-bottom: 1px solid #1c2333;
             font-weight: 600;
         }
-        
+
         td {
             padding: 10px 8px;
             border-bottom: 1px solid #1c2333;
         }
-        
+
         .profit {
             color: #00c853;
         }
-        
+
         .loss {
             color: #ff1744;
         }
-        
+
         .logs-container {
             height: 150px;
             overflow-y: auto;
@@ -326,82 +326,96 @@
             font-size: 12px;
             line-height: 1.8;
         }
-        
+
         .logs-container .log-time {
             color: #8899bb;
         }
-        
+
         .logs-container .log-info {
             color: #64b5f6;
         }
-        
+
         .logs-container .log-success {
             color: #00c853;
         }
-        
+
         .logs-container .log-error {
             color: #ff1744;
         }
-        
+
         .logs-container .log-warning {
             color: #ffab00;
         }
-        
+
         .btn-group {
             display: flex;
             flex-wrap: wrap;
             gap: 8px;
             margin-top: 10px;
         }
-        
+
         .price-ticker {
             font-size: 24px;
             font-weight: 700;
             color: #e6edf3;
             margin: 10px 0;
         }
-        
-        .price-ticker .change {
-            font-size: 16px;
-            margin-left: 10px;
+
+        .account-info {
+            background: #0a0e17;
+            padding: 10px 15px;
+            border-radius: 8px;
+            margin: 10px 0;
+            font-size: 14px;
+            color: #8899bb;
+            border: 1px solid #1c2333;
         }
-        
-        .price-ticker .change.up {
-            color: #00c853;
+
+        .account-info .label {
+            color: #8899bb;
         }
-        
-        .price-ticker .change.down {
+
+        .account-info .value {
+            color: #e6edf3;
+            font-weight: 600;
+        }
+
+        .account-info .value.demo {
+            color: #ffab00;
+        }
+
+        .account-info .value.real {
             color: #ff1744;
         }
-        
+
         @media (max-width: 768px) {
             .grid {
                 grid-template-columns: 1fr;
             }
-            
+
             .header h1 {
                 font-size: 20px;
             }
-            
+
             .levels-grid {
                 grid-template-columns: 1fr;
             }
         }
-        
+
         ::-webkit-scrollbar {
             width: 6px;
             height: 6px;
         }
-        
+
         ::-webkit-scrollbar-track {
             background: #0a0e17;
         }
-        
+
         ::-webkit-scrollbar-thumb {
             background: #1c2333;
             border-radius: 3px;
         }
-        
+
         ::-webkit-scrollbar-thumb:hover {
             background: #2a3344;
         }
@@ -409,9 +423,8 @@
 </head>
 <body>
     <div class="container">
-        <!-- HEADER -->
         <div class="header">
-            <h1>⚡ XAUUSD Bot · Smart Liquidity (API Real)</h1>
+            <h1>⚡ XAUUSD Bot · Smart Liquidity</h1>
             <div class="status-indicator">
                 <span id="statusText" style="color: #8899bb;">Desconectado</span>
                 <span id="statusDot" class="status-dot"></span>
@@ -419,20 +432,16 @@
             </div>
         </div>
 
-        <!-- GRID PRINCIPAL -->
         <div class="grid">
-            <!-- CONFIGURACIÓN -->
             <div class="card">
                 <h3>⚙️ Configuración</h3>
 
                 <div class="config-group">
-                    <label>🔑 App ID (Deriv)</label>
-                    <input type="text" id="appId" placeholder="Ej: 12345" value="54321" />
-                </div>
-
-                <div class="config-group">
                     <label>🔑 API Token (Deriv)</label>
-                    <input type="password" id="apiToken" placeholder="Ingresa tu token de Deriv" />
+                    <input type="password" id="apiToken" placeholder="Ingresa tu token de Deriv (el mismo de índices sintéticos)" />
+                    <div style="font-size: 11px; color: #8899bb; margin-top: 5px;">
+                        ✅ Usa el mismo token que tu bot de índices sintéticos
+                    </div>
                 </div>
 
                 <div class="config-group">
@@ -453,8 +462,14 @@
                 </div>
 
                 <div class="config-group">
-                    <label>📈 Capital inicial (USD)</label>
+                    <label>📈 Capital (USD)</label>
                     <input type="number" id="capitalInput" value="10000" step="1000" />
+                </div>
+
+                <div class="account-info" id="accountInfo" style="display: none;">
+                    <div><span class="label">Cuenta:</span> <span class="value" id="accountId">-</span></div>
+                    <div><span class="label">Balance:</span> <span class="value" id="accountBalance">-</span></div>
+                    <div><span class="label">Tipo:</span> <span class="value" id="accountType">-</span></div>
                 </div>
 
                 <div class="btn-group">
@@ -465,7 +480,6 @@
                 </div>
             </div>
 
-            <!-- SEÑAL ACTUAL -->
             <div class="card">
                 <h3>📡 Señal Actual</h3>
                 <div id="signalBox" class="signal-box neutral">NEUTRO</div>
@@ -498,13 +512,11 @@
             </div>
         </div>
 
-        <!-- GRÁFICO -->
         <div class="card card-full">
             <h3>📊 Gráfico XAUUSD (1H) + Zonas de Liquidez</h3>
             <div id="chart-container"></div>
         </div>
 
-        <!-- POSICIONES E HISTORIAL -->
         <div class="grid">
             <div class="card">
                 <h3>📂 Posiciones Abiertas</h3>
@@ -546,7 +558,6 @@
             </div>
         </div>
 
-        <!-- LOGS -->
         <div class="card card-full">
             <h3>📋 Logs del Sistema</h3>
             <div class="logs-container" id="logs">
@@ -555,16 +566,16 @@
         </div>
     </div>
 
-    <!-- Lightweight Charts -->
     <script src="https://unpkg.com/lightweight-charts@3.8.0/dist/lightweight-charts.standalone.production.js">
     </script>
 
     <script>
         // ============================================================
-        //  CONFIGURACIÓN GLOBAL
+        //  CONFIGURACIÓN - APP ID FIJO
         // ============================================================
+        const APP_ID = 1089; // App ID de prueba de Deriv
+
         let CONFIG = {
-            appId: '54321',
             apiToken: '',
             mode: 'manual',
             riskPercent: 1.0,
@@ -584,11 +595,12 @@
             lineSeries: null,
             autoInterval: null,
             ws: null,
-            currentPrice: null
+            currentPrice: null,
+            accountInfo: null
         };
 
         // ============================================================
-        //  FUNCIONES DE LOG
+        //  LOGS
         // ============================================================
         function addLog(message, type = 'info') {
             const logs = document.getElementById('logs');
@@ -609,34 +621,31 @@
         //  CONFIGURACIÓN
         // ============================================================
         function loadConfig() {
-            const saved = localStorage.getItem('xauusd_bot_config_real');
+            const saved = localStorage.getItem('xauusd_bot_simple');
             if (saved) {
                 try {
                     const cfg = JSON.parse(saved);
                     CONFIG = { ...CONFIG, ...cfg };
-                    document.getElementById('appId').value = CONFIG.appId || '54321';
                     document.getElementById('apiToken').value = CONFIG.apiToken || '';
                     document.getElementById('mode').value = CONFIG.mode || 'manual';
                     document.getElementById('riskSlider').value = CONFIG.riskPercent || 1.0;
                     document.getElementById('capitalInput').value = CONFIG.capital || 10000;
                     document.getElementById('riskDisplay').textContent = (CONFIG.riskPercent || 1.0) + '%';
-                    addLog('Configuración cargada desde localStorage', 'info');
+                    addLog('Configuración cargada', 'info');
                 } catch (e) {
-                    addLog('Error al cargar configuración: ' + e.message, 'error');
+                    addLog('Error al cargar: ' + e.message, 'error');
                 }
             }
         }
 
         function saveConfig() {
-            CONFIG.appId = document.getElementById('appId').value.trim();
             CONFIG.apiToken = document.getElementById('apiToken').value.trim();
             CONFIG.mode = document.getElementById('mode').value;
             CONFIG.riskPercent = parseFloat(document.getElementById('riskSlider').value);
             CONFIG.capital = parseFloat(document.getElementById('capitalInput').value) || 10000;
             document.getElementById('riskDisplay').textContent = CONFIG.riskPercent + '%';
-            localStorage.setItem('xauusd_bot_config_real', JSON.stringify(CONFIG));
+            localStorage.setItem('xauusd_bot_simple', JSON.stringify(CONFIG));
             addLog('Configuración guardada', 'success');
-            updateStatus('Configuración guardada');
         }
 
         // ============================================================
@@ -665,10 +674,9 @@
         }
 
         // ============================================================
-        //  DERIV API REAL (WEBSOCKET + REST)
+        //  CONEXIÓN DERIV - SOLO TOKEN
         // ============================================================
         function connectDeriv() {
-            const appId = CONFIG.appId || '54321';
             const token = CONFIG.apiToken;
 
             if (!token) {
@@ -681,94 +689,78 @@
                 return;
             }
 
-            updateStatus('Conectando a Deriv...', 'connecting');
-            addLog('🔗 Conectando a Deriv via WebSocket...', 'info');
+            updateStatus('Conectando...', 'connecting');
+            addLog(`🔗 Conectando a Deriv (App ID: ${APP_ID})...`, 'info');
 
-            const wsUrl = `wss://ws.deriv.com/v3?app_id=${appId}`;
+            const wsUrl = `wss://ws.deriv.com/v3?app_id=${APP_ID}`;
             state.ws = new WebSocket(wsUrl);
 
             state.ws.onopen = () => {
-                addLog('✅ WebSocket conectado a Deriv', 'success');
+                addLog('✅ WebSocket conectado', 'success');
                 updateStatus('Autenticando...', 'connecting');
-
-                // Autenticar
-                state.ws.send(JSON.stringify({
-                    authorize: token
-                }));
+                state.ws.send(JSON.stringify({ authorize: token }));
             };
 
             state.ws.onmessage = (event) => {
                 try {
                     const data = JSON.parse(event.data);
 
-                    // Respuesta de autenticación
                     if (data.msg_type === 'authorize') {
                         if (data.error) {
-                            addLog(`❌ Error de autenticación: ${data.error.message}`, 'error');
+                            addLog(`❌ Error: ${data.error.message}`, 'error');
                             updateStatus('Error de autenticación');
                             return;
                         }
-                        addLog(`✅ Autenticado como: ${data.authorize.loginid}`, 'success');
-                        updateStatus('Conectado a Deriv', 'online');
+                        state.accountInfo = data.authorize;
+                        addLog(`✅ Autenticado: ${data.authorize.loginid}`, 'success');
+                        updateStatus(`Conectado: ${data.authorize.loginid}`, 'online');
 
-                        // Suscribirse a ticks de XAUUSD
-                        state.ws.send(JSON.stringify({
-                            ticks: 'XAUUSD',
-                            subscribe: true
-                        }));
+                        document.getElementById('accountInfo').style.display = 'block';
+                        document.getElementById('accountId').textContent = data.authorize.loginid;
+                        const tipo = data.authorize.is_virtual ? 'DEMO' : 'REAL';
+                        const tipoClass = data.authorize.is_virtual ? 'demo' : 'real';
+                        document.getElementById('accountType').textContent = tipo;
+                        document.getElementById('accountType').className = `value ${tipoClass}`;
 
-                        // Obtener balance
-                        state.ws.send(JSON.stringify({
-                            balance: 1
-                        }));
+                        state.ws.send(JSON.stringify({ ticks: 'XAUUSD', subscribe: true }));
+                        state.ws.send(JSON.stringify({ balance: 1 }));
                     }
 
-                    // Balance
                     if (data.msg_type === 'balance') {
                         const balance = data.balance.balance;
-                        addLog(`💰 Balance: $${balance.toFixed(2)}`, 'info');
-                        if (CONFIG.capital !== balance) {
-                            CONFIG.capital = balance;
-                            document.getElementById('capitalInput').value = balance;
-                        }
+                        document.getElementById('accountBalance').textContent = `$${balance.toFixed(2)}`;
+                        CONFIG.capital = balance;
+                        document.getElementById('capitalInput').value = balance;
                     }
 
-                    // Ticks en tiempo real
                     if (data.msg_type === 'tick') {
-                        const price = data.tick.quote;
-                        state.currentPrice = price;
-                        document.getElementById('livePrice').textContent = `$${price.toFixed(2)}`;
+                        state.currentPrice = data.tick.quote;
+                        document.getElementById('livePrice').textContent = `$${state.currentPrice.toFixed(2)}`;
                         updatePositionsPnL();
                     }
 
-                    // Error
                     if (data.error) {
-                        addLog(`⚠️ Error API: ${data.error.message}`, 'error');
+                        addLog(`⚠️ API: ${data.error.message}`, 'error');
                     }
 
-                } catch (e) {
-                    // Ignorar errores de parseo
-                }
+                } catch (e) {}
             };
 
             state.ws.onerror = (error) => {
-                addLog(`❌ Error WebSocket: ${error.message || 'Desconocido'}`, 'error');
+                addLog(`❌ Error: ${error.message || 'Desconocido'}`, 'error');
                 updateStatus('Error de conexión');
             };
 
             state.ws.onclose = () => {
-                addLog('🔌 WebSocket desconectado', 'warning');
+                addLog('🔌 Desconectado', 'warning');
                 updateStatus('Desconectado');
                 state.isConnected = false;
-                // Intentar reconectar después de 5 segundos
-                if (state.isRunning) {
-                    setTimeout(connectDeriv, 5000);
-                }
+                if (state.isRunning) setTimeout(connectDeriv, 5000);
             };
         }
 
         // ============================================================
-        //  OBTENER VELAS DESDE DERIV API
+        //  OBTENER VELAS
         // ============================================================
         async function getCandlesDeriv(symbol, timeframe, count) {
             return new Promise((resolve, reject) => {
@@ -778,20 +770,11 @@
                 }
 
                 const requestId = `candles_${Date.now()}`;
-                const timeframes = {
-                    '5m': 300,
-                    '1H': 3600,
-                    '4H': 14400
-                };
-
+                const timeframes = { '5m': 300, '1H': 3600, '4H': 14400 };
                 const granularity = timeframes[timeframe] || 3600;
 
                 state.ws.send(JSON.stringify({
-                    candles: {
-                        granularity: granularity,
-                        symbol: symbol,
-                        count: count
-                    },
+                    candles: { granularity, symbol, count },
                     req_id: requestId
                 }));
 
@@ -811,17 +794,15 @@
                 };
 
                 state.ws.addEventListener('message', handler);
-
-                // Timeout
                 setTimeout(() => {
                     state.ws.removeEventListener('message', handler);
-                    reject(new Error('Timeout obteniendo velas'));
+                    reject(new Error('Timeout'));
                 }, 10000);
             });
         }
 
         // ============================================================
-        //  EJECUTAR ORDEN EN DERIV
+        //  EJECUTAR ORDEN
         // ============================================================
         async function placeOrderDeriv(symbol, action, amount) {
             return new Promise((resolve, reject) => {
@@ -832,7 +813,6 @@
 
                 const requestId = `order_${Date.now()}`;
 
-                // Primero obtener proposal
                 state.ws.send(JSON.stringify({
                     proposal: {
                         amount: amount,
@@ -848,14 +828,9 @@
                 const handler = (event) => {
                     const data = JSON.parse(event.data);
                     if (data.msg_type === 'proposal' && data.req_id === requestId) {
-                        if (data.error) {
-                            reject(new Error(data.error.message));
-                            return;
-                        }
+                        if (data.error) { reject(new Error(data.error.message)); return; }
 
                         const proposalId = data.proposal.id;
-
-                        // Ejecutar la orden
                         state.ws.send(JSON.stringify({
                             buy: proposalId,
                             price: data.proposal.display_value,
@@ -866,35 +841,28 @@
                             const buyData = JSON.parse(buyEvent.data);
                             if (buyData.msg_type === 'buy' && buyData.req_id === `${requestId}_buy`) {
                                 state.ws.removeEventListener('message', buyHandler);
-                                if (buyData.error) {
-                                    reject(new Error(buyData.error.message));
-                                } else {
-                                    resolve(buyData.buy);
-                                }
+                                if (buyData.error) reject(new Error(buyData.error.message));
+                                else resolve(buyData.buy);
                             }
                         };
                         state.ws.addEventListener('message', buyHandler);
-
-                        // Timeout para compra
                         setTimeout(() => {
                             state.ws.removeEventListener('message', buyHandler);
-                            reject(new Error('Timeout ejecutando orden'));
+                            reject(new Error('Timeout'));
                         }, 10000);
                     }
                 };
 
                 state.ws.addEventListener('message', handler);
-
-                // Timeout para proposal
                 setTimeout(() => {
                     state.ws.removeEventListener('message', handler);
-                    reject(new Error('Timeout obteniendo proposal'));
+                    reject(new Error('Timeout'));
                 }, 10000);
             });
         }
 
         // ============================================================
-        //  ESTRATEGIA - ANÁLISIS
+        //  ESTRATEGIA
         // ============================================================
         function getTrend(candles) {
             if (candles.length < 20) return 'rango';
@@ -942,43 +910,33 @@
         }
 
         // ============================================================
-        //  ANÁLISIS PRINCIPAL
+        //  ANÁLISIS
         // ============================================================
         async function analyzeNow() {
-            if (!CONFIG.apiToken) {
-                addLog('⚠️ Ingresa tu API Token primero', 'warning');
-                return;
-            }
-
+            if (!CONFIG.apiToken) { addLog('⚠️ Ingresa tu API Token', 'warning'); return; }
             if (!state.isConnected) {
                 connectDeriv();
                 await new Promise(r => setTimeout(r, 3000));
-                if (!state.isConnected) {
-                    addLog('⚠️ No conectado a Deriv. Reintentando...', 'warning');
-                    return;
-                }
+                if (!state.isConnected) { addLog('⚠️ No conectado', 'warning'); return; }
             }
 
-            addLog('🔍 Iniciando análisis de mercado...', 'info');
+            addLog('🔍 Analizando mercado...', 'info');
             updateStatus('Analizando...');
 
             try {
-                // Obtener datos reales de Deriv
                 const candles4H = await getCandlesDeriv('XAUUSD', '4H', 50);
                 const candles1H = await getCandlesDeriv('XAUUSD', '1H', 100);
                 const candles5m = await getCandlesDeriv('XAUUSD', '5m', 30);
 
-                // Análisis
                 const trend4H = getTrend(candles4H);
-                addLog(`📈 Tendencia 4H: ${trend4H.toUpperCase()}`, 'info');
+                addLog(`📈 4H: ${trend4H.toUpperCase()}`, 'info');
 
                 const liquidity = findLiquidity(candles1H);
-                addLog(`💧 Zonas de liquidez: ${liquidity.length}`, 'info');
+                addLog(`💧 Liquidez: ${liquidity.length} zonas`, 'info');
 
                 const confirmation = getConfirmation(candles5m);
-                addLog(`✅ Confirmación 5m: ${confirmation ? 'SÍ' : 'NO'}`, confirmation ? 'success' : 'warning');
+                addLog(`✅ 5m: ${confirmation ? 'SÍ' : 'NO'}`, confirmation ? 'success' : 'warning');
 
-                // Generar señal
                 if (trend4H !== 'rango' && confirmation) {
                     const lastPrice = candles5m[candles5m.length - 1].close;
                     const sl = trend4H === 'bullish' ?
@@ -992,44 +950,35 @@
                         action: trend4H === 'bullish' ? 'buy' : 'sell',
                         entry: lastPrice,
                         stopLoss: sl,
-                        takeProfit: tp,
-                        trend: trend4H
+                        takeProfit: tp
                     };
 
                     displaySignal(state.currentSignal);
                     document.getElementById('executeBtn').disabled = false;
                     addLog(`🎯 SEÑAL: ${state.currentSignal.action.toUpperCase()} en ${lastPrice.toFixed(2)}`, 'success');
 
-                    // Si está en modo automático, ejecutar
                     if (CONFIG.mode === 'auto' && state.isRunning) {
-                        addLog('🤖 Modo automático: ejecutando trade...', 'info');
+                        addLog('🤖 Auto: ejecutando...', 'info');
                         await executeTrade();
                     }
                 } else {
                     state.currentSignal = null;
                     displaySignal(null);
                     document.getElementById('executeBtn').disabled = true;
-                    addLog('⏳ No hay señal válida. Esperando condiciones...', 'info');
+                    addLog('⏳ Sin señal', 'info');
                 }
 
-                // Actualizar gráfico
                 updateChart(candles1H, liquidity);
-
                 updateStatus('Conectado', 'online');
-                return state.currentSignal;
 
             } catch (error) {
-                addLog(`❌ Error en análisis: ${error.message}`, 'error');
-                updateStatus('Error: ' + error.message);
-                // Reconectar si es necesario
-                if (!state.isConnected) {
-                    connectDeriv();
-                }
+                addLog(`❌ Error: ${error.message}`, 'error');
+                if (!state.isConnected) connectDeriv();
             }
         }
 
         // ============================================================
-        //  INTERFAZ - SEÑAL
+        //  INTERFAZ
         // ============================================================
         function displaySignal(signal) {
             const box = document.getElementById('signalBox');
@@ -1065,18 +1014,9 @@
             state.chart = LightweightCharts.createChart(container, {
                 width: container.clientWidth,
                 height: 400,
-                layout: {
-                    background: { color: '#0a0e17' },
-                    textColor: '#e6edf3'
-                },
-                grid: {
-                    vertLines: { color: '#1c2333' },
-                    horzLines: { color: '#1c2333' }
-                },
-                timeScale: {
-                    timeVisible: true,
-                    secondsVisible: false
-                }
+                layout: { background: { color: '#0a0e17' }, textColor: '#e6edf3' },
+                grid: { vertLines: { color: '#1c2333' }, horzLines: { color: '#1c2333' } },
+                timeScale: { timeVisible: true, secondsVisible: false }
             });
             state.candlestickSeries = state.chart.addCandlestickSeries({
                 upColor: '#00c853',
@@ -1099,25 +1039,15 @@
             }));
             state.candlestickSeries.setData(data);
 
-            // Limpiar líneas anteriores
-            if (state.lineSeries) {
-                state.chart.removeSeries(state.lineSeries);
-            }
-
-            // Dibujar liquidez
+            if (state.lineSeries) state.chart.removeSeries(state.lineSeries);
             if (liquidity && liquidity.length > 0) {
-                state.lineSeries = state.chart.addLineSeries({
-                    color: '#f7931a',
-                    lineWidth: 1,
-                    lineStyle: 2
-                });
+                state.lineSeries = state.chart.addLineSeries({ color: '#f7931a', lineWidth: 1, lineStyle: 2 });
                 const liqData = liquidity.map((z, i) => ({
                     time: data[Math.floor(i * data.length / Math.min(liquidity.length, 10))]?.time || data[0]?.time,
                     value: z.price
                 }));
                 state.lineSeries.setData(liqData);
             }
-
             state.chart.timeScale().fitContent();
         }
 
@@ -1129,46 +1059,26 @@
         });
 
         // ============================================================
-        //  EJECUCIÓN DE TRADES (REAL)
+        //  EJECUCIÓN
         // ============================================================
         async function executeTrade() {
-            if (!state.currentSignal) {
-                addLog('⚠️ No hay señal para ejecutar', 'warning');
-                return;
-            }
-
-            if (!CONFIG.apiToken) {
-                addLog('⚠️ Ingresa tu API Token', 'warning');
-                return;
-            }
-
-            if (!state.isConnected) {
-                addLog('⚠️ No conectado a Deriv', 'warning');
-                return;
-            }
+            if (!state.currentSignal) { addLog('⚠️ Sin señal', 'warning'); return; }
+            if (!CONFIG.apiToken) { addLog('⚠️ Sin token', 'warning'); return; }
+            if (!state.isConnected) { addLog('⚠️ No conectado', 'warning'); return; }
 
             const signal = state.currentSignal;
             const capital = CONFIG.capital || 10000;
             const risk = CONFIG.riskPercent / 100;
             const slPips = Math.abs(signal.entry - signal.stopLoss);
             const lotSize = (capital * risk) / (slPips * 0.1);
-            const roundedLot = Math.round(lotSize * 100) / 100;
+            const finalLot = Math.min(Math.max(Math.round(lotSize * 100) / 100, 0.01), 10);
 
-            // Limitar lote mínimo y máximo
-            const minLot = 0.01;
-            const maxLot = 10;
-            const finalLot = Math.min(Math.max(roundedLot, minLot), maxLot);
-
-            addLog(`📊 Calculando lote: ${finalLot} (riesgo ${CONFIG.riskPercent}%)`, 'info');
+            addLog(`📊 Lote: ${finalLot} (riesgo ${CONFIG.riskPercent}%)`, 'info');
 
             try {
-                // Ejecutar orden real en Deriv
                 const order = await placeOrderDeriv('XAUUSD', signal.action, finalLot);
-
                 addLog(`✅ ${signal.action.toUpperCase()} ejecutada: ${finalLot} lotes en ${signal.entry.toFixed(2)}`, 'success');
-                addLog(`📋 ID de transacción: ${order.transaction_id}`, 'info');
 
-                // Agregar a posiciones
                 const pos = {
                     id: order.transaction_id,
                     symbol: 'XAUUSD',
@@ -1177,8 +1087,7 @@
                     stopLoss: signal.stopLoss,
                     takeProfit: signal.takeProfit,
                     lot: finalLot,
-                    openTime: new Date().toISOString(),
-                    contractId: order.contract_id
+                    openTime: new Date().toISOString()
                 };
 
                 state.positions.push(pos);
@@ -1186,7 +1095,6 @@
                 document.getElementById('tradeCount').textContent = `Operaciones: ${state.tradeCount}`;
                 renderPositions();
 
-                // Resetear señal
                 state.currentSignal = null;
                 displaySignal(null);
                 document.getElementById('executeBtn').disabled = true;
@@ -1194,27 +1102,20 @@
                 return order;
 
             } catch (error) {
-                addLog(`❌ Error al ejecutar: ${error.message}`, 'error');
-                // Reconectar si es error de conexión
-                if (error.message.includes('WebSocket')) {
-                    connectDeriv();
-                }
+                addLog(`❌ Error: ${error.message}`, 'error');
+                if (!state.isConnected) connectDeriv();
             }
         }
 
         // ============================================================
-        //  GESTIÓN DE POSICIONES
+        //  POSICIONES
         // ============================================================
         function updatePositionsPnL() {
-            // Actualizar P&L de posiciones abiertas con precio actual
-            const currentPrice = state.currentPrice;
-            if (!currentPrice) return;
-
+            if (!state.currentPrice) return;
             state.positions.forEach(pos => {
                 const pnl = pos.action === 'buy' ?
-                    (currentPrice - pos.entry) * pos.lot * 100 :
-                    (pos.entry - currentPrice) * pos.lot * 100;
-                // Actualizar en la tabla
+                    (state.currentPrice - pos.entry) * pos.lot * 100 :
+                    (pos.entry - state.currentPrice) * pos.lot * 100;
                 const rows = document.querySelectorAll('#positionsBody tr');
                 rows.forEach(row => {
                     const cells = row.querySelectorAll('td');
@@ -1241,8 +1142,7 @@
                 const pnl = state.currentPrice ?
                     (pos.action === 'buy' ?
                         (state.currentPrice - pos.entry) * pos.lot * 100 :
-                        (pos.entry - state.currentPrice) * pos.lot * 100) :
-                    0;
+                        (pos.entry - state.currentPrice) * pos.lot * 100) : 0;
                 const pnlClass = pnl >= 0 ? 'profit' : 'loss';
                 const row = document.createElement('tr');
                 row.innerHTML = `
@@ -1265,13 +1165,11 @@
             const pnl = state.currentPrice ?
                 (pos.action === 'buy' ?
                     (state.currentPrice - pos.entry) * pos.lot * 100 :
-                    (pos.entry - state.currentPrice) * pos.lot * 100) :
-                (Math.random() - 0.5) * 30;
+                    (pos.entry - state.currentPrice) * pos.lot * 100) : 0;
 
             state.totalPnL += pnl;
             document.getElementById('pnlDisplay').textContent = `P&L: $${state.totalPnL.toFixed(2)}`;
 
-            // Agregar a historial
             state.history.push({
                 date: new Date().toLocaleString(),
                 result: pnl >= 0 ? 'Ganancia' : 'Pérdida',
@@ -1283,8 +1181,7 @@
             state.positions.splice(idx, 1);
             renderPositions();
             renderHistory();
-
-            addLog(`📊 Posición cerrada. P&L: ${pnl >= 0 ? '+' : ''}$${pnl.toFixed(2)}`, pnl >= 0 ? 'success' : 'error');
+            addLog(`📊 Cerrada: ${pnl >= 0 ? '+' : ''}$${pnl.toFixed(2)}`, pnl >= 0 ? 'success' : 'error');
         }
 
         function renderHistory() {
@@ -1311,20 +1208,14 @@
         //  EMERGENCIA
         // ============================================================
         async function emergencyClose() {
-            if (state.positions.length === 0) {
-                addLog('✅ No hay posiciones abiertas para cerrar', 'info');
-                return;
-            }
+            if (state.positions.length === 0) { addLog('✅ Sin posiciones', 'info'); return; }
 
             const count = state.positions.length;
-
             for (const pos of state.positions) {
                 const pnl = state.currentPrice ?
                     (pos.action === 'buy' ?
                         (state.currentPrice - pos.entry) * pos.lot * 100 :
-                        (pos.entry - state.currentPrice) * pos.lot * 100) :
-                    (Math.random() - 0.5) * 20;
-
+                        (pos.entry - state.currentPrice) * pos.lot * 100) : 0;
                 state.totalPnL += pnl;
                 state.history.push({
                     date: new Date().toLocaleString(),
@@ -1339,93 +1230,66 @@
             renderPositions();
             renderHistory();
             document.getElementById('pnlDisplay').textContent = `P&L: $${state.totalPnL.toFixed(2)}`;
-
-            addLog(`🚨 EMERGENCIA: ${count} posiciones cerradas`, 'error');
+            addLog(`🚨 EMERGENCIA: ${count} cerradas`, 'error');
         }
 
         // ============================================================
-        //  CONTROL DEL BOT
+        //  CONTROL
         // ============================================================
         function startBot() {
             saveConfig();
-
-            if (!CONFIG.apiToken) {
-                addLog('⚠️ Ingresa tu API Token en la configuración', 'warning');
-                return;
-            }
+            if (!CONFIG.apiToken) { addLog('⚠️ Ingresa tu token', 'warning'); return; }
 
             state.isRunning = true;
             updateStatus('Conectando...', 'connecting');
-            addLog('🚀 Bot iniciado correctamente', 'success');
-            addLog(`📊 Modo: ${CONFIG.mode.toUpperCase()} | Riesgo: ${CONFIG.riskPercent}% | Capital: $${CONFIG.capital}`,
-                'info');
+            addLog('🚀 Bot iniciado', 'success');
+            addLog(`📊 Modo: ${CONFIG.mode.toUpperCase()} | Riesgo: ${CONFIG.riskPercent}%`, 'info');
 
-            // Conectar a Deriv
             connectDeriv();
-
-            // Análisis inicial después de conexión
             setTimeout(() => {
-                if (state.isConnected) {
-                    analyzeNow();
-                } else {
-                    addLog('⏳ Esperando conexión para análisis inicial...', 'warning');
-                    // Intentar de nuevo en 5 segundos
-                    setTimeout(analyzeNow, 5000);
-                }
+                if (state.isConnected) analyzeNow();
+                else { addLog('⏳ Esperando conexión...', 'warning');
+                    setTimeout(analyzeNow, 5000); }
             }, 3000);
 
-            // Programar análisis automático cada 5 minutos
             if (state.autoInterval) clearInterval(state.autoInterval);
             state.autoInterval = setInterval(() => {
-                if (state.isRunning && state.isConnected) {
-                    analyzeNow();
-                }
-            }, 300000); // 5 minutos
+                if (state.isRunning && state.isConnected) analyzeNow();
+            }, 300000);
 
             document.querySelector('.btn-success').textContent = '🔄 Bot Activo';
         }
 
         function stopBot() {
             state.isRunning = false;
-            if (state.autoInterval) {
-                clearInterval(state.autoInterval);
-                state.autoInterval = null;
-            }
-            if (state.ws) {
-                state.ws.close();
-                state.ws = null;
-            }
+            if (state.autoInterval) { clearInterval(state.autoInterval);
+                state.autoInterval = null; }
+            if (state.ws) { state.ws.close();
+                state.ws = null; }
             updateStatus('Bot detenido');
             document.querySelector('.btn-success').textContent = '▶ Iniciar Bot';
-            addLog('⏹ Bot detenido manualmente', 'warning');
+            addLog('⏹ Bot detenido', 'warning');
         }
 
         // ============================================================
-        //  INICIALIZACIÓN
+        //  INICIO
         // ============================================================
         window.addEventListener('DOMContentLoaded', () => {
             loadConfig();
             initChart();
-            addLog('📊 Bot XAUUSD Smart Liquidity (API Real) cargado', 'info');
-            addLog('💡 Configura tu API Token y presiona "Iniciar Bot"', 'info');
-            addLog('⚠️ USAR CUENTA DEMO PRIMERO', 'warning');
+            addLog('📊 XAUUSD Bot cargado', 'info');
+            addLog(`🔑 App ID: ${APP_ID} (fijo)`, 'info');
+            addLog('💡 Usa el MISMO token que tu bot de índices sintéticos', 'info');
+            addLog('⚠️ PRUEBA EN DEMO PRIMERO', 'warning');
 
-            // Actualizar riesgo en tiempo real
             document.getElementById('riskSlider').addEventListener('input', function() {
                 document.getElementById('riskDisplay').textContent = this.value + '%';
             });
 
-            // Guardar al cambiar
             document.getElementById('apiToken').addEventListener('change', saveConfig);
             document.getElementById('mode').addEventListener('change', saveConfig);
             document.getElementById('capitalInput').addEventListener('change', saveConfig);
         });
-
-        // ============================================================
-        //  EXPORTAR FUNCIONES PARA EL HTML
-        // ============================================================
-        console.log('✅ Bot XAUUSD con API Real listo. Usa startBot() para iniciar.');
-        console.log('⚠️ RECUERDA: Usar cuenta DEMO primero para probar.');
     </script>
 </body>
 </html>
