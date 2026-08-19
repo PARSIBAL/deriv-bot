@@ -575,6 +575,11 @@
         // ============================================================
         const APP_ID = 1089; // App ID de prueba de Deriv
 
+        // Símbolo real que usa la API de Deriv para el par Oro/USD.
+        // "XAUUSD" a secas NO es un símbolo válido en Deriv, por eso
+        // fallaban las suscripciones de precio/velas y las órdenes.
+        const SYMBOL = 'frxXAUUSD';
+
         let CONFIG = {
             apiToken: '',
             mode: 'manual',
@@ -692,7 +697,10 @@
             updateStatus('Conectando...', 'connecting');
             addLog(`🔗 Conectando a Deriv (App ID: ${APP_ID})...`, 'info');
 
-            const wsUrl = `wss://ws.deriv.com/v3?app_id=${APP_ID}`;
+            // URL correcta del endpoint de Deriv (antes apuntaba a
+            // "ws.deriv.com/v3", que no existe y nunca completaba el
+            // handshake, por eso no autenticaba con el token).
+            const wsUrl = `wss://ws.derivws.com/websockets/v3?app_id=${APP_ID}`;
             state.ws = new WebSocket(wsUrl);
 
             state.ws.onopen = () => {
@@ -722,7 +730,7 @@
                         document.getElementById('accountType').textContent = tipo;
                         document.getElementById('accountType').className = `value ${tipoClass}`;
 
-                        state.ws.send(JSON.stringify({ ticks: 'XAUUSD', subscribe: true }));
+                        state.ws.send(JSON.stringify({ ticks: SYMBOL, subscribe: true }));
                         state.ws.send(JSON.stringify({ balance: 1 }));
                     }
 
@@ -746,13 +754,13 @@
                 } catch (e) {}
             };
 
-            state.ws.onerror = (error) => {
-                addLog(`❌ Error: ${error.message || 'Desconocido'}`, 'error');
+            state.ws.onerror = () => {
+                addLog('❌ Error de conexión con el WebSocket', 'error');
                 updateStatus('Error de conexión');
             };
 
-            state.ws.onclose = () => {
-                addLog('🔌 Desconectado', 'warning');
+            state.ws.onclose = (event) => {
+                addLog(`🔌 Desconectado (código ${event.code})`, 'warning');
                 updateStatus('Desconectado');
                 state.isConnected = false;
                 if (state.isRunning) setTimeout(connectDeriv, 5000);
@@ -774,14 +782,22 @@
                 const granularity = timeframes[timeframe] || 3600;
 
                 state.ws.send(JSON.stringify({
-                    candles: { granularity, symbol, count },
+                    ticks_history: symbol,
+                    style: 'candles',
+                    granularity,
+                    count,
+                    end: 'latest',
                     req_id: requestId
                 }));
 
                 const handler = (event) => {
                     const data = JSON.parse(event.data);
-                    if (data.msg_type === 'candles' && data.req_id === requestId) {
+                    if (data.req_id === requestId) {
                         state.ws.removeEventListener('message', handler);
+                        if (data.error) {
+                            reject(new Error(data.error.message));
+                            return;
+                        }
                         const candles = data.candles.map(c => ({
                             time: c.epoch * 1000,
                             open: c.open,
@@ -789,7 +805,7 @@
                             low: c.low,
                             close: c.close
                         }));
-                        resolve(candles.reverse());
+                        resolve(candles);
                     }
                 };
 
@@ -814,26 +830,29 @@
                 const requestId = `order_${Date.now()}`;
 
                 state.ws.send(JSON.stringify({
-                    proposal: {
-                        amount: amount,
-                        basis: 'stake',
-                        contract_type: action === 'buy' ? 'CALL' : 'PUT',
-                        duration: 60,
-                        duration_unit: 's',
-                        symbol: symbol
-                    },
+                    proposal: 1,
+                    amount: amount,
+                    basis: 'stake',
+                    contract_type: action === 'buy' ? 'CALL' : 'PUT',
+                    currency: 'USD',
+                    duration: 60,
+                    duration_unit: 's',
+                    symbol: symbol,
                     req_id: requestId
                 }));
 
                 const handler = (event) => {
                     const data = JSON.parse(event.data);
                     if (data.msg_type === 'proposal' && data.req_id === requestId) {
+                        state.ws.removeEventListener('message', handler);
                         if (data.error) { reject(new Error(data.error.message)); return; }
 
                         const proposalId = data.proposal.id;
+                        // Se debe enviar el precio numérico (ask_price), no el
+                        // "display_value" que es un string formateado para UI.
                         state.ws.send(JSON.stringify({
                             buy: proposalId,
-                            price: data.proposal.display_value,
+                            price: data.proposal.ask_price,
                             req_id: `${requestId}_buy`
                         }));
 
@@ -924,9 +943,9 @@
             updateStatus('Analizando...');
 
             try {
-                const candles4H = await getCandlesDeriv('XAUUSD', '4H', 50);
-                const candles1H = await getCandlesDeriv('XAUUSD', '1H', 100);
-                const candles5m = await getCandlesDeriv('XAUUSD', '5m', 30);
+                const candles4H = await getCandlesDeriv(SYMBOL, '4H', 50);
+                const candles1H = await getCandlesDeriv(SYMBOL, '1H', 100);
+                const candles5m = await getCandlesDeriv(SYMBOL, '5m', 30);
 
                 const trend4H = getTrend(candles4H);
                 addLog(`📈 4H: ${trend4H.toUpperCase()}`, 'info');
@@ -1028,6 +1047,7 @@
         }
 
         function updateChart(candles, liquidity) {
+            if (typeof LightweightCharts === 'undefined') return; // gráfico no disponible, seguimos sin él
             if (!state.chart) initChart();
 
             const data = candles.map(c => ({
@@ -1076,7 +1096,7 @@
             addLog(`📊 Lote: ${finalLot} (riesgo ${CONFIG.riskPercent}%)`, 'info');
 
             try {
-                const order = await placeOrderDeriv('XAUUSD', signal.action, finalLot);
+                const order = await placeOrderDeriv(SYMBOL, signal.action, finalLot);
                 addLog(`✅ ${signal.action.toUpperCase()} ejecutada: ${finalLot} lotes en ${signal.entry.toFixed(2)}`, 'success');
 
                 const pos = {
@@ -1275,8 +1295,25 @@
         //  INICIO
         // ============================================================
         window.addEventListener('DOMContentLoaded', () => {
-            loadConfig();
-            initChart();
+            // Cada bloque va en su propio try/catch: si algo falla (p.ej. el
+            // gráfico no carga por una red lenta o la CDN bloqueada), el
+            // resto de la app sigue funcionando en vez de quedar "muerta".
+            try {
+                loadConfig();
+            } catch (e) {
+                addLog('Error cargando config: ' + e.message, 'error');
+            }
+
+            try {
+                if (typeof LightweightCharts === 'undefined') {
+                    addLog('⚠️ No se pudo cargar la librería del gráfico (revisa tu conexión)', 'warning');
+                } else {
+                    initChart();
+                }
+            } catch (e) {
+                addLog('Error iniciando gráfico: ' + e.message, 'error');
+            }
+
             addLog('📊 XAUUSD Bot cargado', 'info');
             addLog(`🔑 App ID: ${APP_ID} (fijo)`, 'info');
             addLog('💡 Usa el MISMO token que tu bot de índices sintéticos', 'info');
