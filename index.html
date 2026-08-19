@@ -762,7 +762,8 @@
                         document.getElementById('accountType').textContent = tipo;
                         document.getElementById('accountType').className = `value ${tipoClass}`;
 
-                        state.ws.send(JSON.stringify({ ticks: SYMBOL, subscribe: true }));
+                        // CORREGIDO: subscribe debe ser 1 (int), no true (bool)
+                        state.ws.send(JSON.stringify({ ticks: SYMBOL, subscribe: 1 }));
                         state.ws.send(JSON.stringify({ balance: 1 }));
                     }
 
