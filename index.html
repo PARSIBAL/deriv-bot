@@ -632,6 +632,19 @@
         }
 
         // ============================================================
+        //  CAPTURA GLOBAL DE ERRORES
+        //  Como en móvil no hay consola de desarrollador visible, esto
+        //  vuelca cualquier error de JS (o promesa rechazada) directo al
+        //  panel de Logs, para poder diagnosticar sin herramientas extra.
+        // ============================================================
+        window.addEventListener('error', (e) => {
+            addLog(`💥 Error JS: ${e.message} (línea ${e.lineno})`, 'error');
+        });
+        window.addEventListener('unhandledrejection', (e) => {
+            addLog(`💥 Error async: ${e.reason && e.reason.message ? e.reason.message : e.reason}`, 'error');
+        });
+
+        // ============================================================
         //  CONFIGURACIÓN
         // ============================================================
         function loadConfig() {
@@ -645,17 +658,4 @@
                     document.getElementById('riskSlider').value = CONFIG.riskPercent || 1.0;
                     document.getElementById('capitalInput').value = CONFIG.capital || 10000;
                     document.getElementById('multiplierInput').value = CONFIG.multiplier || 20;
-                    document.getElementById('riskDisplay').textContent = (CONFIG.riskPercent || 1.0) + '%';
-                    addLog('Configuración cargada', 'info');
-                } catch (e) {
-                    addLog('Error al cargar: ' + e.message, 'error');
-                }
-            }
-        }
-
-        function saveConfig() {
-            CONFIG.apiToken = document.getElementById('apiToken').value.trim();
-            CONFIG.mode = document.getElementById('mode').value;
-            CONFIG.riskPercent = parseFloat(document.getElementById('riskSlider').value);
-            CONFIG.capital = parseFloat(document.getElementById('capitalInput').value) || 10000;
-            CONFIG.multiplier = parseFloat(document.getElementById('multiplierInput
+                    document.g
