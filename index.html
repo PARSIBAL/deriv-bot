@@ -1258,9 +1258,13 @@
             });
         }
 
+        // ============================================================
+        //  GRÁFICO CORREGIDO — evita "Value is null"
+        // ============================================================
         function updateChart(candles, liquidity) {
-            if (typeof LightweightCharts === 'undefined') return; // gráfico no disponible, seguimos sin él
+            if (typeof LightweightCharts === 'undefined') return;
             if (!state.chart) initChart();
+            if (!candles || candles.length === 0) return;
 
             const data = candles.map(c => ({
                 time: Math.floor(c.time / 1000),
@@ -1269,17 +1273,41 @@
                 low: c.low,
                 close: c.close
             }));
+            data.sort((a, b) => a.time - b.time);
             state.candlestickSeries.setData(data);
 
-            if (state.lineSeries) state.chart.removeSeries(state.lineSeries);
-            if (liquidity && liquidity.length > 0) {
-                state.lineSeries = state.chart.addLineSeries({ color: '#f7931a', lineWidth: 1, lineStyle: 2 });
-                const liqData = liquidity.map((z, i) => ({
-                    time: data[Math.floor(i * data.length / Math.min(liquidity.length, 10))]?.time || data[0]?.time,
-                    value: z.price
-                }));
-                state.lineSeries.setData(liqData);
+            if (state.lineSeries) {
+                try { state.chart.removeSeries(state.lineSeries); } catch(e) {}
+                state.lineSeries = null;
             }
+
+            if (liquidity && liquidity.length > 0) {
+                state.lineSeries = state.chart.addLineSeries({
+                    color: '#f7931a',
+                    lineWidth: 1,
+                    lineStyle: LightweightCharts.LineStyle.LargeDashed
+                });
+
+                const maxPoints = Math.min(liquidity.length, data.length);
+                const step = Math.max(1, Math.floor(data.length / maxPoints));
+                const liqData = [];
+                const usedTimes = new Set();
+
+                for (let i = 0; i < maxPoints; i++) {
+                    const idx = Math.min(i * step, data.length - 1);
+                    const time = data[idx].time;
+                    if (!usedTimes.has(time)) {
+                        usedTimes.add(time);
+                        liqData.push({ time: time, value: liquidity[i].price });
+                    }
+                }
+
+                if (liqData.length > 0) {
+                    liqData.sort((a, b) => a.time - b.time);
+                    state.lineSeries.setData(liqData);
+                }
+            }
+
             state.chart.timeScale().fitContent();
         }
 
