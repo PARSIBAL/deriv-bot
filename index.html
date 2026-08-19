@@ -422,13 +422,6 @@
     </style>
 </head>
 <body>
-    <!-- 🔧 CONSOLA DE DEPURACIÓN MÓVIL (temporal)
-         Muestra un botón flotante que abre una consola tipo DevTools
-         directo en la página, para ver errores de JS sin computadora.
-         Cuando ya no la necesites, borra estas 2 líneas. -->
-    <script src="https://cdn.jsdelivr.net/npm/eruda" crossorigin="anonymous"></script>
-    <script>eruda.init();</script>
-
     <div class="container">
         <div class="header">
             <h1>⚡ XAUUSD Bot · Smart Liquidity</h1>
@@ -635,6 +628,14 @@
             const cls = colors[type] || 'log-info';
             logs.innerHTML +=
                 `<div><span class="log-time">[${timestamp}]</span> <span class="${cls}">${message}</span></div>`;
+
+            // Evita que el panel crezca sin límite y vaya frenando el
+            // celular con el tiempo — se queda con las últimas 200 líneas.
+            const entries = logs.children;
+            while (entries.length > 200) {
+                logs.removeChild(entries[0]);
+            }
+
             logs.scrollTop = logs.scrollHeight;
         }
 
