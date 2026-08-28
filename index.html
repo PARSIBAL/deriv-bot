@@ -295,7 +295,7 @@ body{
 @keyframes blink{0%,100%{opacity:1}50%{opacity:.2}}
 
 .divider{height:1px;background:var(--br);margin:16px 0;}
-.apill.disabled{border-color:rgba(255,45,85,0.15);color:var(--dn);cursor:not-allowed;}
+.apill.disabled{opacity:0.3;border-color:rgba(255,45,85,0.15);color:var(--dn);cursor:not-allowed;}
 </style>
 </head>
 <body>
@@ -543,22 +543,28 @@ body{
 //   Reset manual o automático al día siguiente (00:00 UTC).
 // ══════════════════════════════════════════════════════════════════════════
 
-const ASSETS = ['R_10','R_25','R_50','RDBEAR','RDBULL'];
-const LABELS = {R_10:'V10',R_25:'V25',R_50:'V50',RDBEAR:'BEAR',RDBULL:'BULL'};
+// ══════════════════════════════════════════════════════════════════════════
+// SÍMBOLOS ACTUALIZADOS (2025-2026)
+// Deriv cambió los índices de volatilidad:
+//   Antes: R_10, R_25, R_50  →  Ahora: 1HZ10V, 1HZ25V, 1HZ50V
+//   RDBEAR y RDBULL siguen igual (por ahora)
+// Si tu cuenta aún tiene los viejos, el bot detecta automáticamente.
+// ══════════════════════════════════════════════════════════════════════════
+const ASSETS = ['1HZ10V','1HZ25V','1HZ50V','RDBEAR','RDBULL'];
+const LABELS = {'1HZ10V':'V10','1HZ25V':'V25','1HZ50V':'V50','RDBEAR':'BEAR','RDBULL':'BULL'};
+
+// Fallbacks: si el nuevo no existe, prueba el viejo
+const FALLBACK_MAP = {
+  '1HZ10V': 'R_10',
+  '1HZ25V': 'R_25',
+  '1HZ50V': 'R_50'
+};
+
 const HIST_KEY  = 'sniper_history_v1';
 const TICKS_KEY = 'sniper_ticks_v1';
 
-// Símbolos alternativos (1s ticks) por si los clásicos no están disponibles
-const ALT_SYMBOLS = {
-  'R_10':  ['1HZ10V','R_10'],
-  'R_25':  ['1HZ25V','R_25'],
-  'R_50':  ['1HZ50V','R_50'],
-  'RDBEAR':['RDBEAR'],
-  'RDBULL':['RDBULL']
-};
-
-let activeSymbols = [];   // Símbolos disponibles para esta cuenta
-let symbolMap     = {};   // Mapeo lógico → símbolo real de la API
+let activeSymbols = [];   // Símbolos que la API confirma como disponibles
+let resolvedSymbol = null; // Símbolo real que usaremos para suscribirnos
 
 // ── Estado global ──────────────────────────────────────────────────────────
 let ws, running = false;
@@ -774,7 +780,7 @@ function executeTrade(dir, z) {
 
   pendingBuyAsset = selectedAsset;
 
-  const realSymbol = symbolMap[selectedAsset] || selectedAsset;
+  const tradeSymbol = resolvedSymbol || selectedAsset;
   ws.send(JSON.stringify({
     proposal: 1,
     amount:   stake,
@@ -783,7 +789,7 @@ function executeTrade(dir, z) {
     currency: 'USD',
     duration: duration,
     duration_unit: 'm',
-    symbol:   realSymbol
+    symbol:   tradeSymbol
   }));
 }
 
@@ -925,26 +931,25 @@ function updateStats() {
 
 function buildAssetPills() {
   document.getElementById('assetPills').innerHTML = ASSETS.map(a => {
-    const real = symbolMap[a] || a;
-    const available = activeSymbols.length === 0 || activeSymbols.includes(real);
-    const cls = a === selectedAsset ? 'selected' : (available ? '' : 'disabled');
-    const style = available ? '' : 'opacity:0.3;pointer-events:none;';
-    return `<div class="apill ${cls}" style="${style}" onclick="selectAsset('${a}')">${LABELS[a]}${available?'':'🔒'}</div>`;
+    const isAvail = activeSymbols.length === 0 || activeSymbols.includes(a) || activeSymbols.includes(FALLBACK_MAP[a]);
+    const cls = a === selectedAsset ? 'selected' : '';
+    const lock = isAvail ? '' : ' 🔒';
+    const sty = isAvail ? '' : 'opacity:0.35;pointer-events:none;';
+    return `<div class="apill ${cls}" style="${sty}" onclick="selectAsset('${a}')">${LABELS[a]}${lock}</div>`;
   }).join('');
   document.getElementById('assetSub').innerText = LABELS[selectedAsset];
 }
 
 function selectAsset(a) {
-  // Resolver símbolo real (por si hay alternativas)
-  const realSymbol = symbolMap[a] || a;
   selectedAsset = a;
   tickBuffer = []; tickTimes = []; zConsecutive = 0; lastZDir = null;
   buildAssetPills();
-  addLog('⚙️ Activo → ' + LABELS[a] + ' (' + realSymbol + ') | Buffer reiniciado', 'li');
+  addLog('⚙️ Activo → ' + LABELS[a] + ' | Buffer reiniciado', 'li');
   // Resuscribir ticks si está conectado
   if (ws && ws.readyState === 1) {
     ws.send(JSON.stringify({ forget_all: 'ticks' }));
-    ws.send(JSON.stringify({ ticks: realSymbol, subscribe: 1 }));
+    const sym = resolvedSymbol || a;
+    ws.send(JSON.stringify({ ticks: sym, subscribe: 1 }));
   }
 }
 
@@ -1098,40 +1103,33 @@ function startBot() {
       document.getElementById('statusDot').className = 'dot on';
       document.getElementById('statusTxt').innerText = 'ONLINE — SNIPER ACTIVO · ' + LABELS[selectedAsset];
       ws.send(JSON.stringify({ balance: 1 }));
-      // Pedir lista de símbolos activos para detectar cuáles están disponibles
+      // Pedir lista de símbolos activos para saber cuáles existen en esta cuenta
       ws.send(JSON.stringify({ active_symbols: 'brief', product_type: 'basic' }));
     }
 
     if (d.active_symbols) {
       activeSymbols = d.active_symbols.map(s => s.symbol);
-      addLog('📋 Símbolos activos recibidos: ' + activeSymbols.length + ' mercados', 'li');
-      // Resolver mapeo de símbolos
-      let resolved = false;
-      for (const logic of ASSETS) {
-        const candidates = ALT_SYMBOLS[logic] || [logic];
-        for (const cand of candidates) {
-          if (activeSymbols.includes(cand)) {
-            symbolMap[logic] = cand;
-            resolved = true;
-            break;
-          }
-        }
-      }
-      const missing = ASSETS.filter(a => !symbolMap[a]);
-      if (missing.length > 0) {
-        addLog('⚠️ Símbolos NO disponibles en tu cuenta: ' + missing.map(m => LABELS[m]).join(', '), 'll');
-        addLog('   Esto suele deberse a restricciones regulatorias de tu país.', 'lm');
-      }
-      const ok = ASSETS.filter(a => symbolMap[a]).map(a => LABELS[a] + '(' + symbolMap[a] + ')').join(', ');
-      if (ok) addLog('✅ Símbolos disponibles: ' + ok, 'li');
-      buildAssetPills();
-      // Suscribir al activo seleccionado (usando símbolo real)
-      const realSymbol = symbolMap[selectedAsset] || selectedAsset;
-      if (symbolMap[selectedAsset]) {
-        ws.send(JSON.stringify({ ticks: realSymbol, subscribe: 1 }));
-        addLog('📡 Suscrito a ticks de ' + LABELS[selectedAsset] + ' (' + realSymbol + ') · Acumulando buffer...', 'li');
+      addLog('📋 Símbolos activos detectados: ' + activeSymbols.length, 'li');
+
+      // Resolver qué símbolo usar para el activo seleccionado
+      const primary = selectedAsset;
+      const fallback = FALLBACK_MAP[primary];
+      if (activeSymbols.includes(primary)) {
+        resolvedSymbol = primary;
+        addLog('✅ Usando símbolo nuevo: ' + primary, 'li');
+      } else if (fallback && activeSymbols.includes(fallback)) {
+        resolvedSymbol = fallback;
+        addLog('⚠️ Símbolo nuevo no disponible. Usando legacy: ' + fallback, 'li');
       } else {
-        addLog('❌ No se pudo suscribir: ' + LABELS[selectedAsset] + ' no está disponible.', 'll');
+        resolvedSymbol = primary;
+        addLog('❌ ' + primary + ' ni su fallback están disponibles. Verifica tu cuenta.', 'll');
+      }
+      buildAssetPills();
+
+      // Suscribir al símbolo resuelto
+      if (resolvedSymbol && activeSymbols.includes(resolvedSymbol)) {
+        ws.send(JSON.stringify({ ticks: resolvedSymbol, subscribe: 1 }));
+        addLog('📡 Suscrito a ticks de ' + LABELS[selectedAsset] + ' (' + resolvedSymbol + ')', 'li');
       }
     }
 
@@ -1173,12 +1171,12 @@ function startBot() {
     }
 
     if (d.error) {
-      const msg = d.error.message || '';
-      if (msg.toLowerCase().includes('invalid') && msg.toLowerCase().includes('symbol')) {
-        addLog('❌ ' + msg, 'll');
-        addLog('   → Tu cuenta no tiene acceso a este índice. Prueba otro activo o verifica tu ubicación.', 'lm');
+      const msg = (d.error.message || '').toLowerCase();
+      if (msg.includes('invalid') && msg.includes('symbol')) {
+        addLog('❌ ' + d.error.message, 'll');
+        addLog('   → Deriv cambió los símbolos. R_25 ahora es 1HZ25V. Reinicia el bot.', 'lm');
       } else {
-        addLog('⚠️ ' + msg, 'll');
+        addLog('⚠️ ' + d.error.message, 'll');
       }
     }
   };
@@ -1216,6 +1214,7 @@ updateZThrDisplay();
 addLog('⚡ SNIPER PROTOCOL cargado — Una entrada por día', 'li');
 addLog('📐 Z Adaptativo = (precio - media) / (std × ATR_ratio)', 'li');
 addLog('🔍 4 Capas: Régimen de volatilidad · Z umbral · Agotamiento · Persistencia', 'li');
+addLog('🔄 Símbolos actualizados: 1HZ10V, 1HZ25V, 1HZ50V (Deriv cambió los códigos)', 'li');
 addLog('⏳ Sin setup A+: el bot espera. No hay overtrading.', 'lm');
 </script>
 </body>
