@@ -560,7 +560,7 @@
     <div class="container">
         <header>
             <h1>🤖 <span>Deriv Bot</span> — Digit Differ V10</h1>
-            <p>Seguimiento de algoritmo en Volatility 10 Index | Ventana configurable | Duración de ticks MANUAL</p>
+            <p>Seguimiento de algoritmo en Volatility 10 Index (1HZ10V) | Ventana configurable | Duración de ticks MANUAL</p>
         </header>
 
         <div class="grid">
@@ -675,7 +675,7 @@
             <!-- Panel derecho: Monitor y Logs -->
             <div class="right-column">
                 <div class="panel">
-                    <h2>🔢 Monitor de Dígitos — Volatility 10 Index</h2>
+                    <h2>🔢 Monitor de Dígitos — Volatility 10 Index (1HZ10V)</h2>
 
                     <div class="last-tick">
                         <div class="tick-label">Último Tick Recibido</div>
@@ -749,7 +749,7 @@
 
                 // Configuración fija del contrato
                 this.config = {
-                    symbol: 'R_10',
+                    symbol: '1HZ10V',
                     contractType: 'DIGITDIFF',
                     durationUnit: 't',
                     basis: 'stake'
@@ -925,7 +925,7 @@
                     subscribe: 1,
                     req_id: this.getNextReqId()
                 });
-                this.log(`📡 Suscrito a ticks de ${this.config.symbol}`, 'info');
+                this.log(`📡 Suscrito a ticks de Volatility 10 Index (1HZ10V)`, 'info');
             }
 
             subscribeBalance() {
