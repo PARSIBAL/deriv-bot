@@ -749,11 +749,12 @@
 
                 // Configuración fija del contrato
                 this.config = {
-                    symbol: '1HZ10V',
+                    symbol: null,  // Se detecta automáticamente o usa el seleccionado
                     contractType: 'DIGITDIFF',
                     durationUnit: 't',
                     basis: 'stake'
                 };
+                this.availableSymbols = [];
 
                 this.initDigitsGrid();
                 this.bindDurationInput();
@@ -864,7 +865,7 @@
                     return false;
                 }
 
-                this.log('🔗 Conectando a Deriv...', 'info');
+                this.log('🔗 Conectando a Deriv WebSocket...', 'info');
                 this.updateStatus('connected', 'Conectando...');
 
                 return new Promise((resolve) => {
@@ -957,13 +958,17 @@
                         this.updateBalance();
                         this.updateStatus('connected', 'Conectado');
                         this.log(`🔓 Autorizado. Cuenta: ${msg.authorize.loginid} | Balance: ${this.balance.toFixed(2)} ${this.currency}`, 'success');
-                        this.subscribeTicks();
-                        this.subscribeBalance();
+                        this.log('🔍 Detectando símbolos disponibles para tu cuenta...', 'info');
+                        this.detectSymbol();
                         break;
 
                     case 'balance':
                         this.balance = parseFloat(msg.balance.balance);
                         this.updateBalance();
+                        break;
+
+                    case 'active_symbols':
+                        this.handleActiveSymbols(msg);
                         break;
 
                     case 'tick':
@@ -981,6 +986,68 @@
                     case 'proposal_open_contract':
                         this.handleContractUpdate(msg);
                         break;
+                }
+            }
+
+            detectSymbol() {
+                const manualSymbol = document.getElementById('symbolSelect').value;
+
+                if (manualSymbol !== 'AUTO') {
+                    this.config.symbol = manualSymbol;
+                    this.log(`📌 Usando símbolo manual: ${manualSymbol}`, 'info');
+                    this.subscribeTicks();
+                    this.subscribeBalance();
+                    return;
+                }
+
+                // Auto-detectar: pedir active_symbols
+                this.send({
+                    active_symbols: 'brief',
+                    req_id: this.getNextReqId()
+                });
+            }
+
+            handleActiveSymbols(msg) {
+                const symbols = msg.active_symbols || [];
+                this.availableSymbols = symbols;
+
+                // Buscar símbolos de Volatility 10
+                const v10Patterns = ['1HZ10V', 'R_10'];
+                let selectedSymbol = null;
+
+                for (const pattern of v10Patterns) {
+                    const match = symbols.find(s => 
+                        (s.underlying_symbol === pattern || s.symbol === pattern)
+                    );
+                    if (match) {
+                        selectedSymbol = match.underlying_symbol || match.symbol;
+                        break;
+                    }
+                }
+
+                // Si no encontramos V10, buscar cualquier Volatility Index
+                if (!selectedSymbol) {
+                    const anyVol = symbols.find(s => {
+                        const name = (s.underlying_symbol_name || s.display_name || '').toLowerCase();
+                        return name.includes('volatility') && name.includes('10');
+                    });
+                    if (anyVol) {
+                        selectedSymbol = anyVol.underlying_symbol || anyVol.symbol;
+                    }
+                }
+
+                if (selectedSymbol) {
+                    this.config.symbol = selectedSymbol;
+                    this.log(`✅ Símbolo detectado automáticamente: ${selectedSymbol}`, 'success');
+                    this.subscribeTicks();
+                    this.subscribeBalance();
+                } else {
+                    this.log('❌ No se encontró Volatility 10 Index en los símbolos disponibles de tu cuenta.', 'error');
+                    this.log('📋 Símbolos disponibles: ' + symbols.slice(0, 20).map(s => s.underlying_symbol || s.symbol).join(', '), 'warning');
+                    this.showAlert('No se encontró Volatility 10. Selecciona un símbolo manualmente.', 'danger');
+                    document.getElementById('btnStart').disabled = false;
+                    document.getElementById('btnStop').disabled = true;
+                    this.isRunning = false;
                 }
             }
 
