@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Deriv Bot — Digit Differ V10 | Duración Manual</title>
+    <title>Deriv Bot — Accumulator V1 | Entrada por Calma de Mercado</title>
     <style>
         :root {
             --bg-dark: #0a0c10;
@@ -238,76 +238,6 @@
         .stat-card.profit-positive .value { color: var(--success-light); }
         .stat-card.profit-negative .value { color: var(--danger-light); }
 
-        .digits-grid {
-            display: grid;
-            grid-template-columns: repeat(10, 1fr);
-            gap: 6px;
-            margin-bottom: 18px;
-        }
-
-        .digit-box {
-            aspect-ratio: 1;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            background: var(--bg-input);
-            border: 2px solid var(--border);
-            border-radius: 10px;
-            font-weight: 700;
-            transition: all 0.3s ease;
-            position: relative;
-            overflow: hidden;
-            cursor: default;
-        }
-
-        .digit-box .digit-num {
-            font-size: 1.3rem;
-            z-index: 2;
-            transition: color 0.3s;
-        }
-
-        .digit-box .digit-pct {
-            font-size: 0.6rem;
-            color: var(--text-secondary);
-            z-index: 2;
-            margin-top: 2px;
-            font-weight: 600;
-        }
-
-        .digit-box .digit-bar {
-            position: absolute;
-            bottom: 0; left: 0; right: 0;
-            background: var(--accent);
-            opacity: 0.15;
-            transition: height 0.4s ease;
-            z-index: 1;
-            border-radius: 0 0 8px 8px;
-        }
-
-        .digit-box.hot {
-            border-color: var(--warning);
-            background: rgba(245, 158, 11, 0.08);
-            box-shadow: 0 0 12px rgba(245, 158, 11, 0.1);
-        }
-
-        .digit-box.hot .digit-num { color: var(--warning-light); }
-
-        .digit-box.trigger {
-            border-color: var(--danger);
-            background: rgba(239, 68, 68, 0.12);
-            animation: pulse 1.2s infinite;
-            box-shadow: 0 0 16px rgba(239, 68, 68, 0.2);
-        }
-
-        .digit-box.trigger .digit-num { color: var(--danger-light); }
-        .digit-box.trigger .digit-pct { color: var(--danger-light); }
-
-        @keyframes pulse {
-            0%, 100% { transform: scale(1); box-shadow: 0 0 16px rgba(239, 68, 68, 0.2); }
-            50% { transform: scale(1.06); box-shadow: 0 0 24px rgba(239, 68, 68, 0.35); }
-        }
-
         .log-container {
             height: 380px;
             overflow-y: auto;
@@ -418,21 +348,94 @@
             letter-spacing: -0.5px;
         }
 
-        .last-tick .tick-digit {
-            font-size: 3.2rem;
-            font-weight: 900;
-            color: var(--accent);
-            margin-top: 2px;
-            line-height: 1;
-            text-shadow: 0 0 20px rgba(59, 130, 246, 0.3);
-        }
-
         .last-tick .tick-label {
             font-size: 0.7rem;
             color: var(--text-secondary);
             text-transform: uppercase;
             letter-spacing: 1px;
             margin-bottom: 6px;
+        }
+
+        /* Panel de volatilidad (reemplaza la grilla de dígitos de la versión anterior) */
+        .vol-panel {
+            background: var(--bg-input);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 18px;
+            margin-bottom: 18px;
+        }
+
+        .vol-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: baseline;
+            margin-bottom: 10px;
+        }
+
+        .vol-header .vol-label {
+            font-size: 0.7rem;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .vol-header .vol-state {
+            font-size: 0.75rem;
+            font-weight: 700;
+            padding: 3px 10px;
+            border-radius: 20px;
+        }
+
+        .vol-state.calm {
+            background: rgba(34, 197, 94, 0.15);
+            color: var(--success-light);
+        }
+
+        .vol-state.choppy {
+            background: rgba(239, 68, 68, 0.15);
+            color: var(--danger-light);
+        }
+
+        .vol-value-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+
+        .vol-value-row .vol-current {
+            font-size: 2rem;
+            font-weight: 800;
+            color: var(--text-primary);
+        }
+
+        .vol-value-row .vol-threshold {
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+        }
+
+        .vol-bar-track {
+            height: 10px;
+            background: var(--bg-dark);
+            border-radius: 6px;
+            overflow: hidden;
+            position: relative;
+            border: 1px solid var(--border);
+        }
+
+        .vol-bar-fill {
+            height: 100%;
+            background: linear-gradient(90deg, var(--success), var(--warning), var(--danger));
+            transition: width 0.3s ease;
+            border-radius: 6px 0 0 6px;
+        }
+
+        .vol-bar-marker {
+            position: absolute;
+            top: -3px;
+            width: 2px;
+            height: 16px;
+            background: var(--text-primary);
         }
 
         .trades-table {
@@ -517,12 +520,6 @@
             color: var(--success-light);
         }
 
-        .section-divider {
-            height: 1px;
-            background: var(--border);
-            margin: 14px 0;
-        }
-
         .info-badge {
             display: inline-block;
             padding: 2px 8px;
@@ -533,34 +530,13 @@
             font-weight: 600;
             margin-left: 6px;
         }
-
-        .duration-display {
-            background: var(--bg-dark);
-            border: 1px solid var(--border);
-            border-radius: 8px;
-            padding: 10px;
-            text-align: center;
-            margin-top: 10px;
-        }
-
-        .duration-display .dur-val {
-            font-size: 1.8rem;
-            font-weight: 800;
-            color: var(--accent);
-        }
-
-        .duration-display .dur-label {
-            font-size: 0.7rem;
-            color: var(--text-secondary);
-            text-transform: uppercase;
-        }
     </style>
 </head>
 <body>
     <div class="container">
         <header>
-            <h1>🤖 <span>Deriv Bot</span> — Digit Differ V10</h1>
-            <p>Seguimiento de algoritmo en Volatility 10 Index (1HZ10V) | Ventana configurable | Duración de ticks MANUAL</p>
+            <h1>🤖 <span>Deriv Bot</span> — Accumulator V1</h1>
+            <p>Volatility 10 Index (1HZ10V) | Entra cuando el mercado se calma | Take Profit dinámico $0.02–$0.05</p>
         </header>
 
         <div class="grid">
@@ -580,36 +556,48 @@
                             <input type="number" id="stake" value="1" min="0.35" step="0.01">
                         </div>
                         <div class="form-group">
-                            <label>Duración (ticks) <span class="info-badge">MANUAL</span></label>
-                            <input type="number" id="tickDuration" value="1" min="1" max="10" step="1">
+                            <label>Growth Rate <span class="info-badge">ACCU</span></label>
+                            <select id="growthRate">
+                                <option value="0.01" selected>1%</option>
+                                <option value="0.02">2%</option>
+                                <option value="0.03">3%</option>
+                                <option value="0.04">4%</option>
+                                <option value="0.05">5%</option>
+                            </select>
                         </div>
                     </div>
 
                     <div class="form-row">
                         <div class="form-group">
-                            <label>Ventana (ticks)</label>
-                            <input type="number" id="windowSize" value="50" min="10" max="200">
+                            <label>Ventana Volatilidad (ticks)</label>
+                            <input type="number" id="windowSize" value="20" min="5" max="200">
                         </div>
                         <div class="form-group">
-                            <label>Umbral (%)</label>
-                            <input type="number" id="threshold" value="70" min="50" max="95">
+                            <label>Umbral Calma (%)</label>
+                            <input type="number" id="threshold" value="0.015" min="0.001" step="0.001">
                         </div>
                     </div>
 
                     <div class="form-row">
                         <div class="form-group">
-                            <label>Stop Loss ($)</label>
+                            <label>Take Profit Mín ($)</label>
+                            <input type="number" id="tpMin" value="0.02" min="0.01" step="0.01">
+                        </div>
+                        <div class="form-group">
+                            <label>Take Profit Máx ($)</label>
+                            <input type="number" id="tpMax" value="0.05" min="0.01" step="0.01">
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Límite Pérdida Total ($)</label>
                             <input type="number" id="stopLoss" value="20" min="1" step="0.01">
                         </div>
                         <div class="form-group">
-                            <label>Take Profit ($)</label>
+                            <label>Límite Ganancia Total ($)</label>
                             <input type="number" id="takeProfit" value="10" min="1" step="0.01">
                         </div>
-                    </div>
-
-                    <div class="duration-display">
-                        <div class="dur-label">Duración del Contrato</div>
-                        <div class="dur-val" id="durDisplay">1 tick</div>
                     </div>
 
                     <div class="config-section">
@@ -675,15 +663,27 @@
             <!-- Panel derecho: Monitor y Logs -->
             <div class="right-column">
                 <div class="panel">
-                    <h2>🔢 Monitor de Dígitos — Volatility 10 Index (1HZ10V)</h2>
+                    <h2>🌊 Monitor de Volatilidad — Volatility 10 Index (1HZ10V)</h2>
 
                     <div class="last-tick">
                         <div class="tick-label">Último Tick Recibido</div>
                         <div class="tick-value" id="lastTickValue">---</div>
-                        <div class="tick-digit" id="lastTickDigit">-</div>
                     </div>
 
-                    <div class="digits-grid" id="digitsGrid"></div>
+                    <div class="vol-panel">
+                        <div class="vol-header">
+                            <span class="vol-label">Brusquedad del mercado (variación media absoluta)</span>
+                            <span class="vol-state calm" id="volState">Calculando...</span>
+                        </div>
+                        <div class="vol-value-row">
+                            <span class="vol-current" id="volCurrent">0.0000%</span>
+                            <span class="vol-threshold" id="volThresholdDisplay">Umbral: 0.0150%</span>
+                        </div>
+                        <div class="vol-bar-track">
+                            <div class="vol-bar-fill" id="volBarFill" style="width:0%"></div>
+                            <div class="vol-bar-marker" id="volBarMarker" style="left:0%"></div>
+                        </div>
+                    </div>
 
                     <div class="alert-box alert-warning" id="alertBox">
                         ⚠️ <span id="alertText"></span>
@@ -698,9 +698,9 @@
                                 <tr>
                                     <th>ID</th>
                                     <th>Hora</th>
-                                    <th>Dígito Target</th>
+                                    <th>Growth Rate</th>
                                     <th>Stake</th>
-                                    <th>Duración</th>
+                                    <th>TP Objetivo</th>
                                     <th>Resultado</th>
                                     <th>P/L</th>
                                 </tr>
@@ -720,22 +720,26 @@
 
     <script>
         // ═══════════════════════════════════════════════════════════════════════
-        //  DERIV BOT — DIGIT DIFFER V10 (DURACIÓN MANUAL DE TICKS)
-        //  Estrategia: Análisis de frecuencia de dígitos en ventana deslizante.
-        //  Si un dígito ≥ umbral% (default 70%), opera DIGITDIFF contra él.
-        //  La duración del contrato es MANUAL (1-10 ticks, configurable).
+        //  DERIV BOT — ACCUMULATOR V1 (ENTRADA POR CALMA DE MERCADO)
+        //  Estrategia: mide la "brusquedad" del mercado como la variación
+        //  porcentual absoluta media entre ticks consecutivos, dentro de una
+        //  ventana deslizante. Cuando esa brusquedad cae por debajo del umbral
+        //  configurado (mercado "apagado"/calmado), abre un contrato ACCU con
+        //  el growth rate elegido y un take profit aleatorio entre TP Mín y
+        //  TP Máx (el cierre automático lo hace Deriv vía limit_order, no el
+        //  bot, para evitar demoras de red).
         //  Símbolo: siempre auto-detectado (no hay selector manual en la UI).
         // ═══════════════════════════════════════════════════════════════════════
 
-        class DerivDigitBot {
+        class DerivAccumulatorBot {
             constructor() {
                 this.ws = null;
                 this.isConnected = false;
                 this.isAuthorized = false;
                 this.isRunning = false;
-                this.tickHistory = [];
-                this.digitCounts = new Array(10).fill(0);
-                this.digitPercentages = new Array(10).fill(0);
+                this.prevQuote = null;
+                this.volHistory = [];       // variaciones % absolutas entre ticks consecutivos
+                this.currentVolatility = 0;
                 this.balance = 0;
                 this.currency = 'USD';
                 this.totalProfit = 0;
@@ -746,46 +750,17 @@
                 this.reqId = 1;
                 this.pendingProposal = null;
                 this.cooldownUntil = 0;
-                this.lastTradeDigit = null;
                 this.symbolDetectionTimeout = null;
 
                 // Configuración fija del contrato
                 this.config = {
                     symbol: null,  // Se detecta automáticamente
-                    contractType: 'DIGITDIFF',
-                    durationUnit: 't',
+                    contractType: 'ACCU',
                     basis: 'stake'
                 };
                 this.availableSymbols = [];
 
-                this.initDigitsGrid();
-                this.bindDurationInput();
                 this.log('🚀 Sistema inicializado. Listo para conectar.', 'info');
-            }
-
-            bindDurationInput() {
-                const durInput = document.getElementById('tickDuration');
-                const durDisplay = document.getElementById('durDisplay');
-                durInput.addEventListener('input', () => {
-                    const val = parseInt(durInput.value) || 1;
-                    durDisplay.textContent = `${val} tick${val > 1 ? 's' : ''}`;
-                });
-            }
-
-            initDigitsGrid() {
-                const grid = document.getElementById('digitsGrid');
-                grid.innerHTML = '';
-                for (let i = 0; i <= 9; i++) {
-                    const box = document.createElement('div');
-                    box.className = 'digit-box';
-                    box.id = `digit-${i}`;
-                    box.innerHTML = `
-                        <div class="digit-num">${i}</div>
-                        <div class="digit-pct">0.0%</div>
-                        <div class="digit-bar" style="height:0%"></div>
-                    `;
-                    grid.appendChild(box);
-                }
             }
 
             getNextReqId() { return this.reqId++; }
@@ -860,10 +835,11 @@
                     return false;
                 }
 
-                const duration = this.getDuration();
-                if (duration < 1 || duration > 10) {
-                    this.log('❌ Error: La duración debe estar entre 1 y 10 ticks.', 'error');
-                    this.showAlert('Duración inválida. Usa 1-10 ticks.', 'danger');
+                const tpMin = parseFloat(document.getElementById('tpMin').value) || 0.02;
+                const tpMax = parseFloat(document.getElementById('tpMax').value) || 0.05;
+                if (tpMax < tpMin) {
+                    this.log('❌ Error: Take Profit Máx debe ser mayor o igual al Mín.', 'error');
+                    this.showAlert('Revisa el rango de Take Profit.', 'danger');
                     return false;
                 }
 
@@ -995,11 +971,6 @@
                 }
             }
 
-            // FIX: se eliminó la referencia a un <select id="symbolSelect"> que no
-            // existe en el HTML. Antes, leer su .value lanzaba un TypeError que
-            // interrumpía la ejecución justo después de "Autorizado" — el bot se
-            // quedaba conectado pero nunca pedía ticks ni operaba.
-            // Ahora la detección de símbolo es siempre automática.
             detectSymbol() {
                 this.log('🔍 Solicitando símbolos activos a Deriv...', 'info');
                 this.send({
@@ -1019,7 +990,6 @@
             }
 
             handleActiveSymbols(msg) {
-                // Cancelar timeout si llegó respuesta
                 if (this.symbolDetectionTimeout) {
                     clearTimeout(this.symbolDetectionTimeout);
                     this.symbolDetectionTimeout = null;
@@ -1030,7 +1000,6 @@
 
                 this.log(`📊 Recibidos ${symbols.length} símbolos activos`, 'info');
 
-                // Buscar símbolos de Volatility 10
                 const v10Patterns = ['1HZ10V', 'R_10'];
                 let selectedSymbol = null;
 
@@ -1044,7 +1013,6 @@
                     }
                 }
 
-                // Si no encontramos V10, buscar cualquier Volatility Index
                 if (!selectedSymbol) {
                     const anyVol = symbols.find(s => {
                         const name = (s.underlying_symbol_name || s.display_name || s.displayName || '').toLowerCase();
@@ -1068,124 +1036,121 @@
                 }
             }
 
+            getVolWindow() {
+                return parseInt(document.getElementById('windowSize').value) || 20;
+            }
+
+            getVolThreshold() {
+                return parseFloat(document.getElementById('threshold').value) || 0.015;
+            }
+
+            getGrowthRate() {
+                return parseFloat(document.getElementById('growthRate').value) || 0.01;
+            }
+
             processTick(tick) {
                 const quote = tick.quote;
-                const lastDigit = parseInt(quote.toString().slice(-1));
-
                 document.getElementById('lastTickValue').textContent = quote.toFixed(2);
-                document.getElementById('lastTickDigit').textContent = lastDigit;
 
-                this.tickHistory.push(lastDigit);
-                const windowSize = this.getWindowSize();
-                if (this.tickHistory.length > windowSize) {
-                    this.tickHistory.shift();
-                }
-
-                this.calculatePercentages();
-                this.updateDigitsUI();
-
-                if (this.isRunning && document.getElementById('autoTrade').checked) {
-                    this.checkTradeCondition(lastDigit);
-                }
-            }
-
-            getWindowSize() {
-                return parseInt(document.getElementById('windowSize').value) || 50;
-            }
-
-            getThreshold() {
-                return parseInt(document.getElementById('threshold').value) || 70;
-            }
-
-            getDuration() {
-                return parseInt(document.getElementById('tickDuration').value) || 1;
-            }
-
-            calculatePercentages() {
-                this.digitCounts.fill(0);
-                const len = this.tickHistory.length;
-
-                for (const d of this.tickHistory) {
-                    this.digitCounts[d]++;
-                }
-
-                for (let i = 0; i <= 9; i++) {
-                    this.digitPercentages[i] = len > 0 ? (this.digitCounts[i] / len) * 100 : 0;
-                }
-            }
-
-            updateDigitsUI() {
-                const threshold = this.getThreshold();
-                let hotCount = 0;
-                let triggerDigit = null;
-
-                for (let i = 0; i <= 9; i++) {
-                    const pct = this.digitPercentages[i];
-                    const box = document.getElementById(`digit-${i}`);
-                    const bar = box.querySelector('.digit-bar');
-                    const pctEl = box.querySelector('.digit-pct');
-
-                    pctEl.textContent = `${pct.toFixed(1)}%`;
-                    bar.style.height = `${Math.min(pct * 1.2, 100)}%`;
-
-                    box.classList.remove('hot', 'trigger');
-
-                    if (pct >= threshold) {
-                        box.classList.add('trigger');
-                        triggerDigit = i;
-                        hotCount++;
-                    } else if (pct >= threshold * 0.65) {
-                        box.classList.add('hot');
+                if (this.prevQuote !== null && this.prevQuote !== 0) {
+                    const pctChange = Math.abs((quote - this.prevQuote) / this.prevQuote) * 100;
+                    this.volHistory.push(pctChange);
+                    const windowSize = this.getVolWindow();
+                    if (this.volHistory.length > windowSize) {
+                        this.volHistory.shift();
                     }
                 }
+                this.prevQuote = quote;
 
-                return { hotCount, triggerDigit };
+                this.calculateVolatility();
+                this.updateVolatilityUI();
+
+                if (this.isRunning && document.getElementById('autoTrade').checked) {
+                    this.checkEntryCondition();
+                }
             }
 
-            checkTradeCondition(currentDigit) {
+            calculateVolatility() {
+                const len = this.volHistory.length;
+                if (len === 0) {
+                    this.currentVolatility = 0;
+                    return;
+                }
+                const sum = this.volHistory.reduce((a, b) => a + b, 0);
+                this.currentVolatility = sum / len;
+            }
+
+            updateVolatilityUI() {
+                const threshold = this.getVolThreshold();
+                const vol = this.currentVolatility;
+                const windowSize = this.getVolWindow();
+                const ready = this.volHistory.length >= windowSize;
+
+                document.getElementById('volCurrent').textContent = `${vol.toFixed(4)}%`;
+                document.getElementById('volThresholdDisplay').textContent = `Umbral: ${threshold.toFixed(4)}%`;
+
+                // Escala visual: 0 a 3x el umbral
+                const scaleMax = threshold * 3;
+                const fillPct = scaleMax > 0 ? Math.min((vol / scaleMax) * 100, 100) : 0;
+                document.getElementById('volBarFill').style.width = `${fillPct}%`;
+                const markerPct = scaleMax > 0 ? Math.min((threshold / scaleMax) * 100, 100) : 0;
+                document.getElementById('volBarMarker').style.left = `${markerPct}%`;
+
+                const stateEl = document.getElementById('volState');
+                if (!ready) {
+                    stateEl.textContent = `Calculando... (${this.volHistory.length}/${windowSize})`;
+                    stateEl.className = 'vol-state choppy';
+                } else if (vol <= threshold) {
+                    stateEl.textContent = '🟢 Mercado calmado';
+                    stateEl.className = 'vol-state calm';
+                } else {
+                    stateEl.textContent = '🔴 Mercado agitado';
+                    stateEl.className = 'vol-state choppy';
+                }
+            }
+
+            checkEntryCondition() {
                 const now = Date.now();
                 if (now < this.cooldownUntil) return;
                 if (this.openContracts.size > 0) return;
+                if (this.volHistory.length < this.getVolWindow()) return; // aún no hay suficientes datos
 
-                const { hotCount, triggerDigit } = this.updateDigitsUI();
-                const threshold = this.getThreshold();
+                const threshold = this.getVolThreshold();
 
-                // CONDICIÓN: exactamente UN dígito ≥ umbral
-                if (hotCount === 1 && triggerDigit !== null && this.digitPercentages[triggerDigit] >= threshold) {
-                    if (this.lastTradeDigit === triggerDigit) return; // Evita spam del mismo dígito
-
-                    const pct = this.digitPercentages[triggerDigit].toFixed(1);
-                    this.log(`🎯 TRIGGER: Dígito ${triggerDigit} alcanzó ${pct}% en ventana de ${this.tickHistory.length} ticks`, 'trade');
+                if (this.currentVolatility <= threshold) {
+                    this.log(`🌊 Mercado calmado: brusquedad ${this.currentVolatility.toFixed(4)}% ≤ umbral ${threshold.toFixed(4)}%. Entrando...`, 'trade');
                     this.playSound('trade');
-                    this.placeTrade(triggerDigit);
+                    this.placeTrade();
                     this.cooldownUntil = now + 3000;
                 }
             }
 
-            placeTrade(predictionDigit) {
+            placeTrade() {
                 const stake = parseFloat(document.getElementById('stake').value) || 1;
-                const duration = this.getDuration();
+                const growthRate = this.getGrowthRate();
+                const tpMin = parseFloat(document.getElementById('tpMin').value) || 0.02;
+                const tpMax = parseFloat(document.getElementById('tpMax').value) || 0.05;
                 const stopLoss = parseFloat(document.getElementById('stopLoss').value) || 20;
-                const takeProfit = parseFloat(document.getElementById('takeProfit').value) || 10;
+                const takeProfitLimit = parseFloat(document.getElementById('takeProfit').value) || 10;
 
-                // Verificar límites de profit/loss
+                // Verificar límites globales de profit/loss
                 if (this.totalProfit <= -stopLoss) {
-                    this.log(`⛔ STOP LOSS alcanzado (${this.totalProfit.toFixed(2)} ${this.currency}). Deteniendo bot.`, 'error');
-                    this.showAlert('Stop Loss alcanzado. Bot detenido.', 'danger');
+                    this.log(`⛔ LÍMITE DE PÉRDIDA alcanzado (${this.totalProfit.toFixed(2)} ${this.currency}). Deteniendo bot.`, 'error');
+                    this.showAlert('Límite de pérdida alcanzado. Bot detenido.', 'danger');
                     this.stop();
                     return;
                 }
 
-                if (this.totalProfit >= takeProfit) {
-                    this.log(`🎉 TAKE PROFIT alcanzado (+${this.totalProfit.toFixed(2)} ${this.currency}). Deteniendo bot.`, 'success');
-                    this.showAlert('Take Profit alcanzado. Bot detenido.', 'success');
+                if (this.totalProfit >= takeProfitLimit) {
+                    this.log(`🎉 LÍMITE DE GANANCIA alcanzado (+${this.totalProfit.toFixed(2)} ${this.currency}). Deteniendo bot.`, 'success');
+                    this.showAlert('Límite de ganancia alcanzado. Bot detenido.', 'success');
                     this.stop();
                     return;
                 }
 
-                this.lastTradeDigit = predictionDigit;
+                // Take profit por operación: aleatorio dentro del rango configurado
+                const tradeTakeProfit = +(tpMin + Math.random() * (tpMax - tpMin)).toFixed(2);
 
-                // Solicitar proposal
                 this.send({
                     proposal: 1,
                     subscribe: 0,
@@ -1193,21 +1158,20 @@
                     basis: this.config.basis,
                     contract_type: this.config.contractType,
                     currency: this.currency,
-                    duration: duration,
-                    duration_unit: this.config.durationUnit,
                     symbol: this.config.symbol,
-                    barrier: predictionDigit.toString(),
+                    growth_rate: growthRate,
+                    limit_order: { take_profit: tradeTakeProfit },
                     req_id: this.getNextReqId()
                 });
 
                 this.pendingProposal = {
-                    predictionDigit,
+                    growthRate,
                     stake,
-                    duration,
+                    takeProfit: tradeTakeProfit,
                     reqId: this.reqId - 1
                 };
 
-                this.log(`📡 Proposal solicitada: DIGITDIFF | Prediction: ${predictionDigit} | Stake: ${stake} | Duración: ${duration} tick${duration > 1 ? 's' : ''}`, 'info');
+                this.log(`📡 Proposal solicitada: ACCU | Growth Rate: ${(growthRate * 100).toFixed(0)}% | Stake: $${stake} | TP objetivo: $${tradeTakeProfit}`, 'info');
             }
 
             handleProposal(msg) {
@@ -1236,24 +1200,24 @@
 
                 const contract = msg.buy;
                 const contractId = contract.contract_id;
-                const dur = this.pendingProposal?.duration || 1;
+                const growthRate = this.pendingProposal?.growthRate || 0.01;
+                const takeProfit = this.pendingProposal?.takeProfit;
 
                 this.openContracts.set(contractId, {
                     id: contractId,
-                    prediction: this.pendingProposal?.predictionDigit,
+                    growthRate,
                     stake: this.pendingProposal?.stake,
-                    duration: dur,
+                    takeProfit,
                     startTime: Date.now(),
                     status: 'open'
                 });
 
                 this.totalTrades++;
                 this.updateStats();
-                this.addTradeRow(contractId, this.pendingProposal?.predictionDigit, this.pendingProposal?.stake, dur);
+                this.addTradeRow(contractId, growthRate, this.pendingProposal?.stake, takeProfit);
 
-                this.log(`✅ Contrato #${contractId} comprado | Prediction: ${this.pendingProposal?.predictionDigit} | Stake: ${this.pendingProposal?.stake} | Duración: ${dur} tick${dur > 1 ? 's' : ''}`, 'success');
+                this.log(`✅ Contrato #${contractId} comprado | Growth Rate: ${(growthRate * 100).toFixed(0)}% | Stake: $${this.pendingProposal?.stake} | TP objetivo: $${takeProfit}`, 'success');
 
-                // Suscribirse a updates del contrato
                 this.send({
                     proposal_open_contract: 1,
                     contract_id: contractId,
@@ -1273,7 +1237,6 @@
                 const status = contract.status;
 
                 if (isSold && this.openContracts.has(contractId)) {
-                    const trade = this.openContracts.get(contractId);
                     const profit = parseFloat(contract.profit);
                     const buyPrice = parseFloat(contract.buy_price);
 
@@ -1295,17 +1258,16 @@
                     this.updateStats();
                     this.updateBalance();
 
-                    // Verificar límites post-trade
                     const stopLoss = parseFloat(document.getElementById('stopLoss').value) || 20;
-                    const takeProfit = parseFloat(document.getElementById('takeProfit').value) || 10;
+                    const takeProfitLimit = parseFloat(document.getElementById('takeProfit').value) || 10;
 
                     if (this.totalProfit <= -stopLoss) {
-                        this.log(`⛔ STOP LOSS alcanzado (${this.totalProfit.toFixed(2)} ${this.currency}). Bot detenido.`, 'error');
-                        this.showAlert('Stop Loss alcanzado. Bot detenido.', 'danger');
+                        this.log(`⛔ LÍMITE DE PÉRDIDA alcanzado (${this.totalProfit.toFixed(2)} ${this.currency}). Bot detenido.`, 'error');
+                        this.showAlert('Límite de pérdida alcanzado. Bot detenido.', 'danger');
                         this.stop();
-                    } else if (this.totalProfit >= takeProfit) {
-                        this.log(`🎉 TAKE PROFIT alcanzado (+${this.totalProfit.toFixed(2)} ${this.currency}). Bot detenido.`, 'success');
-                        this.showAlert('Take Profit alcanzado. Bot detenido.', 'success');
+                    } else if (this.totalProfit >= takeProfitLimit) {
+                        this.log(`🎉 LÍMITE DE GANANCIA alcanzado (+${this.totalProfit.toFixed(2)} ${this.currency}). Bot detenido.`, 'success');
+                        this.showAlert('Límite de ganancia alcanzado. Bot detenido.', 'success');
                         this.stop();
                     }
                 }
@@ -1331,21 +1293,20 @@
                 statProfit.className = `stat-card ${this.totalProfit >= 0 ? 'profit-positive' : 'profit-negative'}`;
             }
 
-            addTradeRow(contractId, prediction, stake, duration) {
+            addTradeRow(contractId, growthRate, stake, takeProfit) {
                 const tbody = document.getElementById('tradesBody');
                 const row = document.createElement('tr');
                 row.id = `trade-${contractId}`;
                 row.innerHTML = `
                     <td>${contractId}</td>
                     <td>${new Date().toLocaleTimeString('es-ES')}</td>
-                    <td>${prediction}</td>
+                    <td>${(growthRate * 100).toFixed(0)}%</td>
                     <td>$${stake}</td>
-                    <td>${duration} tick${duration > 1 ? 's' : ''}</td>
+                    <td>$${takeProfit}</td>
                     <td><span class="badge badge-pending">Pendiente</span></td>
                     <td>-</td>
                 `;
                 tbody.insertBefore(row, tbody.firstChild);
-                // Limitar a 50 filas
                 while (tbody.children.length > 50) {
                     tbody.removeChild(tbody.lastChild);
                 }
@@ -1399,7 +1360,7 @@
         async function startBot() {
             if (bot && bot.isRunning) return;
 
-            bot = new DerivDigitBot();
+            bot = new DerivAccumulatorBot();
 
             document.getElementById('btnStart').disabled = true;
             document.getElementById('btnStop').disabled = false;
